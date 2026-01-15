@@ -14,12 +14,22 @@
         </header>
 
         <nav class="tab-navigation">
-            <button class="tab-btn active" data-tab="search">Search Cocktails</button>
+            <button class="tab-btn active" data-tab="codex">Cocktail Codex</button>
+            <button class="tab-btn" data-tab="search">Search Cocktails</button>
             <button class="tab-btn" data-tab="create">Create Your Own</button>
         </nav>
 
+        <!-- Cocktail Codex Tab -->
+        <div class="tab-content active" id="codex-tab">
+            <div class="codex-section">
+                <h2>The Six Foundational Cocktails</h2>
+                <p class="codex-intro">Explore cocktail families based on the Cocktail Codex. Click any root cocktail to discover its template, ingredients, and variations organized by flavor similarity.</p>
+                <div id="codex-graph-container" class="codex-graph-container"></div>
+            </div>
+        </div>
+
         <!-- Search Tab -->
-        <div class="tab-content active" id="search-tab">
+        <div class="tab-content" id="search-tab">
             <div class="search-section">
                 <div class="search-options">
                     <button class="search-type-btn active" data-type="name">By Name</button>
@@ -133,7 +143,10 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="flavor-engine.js"></script>
+    <script src="cocktail-codex.js"></script>
+    <script src="codex-graph.js"></script>
     <script src="cocktail-graph.js"></script>
+    <script src="codex-app.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
