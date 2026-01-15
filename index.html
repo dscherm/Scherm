@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scherm Page - A Digital Tomorrow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --atomic-orange: #FF6B35;
+            --space-teal: #00D9C0;
+            --cosmic-blue: #0066CC;
+            --stardust-white: #F4F4F4;
+            --void-black: #1A1A1A;
+            --orbit-yellow: #FFB800;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--void-black) 0%, #2a2a3a 100%);
+            color: var(--stardust-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        .orbit {
+            position: absolute;
+            border: 2px solid rgba(0, 217, 192, 0.2);
+            border-radius: 50%;
+            animation: rotate 30s linear infinite;
+        }
+
+        .orbit:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .orbit:nth-child(2) {
+            width: 500px;
+            height: 500px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 45s;
+            animation-direction: reverse;
+        }
+
+        .orbit:nth-child(3) {
+            width: 700px;
+            height: 700px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 60s;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Floating atoms */
+        .atom {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, var(--space-teal), transparent);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        .atom:nth-child(4) {
+            top: 20%;
+            left: 15%;
+            animation-delay: 0s;
+        }
+
+        .atom:nth-child(5) {
+            top: 60%;
+            left: 80%;
+            animation-delay: 2s;
+            background: radial-gradient(circle, var(--atomic-orange), transparent);
+        }
+
+        .atom:nth-child(6) {
+            top: 80%;
+            left: 20%;
+            animation-delay: 4s;
+            background: radial-gradient(circle, var(--orbit-yellow), transparent);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-30px) scale(1.2); }
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 800px;
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 3px solid rgba(0, 217, 192, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                        inset 0 0 40px rgba(0, 217, 192, 0.1);
+        }
+
+        /* Atomic logo */
+        .logo {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+        }
+
+        .nucleus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, var(--orbit-yellow), var(--atomic-orange));
+            border-radius: 50%;
+            box-shadow: 0 0 30px var(--atomic-orange);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .electron-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--space-teal);
+            border-radius: 50%;
+        }
+
+        .electron-orbit:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            animation: spin 3s linear infinite;
+        }
+
+        .electron-orbit:nth-child(3) {
+            width: 90px;
+            height: 90px;
+            transform: translate(-50%, -50%) rotate(60deg);
+            animation: spin 4s linear infinite reverse;
+        }
+
+        .electron-orbit:nth-child(4) {
+            width: 90px;
+            height: 90px;
+            transform: translate(-50%, -50%) rotate(-60deg);
+            animation: spin 5s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .electron {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--space-teal);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--space-teal);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 4.5em;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--atomic-orange), var(--space-teal), var(--orbit-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .tagline {
+            font-size: 1.3em;
+            color: var(--space-teal);
+            margin-bottom: 50px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        .divider {
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--space-teal), transparent);
+            margin: 30px auto;
+        }
+
+        /* Project cards */
+        .projects {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .project-card {
+            position: relative;
+            padding: 30px 40px;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(0, 217, 192, 0.1));
+            border: 2px solid var(--space-teal);
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--stardust-white);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 217, 192, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .project-card:hover::before {
+            left: 100%;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 217, 192, 0.4);
+            border-color: var(--atomic-orange);
+        }
+
+        .project-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .project-title {
+            font-size: 2em;
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: 0.05em;
+        }
+
+        .project-description {
+            font-size: 1em;
+            color: rgba(244, 244, 244, 0.8);
+            line-height: 1.6;
+        }
+
+        /* Starfield */
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 4s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+
+            h1 {
+                font-size: 3em;
+            }
+
+            .tagline {
+                font-size: 1em;
+            }
+
+            .logo {
+                width: 120px;
+                height: 120px;
+            }
+
+            .orbit:nth-child(2),
+            .orbit:nth-child(3) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background elements -->
+    <div class="orbit"></div>
+    <div class="orbit"></div>
+    <div class="orbit"></div>
+    <div class="atom"></div>
+    <div class="atom"></div>
+    <div class="atom"></div>
+
+    <!-- Generate starfield -->
+    <script>
+        // Create random stars
+        for (let i = 0; i < 50; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 4 + 's';
+            document.body.appendChild(star);
+        }
+    </script>
+
+    <div class="container">
+        <!-- Atomic logo -->
+        <div class="logo">
+            <div class="nucleus"></div>
+            <div class="electron-orbit">
+                <div class="electron"></div>
+            </div>
+            <div class="electron-orbit">
+                <div class="electron"></div>
+            </div>
+            <div class="electron-orbit">
+                <div class="electron"></div>
+            </div>
+        </div>
+
+        <h1>Scherm Page</h1>
+        <p class="tagline">A Digital Tomorrow</p>
+
+        <div class="divider"></div>
+
+        <div class="projects">
+            <a href="./docs/index.html" class="project-card">
+                <div class="project-icon">🍹</div>
+                <div class="project-title">Cocktail Mixologist</div>
+                <div class="project-description">
+                    Discover, create, and explore cocktails with interactive flavor profiles and the Cocktail Codex system
+                </div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
