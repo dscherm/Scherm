@@ -262,6 +262,12 @@ function showCocktailDetail(cocktail) {
                 ${cocktailType ? `<span class="tag">${cocktailType.name}</span>` : ''}
             </div>
 
+            <div class="graph-section">
+                <h3>Cocktail Structure</h3>
+                <p class="section-hint">Node size shows ingredient proportion. Click ingredients to see alternatives.</p>
+                <div id="cocktail-graph-container" class="cocktail-graph-container"></div>
+            </div>
+
             <div class="flavor-profile-section">
                 <h3>Flavor Profile</h3>
                 <div class="flavor-tags">
@@ -321,6 +327,18 @@ function showCocktailDetail(cocktail) {
     });
 
     cocktailModal.style.display = 'block';
+
+    // Create interactive graph visualization (after modal is displayed so container has dimensions)
+    setTimeout(() => {
+        createCocktailGraph(
+            'cocktail-graph-container',
+            cocktail.strDrink,
+            ingredients,
+            (ingredientName, profile) => {
+                showIngredientDetail(ingredientName, ingredientNames);
+            }
+        );
+    }, 100);
 }
 
 // =============================================================================
@@ -402,16 +420,19 @@ function showIngredientDetail(ingredientName, cocktailIngredients = []) {
 
             <div class="alternatives-list">
                 <p class="section-hint">Similar ingredients you can substitute</p>
-                ${alternatives.length > 0 ? alternatives.map(alt => `
-                    <div class="alternative-item">
-                        <div>
-                            <strong>${alt.ingredient}</strong>
-                            <span class="similarity-score">
-                                ${Math.round(alt.similarity * 100)}% flavor match
-                            </span>
+                ${alternatives.length > 0 ? `
+                    <div id="alternatives-graph-container" class="alternatives-graph-container"></div>
+                    ${alternatives.map(alt => `
+                        <div class="alternative-item">
+                            <div>
+                                <strong>${alt.ingredient}</strong>
+                                <span class="similarity-score">
+                                    ${Math.round(alt.similarity * 100)}% flavor match
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                `).join('') : '<p class="empty-state">No alternatives found</p>'}
+                    `).join('')}
+                ` : '<p class="empty-state">No alternatives found</p>'}
             </div>
         </div>
     `;
@@ -427,6 +448,16 @@ function showIngredientDetail(ingredientName, cocktailIngredients = []) {
             const option = btn.dataset.option;
             document.querySelector('.pairings-list').classList.toggle('active', option === 'pairings');
             document.querySelector('.alternatives-list').classList.toggle('active', option === 'alternatives');
+
+            // Create alternatives graph when alternatives tab is shown
+            if (option === 'alternatives' && alternatives.length > 0) {
+                setTimeout(() => {
+                    const graphContainer = document.getElementById('alternatives-graph-container');
+                    if (graphContainer && !graphContainer.querySelector('svg')) {
+                        createAlternativesGraph('alternatives-graph-container', ingredientName, alternatives);
+                    }
+                }, 100);
+            }
         });
     });
 
@@ -696,6 +727,12 @@ function showCustomCocktailDetail(cocktail) {
                 <span class="tag">Your Creation</span>
             </div>
 
+            <div class="graph-section">
+                <h3>Cocktail Structure</h3>
+                <p class="section-hint">Node size shows ingredient proportion. Click ingredients to see alternatives.</p>
+                <div id="cocktail-graph-container" class="cocktail-graph-container"></div>
+            </div>
+
             ${flavorProfile && flavorProfile.length > 0 ? `
                 <div class="flavor-profile-section">
                     <h3>Flavor Profile</h3>
@@ -741,6 +778,18 @@ function showCustomCocktailDetail(cocktail) {
     });
 
     cocktailModal.style.display = 'block';
+
+    // Create interactive graph visualization
+    setTimeout(() => {
+        createCocktailGraph(
+            'cocktail-graph-container',
+            cocktail.strDrink,
+            cocktail.ingredients,
+            (ingredientName, profile) => {
+                showIngredientDetail(ingredientName, ingredientNames);
+            }
+        );
+    }, 100);
 }
 
 function deleteCocktail(id) {
