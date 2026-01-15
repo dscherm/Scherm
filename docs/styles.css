@@ -666,3 +666,311 @@ header h1 {
         max-width: 95%;
     }
 }
+
+/* =============================================================================
+   FLAVOR PAIRING SYSTEM STYLES
+   ============================================================================= */
+
+/* Flavor Profile Section */
+.flavor-profile-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 160, 122, 0.1));
+    border-radius: 15px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.flavor-profile-section h3 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.flavor-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.flavor-tag {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.flavor-tag:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Pairing Section */
+.pairing-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    border-left: 4px solid #667eea;
+}
+
+.pairing-section h3 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.section-hint {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.pairing-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.pairing-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.compatibility-score,
+.compat-badge {
+    font-size: 0.85em;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.compat-badge.excellent {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+}
+
+.compat-badge.good {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.compat-badge.okay {
+    background: linear-gradient(135deg, #FFA07A, #FF6B9D);
+    color: white;
+}
+
+.compat-badge.neutral {
+    background: #e9ecef;
+    color: #666;
+}
+
+/* Ingredient Item Enhancements */
+.ingredient-item.has-profile {
+    border-left-color: var(--primary-color);
+    border-left-width: 4px;
+}
+
+.profile-indicator {
+    margin-left: 5px;
+    font-size: 0.85em;
+}
+
+/* Ingredient Detail Modal Enhancements */
+.ingredient-detail-content {
+    padding: 30px;
+}
+
+.ingredient-detail-content h2 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+}
+
+.flavor-section {
+    margin: 25px 0;
+}
+
+.flavor-section h3 {
+    font-size: 1.3em;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+}
+
+.pairings-list,
+.alternatives-list {
+    display: none;
+    margin-top: 20px;
+}
+
+.pairings-list.active,
+.alternatives-list.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.pairing-category {
+    font-size: 0.75em;
+    color: #999;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+.synergy-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(255, 107, 157, 0.2);
+    color: var(--primary-color);
+    border-radius: 10px;
+    font-size: 0.75em;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.similarity-score {
+    font-size: 0.85em;
+    color: #666;
+    font-weight: normal;
+}
+
+.alternative-item {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.alternative-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+/* Recommendation Panel */
+.recommendation-panel {
+    margin: 25px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 15px;
+    border: 2px dashed var(--primary-color);
+}
+
+.recommendation-panel h4 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.recommendation-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.recommendation-chip {
+    padding: 10px 16px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-chip:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+}
+
+.recommendation-chip .compat-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+}
+
+/* Delete Button */
+.delete-btn {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .flavor-tags {
+        justify-content: center;
+    }
+
+    .pairing-item {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .recommendation-chips {
+        justify-content: center;
+    }
+
+    .recommendation-chip {
+        font-size: 0.85em;
+    }
+}
+
+/* Enhanced Animations */
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 107, 157, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 107, 157, 0.8);
+    }
+}
+
+.has-profile:hover {
+    animation: pulseGlow 2s infinite;
+}
