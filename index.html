@@ -23,13 +23,16 @@
         body {
             font-family: 'Helvetica Neue', 'Arial', sans-serif;
             background: linear-gradient(135deg, var(--void-black) 0%, #2a2a3a 100%);
+            background-attachment: fixed;
             color: var(--stardust-white);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             position: relative;
+            padding: 40px 20px;
         }
 
         /* Animated background elements */
@@ -114,7 +117,9 @@
             z-index: 10;
             text-align: center;
             max-width: 800px;
+            width: 100%;
             padding: 60px 40px;
+            margin: 40px auto;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border-radius: 30px;
@@ -389,6 +394,14 @@
                 <div class="project-title">USA Vaccination Policy Tracker</div>
                 <div class="project-description">
                     Compare vaccination policies, mandates, and outcomes across the USA from 2015-2025, organized by topic with interactive timelines
+                </div>
+            </a>
+
+            <a href="./vaccine-design-game.html" class="project-card">
+                <div class="project-icon">🧬</div>
+                <div class="project-title">Vaccine Design Game</div>
+                <div class="project-description">
+                    Learn how vaccines work through interactive gameplay - design antibodies, understand spike proteins, memory cells, and virus mutations
                 </div>
             </a>
         </div>
