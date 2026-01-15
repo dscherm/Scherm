@@ -322,37 +322,11 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
 
     // Setup node interactions
     function setupNodeInteractions(nodeSelection) {
-        let longPressTimer = null;
-        let longPressNode = null;
-
         nodeSelection.filter(d => d.type === 'ingredient' || d.level === 2)
-            .on('mousedown touchstart', function(event, d) {
-                event.stopPropagation();
-                longPressNode = d;
-
-                // Start long press timer (750ms)
-                longPressTimer = setTimeout(() => {
-                    if (d.level === 1 && d.hasProfile) {
-                        expandComplementaryFlavors(d);
-                    }
-                }, 750);
-            })
-            .on('mouseup touchend mouseleave touchcancel', function(event, d) {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-            })
             .on('click', function(event, d) {
                 event.stopPropagation();
 
-                // Clear any pending long press
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-
-                // Regular click behavior
+                // Regular click behavior - open modal
                 if (onIngredientClick) {
                     // Pulse animation
                     d3.select(this).select('circle')
@@ -366,6 +340,23 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                     onIngredientClick(d.label, d.profile);
                 }
             })
+            .on('dblclick', function(event, d) {
+                event.stopPropagation();
+
+                // Double-click to expand/collapse complementary flavors
+                if (d.level === 1 && d.hasProfile) {
+                    // Expansion animation
+                    d3.select(this).select('circle')
+                        .transition()
+                        .duration(300)
+                        .attr('r', d.radius * 1.3)
+                        .transition()
+                        .duration(300)
+                        .attr('r', d.radius);
+
+                    expandComplementaryFlavors(d);
+                }
+            })
             .on('mouseenter', function(event, d) {
                 if (d.type === 'ingredient' || d.level === 2) {
                     d3.select(this).select('circle')
@@ -374,9 +365,11 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .attr('r', d.radius * 1.1)
                         .attr('stroke-width', 4);
 
-                    // Show hold instruction for level 1 nodes
+                    // Show double-click instruction for level 1 nodes
                     if (d.level === 1 && d.hasProfile && !expandedNodes.has(d.id)) {
-                        showTooltip(event, d, 'Hold to explore complementary flavors');
+                        showTooltip(event, d, 'Double-click to explore complementary flavors');
+                    } else if (d.level === 1 && d.hasProfile && expandedNodes.has(d.id)) {
+                        showTooltip(event, d, 'Double-click to collapse');
                     } else if (d.level === 2) {
                         showTooltip(event, d, 'Complementary ingredient');
                     } else {

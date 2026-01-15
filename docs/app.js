@@ -264,7 +264,7 @@ function showCocktailDetail(cocktail) {
 
             <div class="graph-section">
                 <h3>Cocktail Structure</h3>
-                <p class="section-hint">Node size shows ingredient proportion. Click ingredients to see alternatives.</p>
+                <p class="section-hint">Node size shows ingredient proportion. Click to view details, double-click to explore pairings.</p>
                 <div id="cocktail-graph-container" class="cocktail-graph-container"></div>
             </div>
 
@@ -729,7 +729,7 @@ function showCustomCocktailDetail(cocktail) {
 
             <div class="graph-section">
                 <h3>Cocktail Structure</h3>
-                <p class="section-hint">Node size shows ingredient proportion. Click ingredients to see alternatives.</p>
+                <p class="section-hint">Node size shows ingredient proportion. Click to view details, double-click to explore pairings.</p>
                 <div id="cocktail-graph-container" class="cocktail-graph-container"></div>
             </div>
 
