@@ -372,6 +372,9 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
         }
     }
 
+    // Detect if device has hover capability
+    const hasHoverCapability = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     // Setup node interactions
     function setupNodeInteractions(nodeSelection) {
         nodeSelection.filter(d => d.type === 'ingredient' || d.level === 2)
@@ -410,11 +413,14 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .attr('r', d.radius * 1.1)
                         .attr('stroke-width', 4);
 
-                    // Show tap instruction for level 1 nodes
-                    if (d.level === 1 && d.hasProfile) {
+                    // On desktop with hover capability, show action buttons on hover
+                    if (hasHoverCapability && d.level === 1 && d.hasProfile) {
+                        showActionButtons(d);
+                        showTooltip(event, d, 'Hover to explore - click for details');
+                    } else if (d.level === 1 && d.hasProfile) {
                         showTooltip(event, d, 'Tap to explore alternatives and flavors');
                     } else if (d.level === 2) {
-                        showTooltip(event, d, 'Tap for details');
+                        showTooltip(event, d, 'Click for details');
                     } else {
                         showTooltip(event, d);
                     }
@@ -429,6 +435,16 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .attr('stroke-width', 2);
 
                     hideTooltip();
+
+                    // On desktop, hide action buttons on mouse leave (unless pinned by click)
+                    if (hasHoverCapability && (!selectedNode || selectedNode.id !== d.id)) {
+                        // Add small delay to allow clicking buttons
+                        setTimeout(() => {
+                            if (!actionButtons || !actionButtons.matches(':hover')) {
+                                hideActionButtons();
+                            }
+                        }, 100);
+                    }
                 }
             });
     }
@@ -717,6 +733,20 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
     if (closeActionBtn) {
         closeActionBtn.onclick = () => {
             hideActionButtons();
+        };
+    }
+
+    // Keep action buttons visible while hovering over them (desktop only)
+    if (actionButtons && hasHoverCapability) {
+        actionButtons.onmouseenter = () => {
+            // Keep visible while hovering
+        };
+
+        actionButtons.onmouseleave = () => {
+            // Hide when mouse leaves buttons (if not pinned by click)
+            if (!selectedNode) {
+                hideActionButtons();
+            }
         };
     }
 

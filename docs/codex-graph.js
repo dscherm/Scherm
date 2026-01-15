@@ -161,16 +161,21 @@ function createRootCocktailsGraph(containerId, onRootClick) {
         .attr('pointer-events', 'none')
         .style('text-shadow', '1px 1px 3px rgba(0,0,0,0.8)');
 
-    // Add descriptions
+    // Add descriptions with background for better readability
     node.filter(d => d.description)
-        .append('text')
-        .text(d => d.description)
-        .attr('text-anchor', 'middle')
-        .attr('dy', d => d.radius + 20)
-        .attr('font-size', '11px')
-        .attr('fill', 'white')
-        .attr('pointer-events', 'none')
-        .style('opacity', 0.8);
+        .each(function(d) {
+            const nodeGroup = d3.select(this);
+
+            // Add semi-transparent background rectangle
+            const text = nodeGroup.append('text')
+                .text(d.description)
+                .attr('text-anchor', 'middle')
+                .attr('dy', d.radius + 20)
+                .attr('font-size', '11px')
+                .attr('fill', 'white')
+                .attr('pointer-events', 'none')
+                .style('text-shadow', '1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9), 1px -1px 3px rgba(0,0,0,0.9), -1px 1px 3px rgba(0,0,0,0.9)');
+        });
 
     // Add interactions
     node.filter(d => d.type === 'root')
@@ -404,16 +409,17 @@ async function createFocusedCocktailGraph(containerId, rootCocktail, onIngredien
         .attr('pointer-events', 'none')
         .style('text-shadow', '1px 1px 3px rgba(0,0,0,0.8)');
 
-    // Add description for root
+    // Add description for root with better contrast
     node.filter(d => d.description)
         .append('text')
         .text(d => d.description)
         .attr('text-anchor', 'middle')
         .attr('dy', d => d.radius + 20)
-        .attr('font-size', '11px')
+        .attr('font-size', '12px')
+        .attr('font-weight', 'bold')
         .attr('fill', 'white')
         .attr('pointer-events', 'none')
-        .style('opacity', 0.8);
+        .style('text-shadow', '1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9), 1px -1px 3px rgba(0,0,0,0.9), -1px 1px 3px rgba(0,0,0,0.9)');
 
     // Add back button
     const backButton = svg.append('g')
@@ -443,11 +449,17 @@ async function createFocusedCocktailGraph(containerId, rootCocktail, onIngredien
 
         currentGraphState = 'roots';
         focusedRoot = null;
-        createRootCocktailsGraph(containerId, (root) => {
-            focusedRoot = root;
-            currentGraphState = 'focused';
-            createFocusedCocktailGraph(containerId, root, onIngredientClick, onVariationClick);
-        });
+
+        // Re-initialize the root graph without recursive callback
+        const codexContainer = document.getElementById(containerId);
+        if (codexContainer) {
+            codexContainer.innerHTML = '';
+            createRootCocktailsGraph(containerId, (root) => {
+                focusedRoot = root;
+                currentGraphState = 'focused';
+                createFocusedCocktailGraph(containerId, root, onIngredientClick, onVariationClick);
+            });
+        }
     });
 
     // Show filters UI
