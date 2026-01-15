@@ -1469,3 +1469,172 @@ header h1 {
         display: none; /* Hide legend on mobile */
     }
 }
+
+/* =============================================================================
+   NODE ACTION BUTTONS (MOBILE TAP-TO-SELECT INTERACTION)
+   ============================================================================= */
+
+/* Action Buttons Container */
+.node-action-buttons {
+    position: fixed;
+    bottom: -200px; /* Hidden by default */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border-radius: 25px 25px 0 0;
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.3);
+    transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 107, 157, 0.3);
+    border-bottom: none;
+    max-width: 95%;
+}
+
+.node-action-buttons.visible {
+    bottom: 0;
+}
+
+/* Action Buttons */
+.node-action-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 20px;
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.node-action-btn:active {
+    transform: scale(0.95);
+}
+
+.node-action-btn .btn-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.node-action-btn .btn-text {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Button Variants */
+.node-action-btn:nth-child(1) {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.node-action-btn:nth-child(1):hover,
+.node-action-btn:nth-child(1):active {
+    background: #667eea;
+    color: white;
+}
+
+.node-action-btn:nth-child(2) {
+    border-color: #11998e;
+    color: #11998e;
+}
+
+.node-action-btn:nth-child(2):hover,
+.node-action-btn:nth-child(2):active {
+    background: #11998e;
+    color: white;
+}
+
+.node-action-btn.close-btn {
+    border-color: #dc3545;
+    color: #dc3545;
+    flex: 0 0 80px;
+}
+
+.node-action-btn.close-btn:hover,
+.node-action-btn.close-btn:active {
+    background: #dc3545;
+    color: white;
+}
+
+/* Selected Node Highlight */
+.graph-node.selected circle {
+    stroke: #FFD700 !important;
+    stroke-width: 5px !important;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) brightness(1.2);
+}
+
+.graph-node.selected {
+    z-index: 100;
+}
+
+/* Selected Node Pulse Animation */
+@keyframes selectedPulse {
+    0%, 100% {
+        stroke-width: 5px;
+    }
+    50% {
+        stroke-width: 7px;
+    }
+}
+
+.graph-node.selected circle {
+    animation: selectedPulse 2s infinite;
+}
+
+/* Responsive Action Buttons */
+@media (max-width: 768px) {
+    .node-action-buttons {
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .node-action-btn {
+        padding: 14px 12px;
+        min-width: 80px;
+    }
+
+    .node-action-btn .btn-icon {
+        font-size: 20px;
+    }
+
+    .node-action-btn .btn-text {
+        font-size: 10px;
+    }
+
+    .node-action-btn.close-btn {
+        flex: 0 0 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .node-action-buttons {
+        gap: 6px;
+        padding: 12px;
+    }
+
+    .node-action-btn {
+        padding: 12px 8px;
+        min-width: 70px;
+    }
+
+    .node-action-btn .btn-icon {
+        font-size: 18px;
+    }
+
+    .node-action-btn .btn-text {
+        font-size: 9px;
+    }
+}

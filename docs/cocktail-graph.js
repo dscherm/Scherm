@@ -51,9 +51,16 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
     const width = container.clientWidth || 800;
     const height = 500;
 
-    // Track expanded nodes
+    // Track expanded nodes and selected node
     const expandedNodes = new Set();
     let nodeIdCounter = 0;
+    let selectedNode = null;
+
+    // Get action buttons
+    const actionButtons = document.getElementById('node-action-buttons');
+    const showAlternativesBtn = document.getElementById('show-alternatives-btn');
+    const showFlavorsBtn = document.getElementById('show-flavors-btn');
+    const closeActionBtn = document.getElementById('close-action-btn');
 
     // Create SVG
     const svg = d3.select(`#${containerId}`)
@@ -104,6 +111,16 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
     complementaryGradient.append('stop')
         .attr('offset', '100%')
         .attr('stop-color', '#38ef7d');
+
+    // Gradient for alternative nodes
+    const alternativeGradient = defs.append('radialGradient')
+        .attr('id', 'alternative-gradient');
+    alternativeGradient.append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', '#667eea');
+    alternativeGradient.append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', '#764ba2');
 
     // Parse ingredients and create nodes
     const ingredientNodes = ingredients.map((ing, i) => {
@@ -189,8 +206,15 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
             .join(
                 enter => enter.append('line')
                     .attr('class', 'graph-link')
-                    .attr('stroke', d => d.type === 'complementary' ? '#11998e' : '#ddd')
-                    .attr('stroke-width', d => d.type === 'complementary' ? 1.5 : Math.sqrt(d.value || 1) * 2)
+                    .attr('stroke', d => {
+                        if (d.type === 'complementary') return '#11998e';
+                        if (d.type === 'alternative') return '#667eea';
+                        return '#ddd';
+                    })
+                    .attr('stroke-width', d => {
+                        if (d.type === 'complementary' || d.type === 'alternative') return 1.5;
+                        return Math.sqrt(d.value || 1) * 2;
+                    })
                     .attr('stroke-opacity', 0)
                     .call(enter => enter.transition().duration(500).attr('stroke-opacity', 0.6)),
                 update => update,
@@ -216,13 +240,15 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .attr('r', 0)
                         .attr('fill', d => {
                             if (d.type === 'cocktail') return 'url(#cocktail-gradient)';
-                            if (d.level === 2) return 'url(#complementary-gradient)';
+                            if (d.type === 'complementary' || (d.level === 2 && d.parentType !== 'alternatives')) return 'url(#complementary-gradient)';
+                            if (d.type === 'alternative' || d.parentType === 'alternatives') return 'url(#alternative-gradient)';
                             if (d.isSpirit) return 'url(#spirit-gradient)';
                             return 'url(#ingredient-gradient)';
                         })
                         .attr('stroke', d => {
                             if (d.type === 'cocktail') return '#C44569';
-                            if (d.level === 2) return '#11998e';
+                            if (d.type === 'complementary' || (d.level === 2 && d.parentType !== 'alternatives')) return '#11998e';
+                            if (d.type === 'alternative' || d.parentType === 'alternatives') return '#667eea';
                             return d.hasProfile ? '#667eea' : '#999';
                         })
                         .attr('stroke-width', d => d.type === 'cocktail' ? 4 : 2)
@@ -320,14 +346,40 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
         });
     }
 
+    // Show/hide action buttons
+    function showActionButtons(node) {
+        selectedNode = node;
+
+        // Highlight selected node
+        d3.selectAll('.graph-node').classed('selected', false);
+        d3.selectAll('.graph-node').filter(d => d.id === node.id).classed('selected', true);
+
+        // Show action buttons
+        if (actionButtons) {
+            actionButtons.classList.add('visible');
+        }
+    }
+
+    function hideActionButtons() {
+        selectedNode = null;
+
+        // Remove highlight
+        d3.selectAll('.graph-node').classed('selected', false);
+
+        // Hide action buttons
+        if (actionButtons) {
+            actionButtons.classList.remove('visible');
+        }
+    }
+
     // Setup node interactions
     function setupNodeInteractions(nodeSelection) {
         nodeSelection.filter(d => d.type === 'ingredient' || d.level === 2)
             .on('click', function(event, d) {
                 event.stopPropagation();
 
-                // Regular click behavior - open modal
-                if (onIngredientClick) {
+                // If level 1 ingredient with profile, select it and show action buttons
+                if (d.level === 1 && d.hasProfile) {
                     // Pulse animation
                     d3.select(this).select('circle')
                         .transition()
@@ -337,24 +389,17 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .duration(200)
                         .attr('r', d.radius);
 
-                    onIngredientClick(d.label, d.profile);
-                }
-            })
-            .on('dblclick', function(event, d) {
-                event.stopPropagation();
-
-                // Double-click to expand/collapse complementary flavors
-                if (d.level === 1 && d.hasProfile) {
-                    // Expansion animation
-                    d3.select(this).select('circle')
-                        .transition()
-                        .duration(300)
-                        .attr('r', d.radius * 1.3)
-                        .transition()
-                        .duration(300)
-                        .attr('r', d.radius);
-
-                    expandComplementaryFlavors(d);
+                    // If already selected, deselect
+                    if (selectedNode && selectedNode.id === d.id) {
+                        hideActionButtons();
+                    } else {
+                        showActionButtons(d);
+                    }
+                } else {
+                    // For nodes without profiles or level 2 nodes, open modal directly
+                    if (onIngredientClick) {
+                        onIngredientClick(d.label, d.profile);
+                    }
                 }
             })
             .on('mouseenter', function(event, d) {
@@ -365,13 +410,11 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
                         .attr('r', d.radius * 1.1)
                         .attr('stroke-width', 4);
 
-                    // Show double-click instruction for level 1 nodes
-                    if (d.level === 1 && d.hasProfile && !expandedNodes.has(d.id)) {
-                        showTooltip(event, d, 'Double-click to explore complementary flavors');
-                    } else if (d.level === 1 && d.hasProfile && expandedNodes.has(d.id)) {
-                        showTooltip(event, d, 'Double-click to collapse');
+                    // Show tap instruction for level 1 nodes
+                    if (d.level === 1 && d.hasProfile) {
+                        showTooltip(event, d, 'Tap to explore alternatives and flavors');
                     } else if (d.level === 2) {
-                        showTooltip(event, d, 'Complementary ingredient');
+                        showTooltip(event, d, 'Tap for details');
                     } else {
                         showTooltip(event, d);
                     }
@@ -469,6 +512,111 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
         update();
     }
 
+    // Expand alternative ingredients
+    function expandAlternatives(node) {
+        // Check if already expanded
+        if (expandedNodes.has(node.id + '-alternatives')) {
+            collapseAlternatives(node);
+            return;
+        }
+
+        // Mark as expanded
+        expandedNodes.add(node.id + '-alternatives');
+
+        // Get alternatives for this ingredient using flavor similarity
+        const alternatives = [];
+        if (FlavorProfiles[node.label]) {
+            const currentProfile = FlavorProfiles[node.label];
+
+            // Find ingredients with similar flavor profiles
+            for (const [ingredient, profile] of Object.entries(FlavorProfiles)) {
+                if (ingredient !== node.label && profile.category === currentProfile.category) {
+                    const similarity = calculateFlavorSimilarity(
+                        currentProfile.flavors,
+                        profile.flavors
+                    );
+                    if (similarity > 0.3) { // Only show reasonable matches
+                        alternatives.push({ ingredient, similarity });
+                    }
+                }
+            }
+
+            // Sort by similarity
+            alternatives.sort((a, b) => b.similarity - a.similarity);
+        }
+
+        // Take top 5 alternatives
+        const topAlternatives = alternatives.slice(0, 5);
+
+        if (topAlternatives.length === 0) {
+            showNotification(`No alternatives found for ${node.label}`);
+            expandedNodes.delete(node.id + '-alternatives');
+            return;
+        }
+
+        // Create new nodes for alternatives
+        const newNodes = topAlternatives.map(alt => {
+            const profile = FlavorProfiles[alt.ingredient];
+            return {
+                id: `alternative-${nodeIdCounter++}`,
+                label: alt.ingredient,
+                type: 'alternative',
+                level: 2,
+                parentId: node.id,
+                parentType: 'alternatives',
+                hasProfile: !!profile,
+                profile: profile,
+                similarity: alt.similarity,
+                radius: 20
+            };
+        });
+
+        // Create new links with purple color for alternatives
+        const newLinks = newNodes.map(n => ({
+            source: node.id,
+            target: n.id,
+            type: 'alternative'
+        }));
+
+        // Add to nodes and links arrays
+        nodes = [...nodes, ...newNodes];
+        links = [...links, ...newLinks];
+
+        // Update expand indicator
+        d3.selectAll('.graph-node')
+            .filter(d => d.id === node.id)
+            .select('.expand-indicator')
+            .text('⊖');
+
+        // Update visualization
+        update();
+
+        // Show expansion notification
+        showNotification(`Showing ${newNodes.length} alternatives for ${node.label}`);
+    }
+
+    // Collapse alternatives
+    function collapseAlternatives(node) {
+        // Remove from expanded set
+        expandedNodes.delete(node.id + '-alternatives');
+
+        // Remove alternative nodes and links
+        nodes = nodes.filter(n => n.parentId !== node.id || n.parentType !== 'alternatives');
+        links = links.filter(l => {
+            const sourceId = l.source.id || l.source;
+            return sourceId !== node.id || l.type !== 'alternative';
+        });
+
+        // Update expand indicator
+        d3.selectAll('.graph-node')
+            .filter(d => d.id === node.id)
+            .select('.expand-indicator')
+            .text('⊕');
+
+        // Update visualization
+        update();
+    }
+
     // Tooltip
     const tooltip = d3.select('body')
         .append('div')
@@ -491,6 +639,9 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
             }
             if (d.score) {
                 content += `<br><span class="compat-badge">Match: ${d.score.toFixed(1)}</span>`;
+            }
+            if (d.similarity) {
+                content += `<br><span class="compat-badge">Similarity: ${Math.round(d.similarity * 100)}%</span>`;
             }
         }
 
@@ -544,6 +695,39 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
         d.fy = null;
     }
 
+    // Button click handlers (using onclick to avoid multiple listeners)
+    if (showAlternativesBtn) {
+        showAlternativesBtn.onclick = () => {
+            if (selectedNode) {
+                expandAlternatives(selectedNode);
+                hideActionButtons();
+            }
+        };
+    }
+
+    if (showFlavorsBtn) {
+        showFlavorsBtn.onclick = () => {
+            if (selectedNode) {
+                expandComplementaryFlavors(selectedNode);
+                hideActionButtons();
+            }
+        };
+    }
+
+    if (closeActionBtn) {
+        closeActionBtn.onclick = () => {
+            hideActionButtons();
+        };
+    }
+
+    // Click on background to deselect
+    svg.on('click', function(event) {
+        // Only if clicking on the SVG itself, not on a node
+        if (event.target.tagName === 'svg') {
+            hideActionButtons();
+        }
+    });
+
     // Initial update
     update();
 
@@ -554,7 +738,8 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
         nodes,
         links,
         expandNode: expandComplementaryFlavors,
-        collapseNode: collapseComplementaryFlavors
+        collapseNode: collapseComplementaryFlavors,
+        hideButtons: hideActionButtons
     };
 }
 
