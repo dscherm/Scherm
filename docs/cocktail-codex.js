@@ -14,6 +14,7 @@ const RootCocktails = {
         template: ['Spirit', 'Sugar', 'Bitters'],
         baseSpirits: ['Bourbon', 'Rye whiskey', 'Brandy', 'Rum'],
         flavorProfile: ['strong', 'rich', 'aromatic', 'balanced'],
+        characteristics: ['spirit-forward', 'stirred', 'boozy', 'bitter'],
         color: '#D4AF37', // Gold
         examples: [
             { name: 'Classic Old Fashioned', spirit: 'Bourbon', variations: ['sugar cube', 'Angostura bitters', 'orange peel'] },
@@ -28,6 +29,7 @@ const RootCocktails = {
         template: ['Spirit', 'Vermouth'],
         baseSpirits: ['Gin', 'Vodka'],
         flavorProfile: ['dry', 'botanical', 'sophisticated', 'spirit-forward'],
+        characteristics: ['spirit-forward', 'stirred', 'dry', 'boozy'],
         color: '#98D8C8', // Mint
         examples: [
             { name: 'Classic Martini', spirit: 'Gin', variations: ['dry vermouth', 'olive'] },
@@ -42,6 +44,7 @@ const RootCocktails = {
         template: ['Spirit', 'Citrus', 'Sugar'],
         baseSpirits: ['Light rum', 'Tequila', 'Gin', 'Vodka'],
         flavorProfile: ['bright', 'tart', 'refreshing', 'balanced'],
+        characteristics: ['sour', 'shaken', 'citrus', 'balanced'],
         color: '#FFE135', // Lemon
         examples: [
             { name: 'Classic Daiquiri', spirit: 'Light rum', variations: ['lime juice', 'simple syrup'] },
@@ -56,6 +59,7 @@ const RootCocktails = {
         template: ['Spirit', 'Liqueur', 'Citrus'],
         baseSpirits: ['Brandy', 'Bourbon', 'Tequila', 'Rum'],
         flavorProfile: ['complex', 'citrus', 'sweet', 'aromatic'],
+        characteristics: ['sour', 'shaken', 'sweet', 'citrus'],
         color: '#FF6B35', // Orange
         examples: [
             { name: 'Classic Sidecar', spirit: 'Brandy', variations: ['Cointreau', 'lemon juice'] },
@@ -70,6 +74,7 @@ const RootCocktails = {
         template: ['Spirit', 'Carbonation'],
         baseSpirits: ['Bourbon', 'Scotch', 'Gin', 'Vodka', 'Rum'],
         flavorProfile: ['refreshing', 'light', 'effervescent', 'crisp'],
+        characteristics: ['refreshing', 'built', 'carbonated', 'light'],
         color: '#87CEEB', // Sky Blue
         examples: [
             { name: 'Whiskey Highball', spirit: 'Bourbon', variations: ['club soda', 'lemon twist'] },
@@ -84,6 +89,7 @@ const RootCocktails = {
         template: ['Spirit', 'Sugar', 'Egg', 'Spice'],
         baseSpirits: ['Bourbon', 'Dark rum', 'Brandy', 'Sherry'],
         flavorProfile: ['rich', 'creamy', 'indulgent', 'warming'],
+        characteristics: ['creamy', 'shaken', 'sweet', 'rich'],
         color: '#E6B89C', // Cream
         examples: [
             { name: 'Classic Flip', spirit: 'Bourbon', variations: ['simple syrup', 'whole egg', 'nutmeg'] },

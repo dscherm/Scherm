@@ -24,6 +24,24 @@
             <div class="codex-section">
                 <h2>The Six Foundational Cocktails</h2>
                 <p class="codex-intro">Explore cocktail families based on the Cocktail Codex. Click any root cocktail to discover its template, ingredients, and variations organized by flavor similarity.</p>
+
+                <!-- Filter Controls (hidden until focused view) -->
+                <div id="codex-filters" class="codex-filters" style="display: none;">
+                    <h3>Filter Variations</h3>
+                    <div class="filter-chips">
+                        <button class="filter-chip" data-filter="spirit-forward">🥃 Spirit-Forward</button>
+                        <button class="filter-chip" data-filter="sour">🍋 Sour</button>
+                        <button class="filter-chip" data-filter="sweet">🍬 Sweet</button>
+                        <button class="filter-chip" data-filter="citrus">🍊 Citrus</button>
+                        <button class="filter-chip" data-filter="shaken">🧊 Shaken</button>
+                        <button class="filter-chip" data-filter="stirred">🥄 Stirred</button>
+                        <button class="filter-chip" data-filter="refreshing">💧 Refreshing</button>
+                        <button class="filter-chip" data-filter="creamy">🥛 Creamy</button>
+                        <button class="filter-chip" data-filter="bitter">🌿 Bitter</button>
+                        <button class="filter-chip reset-filters">✕ Clear All</button>
+                    </div>
+                </div>
+
                 <div id="codex-graph-container" class="codex-graph-container"></div>
             </div>
         </div>

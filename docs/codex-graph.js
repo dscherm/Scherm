@@ -6,6 +6,23 @@
 let currentGraphState = 'roots'; // 'roots', 'focused', 'expanded'
 let focusedRoot = null;
 let graphSimulation = null;
+let activeFilters = new Set(); // For filtering variations
+
+/**
+ * Generate hexagon path for SVG
+ * @param {number} radius - Radius of the hexagon
+ * @returns {string} SVG path string
+ */
+function hexagonPath(radius) {
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2; // Start from top
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        points.push(`${x},${y}`);
+    }
+    return `M${points.join('L')}Z`;
+}
 
 /**
  * Create the initial root cocktails view (6 foundational cocktails)
@@ -99,16 +116,28 @@ function createRootCocktailsGraph(containerId, onRootClick) {
         .attr('class', d => `codex-node ${d.type}-node`)
         .style('cursor', d => d.type === 'root' ? 'pointer' : 'default');
 
-    // Add circles
-    node.append('circle')
-        .attr('r', d => d.radius)
-        .attr('fill', d => {
-            if (d.type === 'center') return 'url(#cocktail-gradient)';
-            return `url(#root-${d.id}-gradient)`;
-        })
-        .attr('stroke', d => d.type === 'center' ? '#C44569' : '#fff')
-        .attr('stroke-width', 3)
-        .attr('filter', 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))');
+    // Add shapes (hexagons for roots, circle for center)
+    node.each(function(d) {
+        const nodeGroup = d3.select(this);
+
+        if (d.type === 'root') {
+            // Hexagon for root nodes
+            nodeGroup.append('path')
+                .attr('d', hexagonPath(d.radius))
+                .attr('fill', `url(#root-${d.id}-gradient)`)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 4)
+                .attr('filter', 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))');
+        } else {
+            // Circle for center node
+            nodeGroup.append('circle')
+                .attr('r', d.radius)
+                .attr('fill', 'url(#cocktail-gradient)')
+                .attr('stroke', '#C44569')
+                .attr('stroke-width', 3)
+                .attr('filter', 'drop-shadow(0 5px 15px rgba(0,0,0,0.3))');
+        }
+    });
 
     // Add labels
     node.append('text')
@@ -146,29 +175,29 @@ function createRootCocktailsGraph(containerId, onRootClick) {
     // Add interactions
     node.filter(d => d.type === 'root')
         .on('mouseenter', function(event, d) {
-            d3.select(this).select('circle')
+            d3.select(this).select('path')
                 .transition()
                 .duration(200)
-                .attr('r', d.radius * 1.1)
-                .attr('stroke-width', 5);
+                .attr('d', hexagonPath(d.radius * 1.1))
+                .attr('stroke-width', 6);
         })
         .on('mouseleave', function(event, d) {
-            d3.select(this).select('circle')
+            d3.select(this).select('path')
                 .transition()
                 .duration(200)
-                .attr('r', d.radius)
-                .attr('stroke-width', 3);
+                .attr('d', hexagonPath(d.radius))
+                .attr('stroke-width', 4);
         })
         .on('click', function(event, d) {
             if (onRootClick) {
                 // Pulse animation
-                d3.select(this).select('circle')
+                d3.select(this).select('path')
                     .transition()
                     .duration(300)
-                    .attr('r', d.radius * 1.3)
+                    .attr('d', hexagonPath(d.radius * 1.3))
                     .transition()
                     .duration(300)
-                    .attr('r', d.radius);
+                    .attr('d', hexagonPath(d.radius));
 
                 onRootClick(d.data);
             }
@@ -331,21 +360,34 @@ async function createFocusedCocktailGraph(containerId, rootCocktail, onIngredien
             .on('drag', dragged)
             .on('end', dragended));
 
-    // Add circles
-    node.append('circle')
-        .attr('r', d => d.radius)
-        .attr('fill', d => {
-            if (d.type === 'focused-root') return 'url(#focused-root-gradient)';
-            if (d.type === 'template-ingredient') return `url(#${getCategoryGradientId(d.category)})`;
-            return 'url(#variation-gradient)';
-        })
-        .attr('stroke', d => {
-            if (d.type === 'focused-root') return '#fff';
-            if (d.type === 'template-ingredient') return getCategoryColor(d.category);
-            return '#11998e';
-        })
-        .attr('stroke-width', d => d.type === 'focused-root' ? 4 : 2)
-        .attr('filter', 'drop-shadow(0 3px 10px rgba(0,0,0,0.3))');
+    // Add shapes (hexagon for focused root, circles for others)
+    node.each(function(d) {
+        const nodeGroup = d3.select(this);
+
+        if (d.type === 'focused-root') {
+            // Hexagon for focused root
+            nodeGroup.append('path')
+                .attr('d', hexagonPath(d.radius))
+                .attr('fill', 'url(#focused-root-gradient)')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 4)
+                .attr('filter', 'drop-shadow(0 5px 20px rgba(0,0,0,0.4))');
+        } else {
+            // Circles for ingredients and variations
+            nodeGroup.append('circle')
+                .attr('r', d.radius)
+                .attr('fill', d => {
+                    if (d.type === 'template-ingredient') return `url(#${getCategoryGradientId(d.category)})`;
+                    return 'url(#variation-gradient)';
+                })
+                .attr('stroke', d => {
+                    if (d.type === 'template-ingredient') return getCategoryColor(d.category);
+                    return '#11998e';
+                })
+                .attr('stroke-width', 2)
+                .attr('filter', 'drop-shadow(0 3px 10px rgba(0,0,0,0.3))');
+        }
+    });
 
     // Add labels
     node.append('text')
@@ -394,7 +436,11 @@ async function createFocusedCocktailGraph(containerId, rootCocktail, onIngredien
         .attr('pointer-events', 'none');
 
     backButton.on('click', () => {
-        // Return to root view
+        // Hide filters and return to root view
+        const filtersDiv = document.getElementById('codex-filters');
+        if (filtersDiv) filtersDiv.style.display = 'none';
+        activeFilters.clear();
+
         currentGraphState = 'roots';
         focusedRoot = null;
         createRootCocktailsGraph(containerId, (root) => {
@@ -403,6 +449,116 @@ async function createFocusedCocktailGraph(containerId, rootCocktail, onIngredien
             createFocusedCocktailGraph(containerId, root, onIngredientClick, onVariationClick);
         });
     });
+
+    // Show filters UI
+    const filtersDiv = document.getElementById('codex-filters');
+    if (filtersDiv) {
+        filtersDiv.style.display = 'block';
+        setupFilterInteractions(rootCocktail);
+    }
+
+    // Setup filter interactions
+    function setupFilterInteractions(root) {
+        const filterChips = document.querySelectorAll('.filter-chip');
+
+        filterChips.forEach(chip => {
+            chip.onclick = function() {
+                const filter = this.getAttribute('data-filter');
+
+                if (this.classList.contains('reset-filters')) {
+                    // Clear all filters
+                    activeFilters.clear();
+                    filterChips.forEach(c => c.classList.remove('active'));
+                    applyFilters();
+                } else {
+                    // Toggle filter
+                    if (activeFilters.has(filter)) {
+                        activeFilters.delete(filter);
+                        this.classList.remove('active');
+                    } else {
+                        activeFilters.add(filter);
+                        this.classList.add('active');
+                    }
+                    applyFilters();
+                }
+            };
+        });
+
+        function applyFilters() {
+            if (activeFilters.size === 0) {
+                // Show all variation nodes
+                node.filter(d => d.type === 'variation')
+                    .style('opacity', 1)
+                    .style('pointer-events', 'all');
+
+                link.filter(d => d.type === 'variation')
+                    .style('opacity', 0.4);
+            } else {
+                // Filter variations based on characteristics
+                node.filter(d => d.type === 'variation')
+                    .style('opacity', d => {
+                        // Check if cocktail matches any active filter
+                        const cocktailCharacteristics = getCocktailCharacteristics(d.data, root);
+                        const matches = [...activeFilters].some(filter =>
+                            cocktailCharacteristics.includes(filter)
+                        );
+                        return matches ? 1 : 0.1;
+                    })
+                    .style('pointer-events', d => {
+                        const cocktailCharacteristics = getCocktailCharacteristics(d.data, root);
+                        const matches = [...activeFilters].some(filter =>
+                            cocktailCharacteristics.includes(filter)
+                        );
+                        return matches ? 'all' : 'none';
+                    });
+
+                link.filter(d => d.type === 'variation')
+                    .style('opacity', d => {
+                        const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
+                        if (!targetNode || targetNode.type !== 'variation') return 0.4;
+
+                        const cocktailCharacteristics = getCocktailCharacteristics(targetNode.data, root);
+                        const matches = [...activeFilters].some(filter =>
+                            cocktailCharacteristics.includes(filter)
+                        );
+                        return matches ? 0.4 : 0.05;
+                    });
+            }
+        }
+
+        function getCocktailCharacteristics(cocktail, root) {
+            // Return characteristics based on ingredients and root family
+            const characteristics = [...root.characteristics]; // Start with root characteristics
+
+            // Add characteristics based on ingredients
+            if (cocktail.strIngredient1) {
+                const ingredients = [];
+                for (let i = 1; i <= 15; i++) {
+                    const ingredient = cocktail[`strIngredient${i}`];
+                    if (ingredient) ingredients.push(ingredient.toLowerCase());
+                }
+
+                // Check for specific characteristics
+                if (ingredients.some(ing => ing.includes('lemon') || ing.includes('lime'))) {
+                    characteristics.push('citrus', 'sour');
+                }
+                if (ingredients.some(ing => ing.includes('cream') || ing.includes('milk'))) {
+                    characteristics.push('creamy');
+                }
+                if (ingredients.some(ing => ing.includes('sugar') || ing.includes('syrup'))) {
+                    characteristics.push('sweet');
+                }
+                if (ingredients.some(ing => ing.includes('soda') || ing.includes('tonic'))) {
+                    characteristics.push('refreshing', 'carbonated');
+                }
+                if (ingredients.some(ing => ing.includes('bitters'))) {
+                    characteristics.push('bitter');
+                }
+            }
+
+            return characteristics;
+        }
+    }
 
     // Add interactions
     node.filter(d => d.type === 'template-ingredient')
