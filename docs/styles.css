@@ -1168,3 +1168,171 @@ header h1 {
     width: 40px;
     height: 40px;
 }
+
+/* =============================================================================
+   DYNAMIC FLAVOR EXPANSION STYLES
+   ============================================================================= */
+
+/* Expand/Collapse Indicator */
+.expand-indicator {
+    cursor: pointer;
+    user-select: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: all 0.3s ease;
+}
+
+.graph-node:hover .expand-indicator {
+    transform: scale(1.2);
+    filter: drop-shadow(0 3px 6px rgba(255, 255, 255, 0.8));
+}
+
+/* Complementary Nodes (Level 2) */
+.level-2 circle {
+    filter: drop-shadow(0 3px 8px rgba(17, 153, 142, 0.6));
+}
+
+.level-2:hover circle {
+    filter: drop-shadow(0 5px 12px rgba(56, 239, 125, 0.8));
+}
+
+/* Complementary Links */
+.graph-link[stroke="#11998e"] {
+    stroke-dasharray: 4, 4;
+    animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -8;
+    }
+}
+
+/* Graph Notification */
+.graph-notification {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+}
+
+/* Long Press Visual Feedback */
+@keyframes longPressRipple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.graph-node.pressing circle {
+    animation: longPressRipple 0.75s ease-out;
+}
+
+/* Enhanced Tooltip for Hold Instructions */
+.graph-tooltip em {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    color: #38ef7d;
+    font-style: normal;
+    font-weight: bold;
+}
+
+/* Node Level Differentiation */
+.level-1 {
+    z-index: 10;
+}
+
+.level-2 {
+    z-index: 5;
+}
+
+.cocktail-node {
+    z-index: 20;
+}
+
+/* Expand Animation */
+@keyframes expandPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.graph-node.expanding {
+    animation: expandPulse 0.5s ease-out;
+}
+
+/* Complementary Node Spawn Animation */
+@keyframes spawnNode {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+.level-2.spawning {
+    animation: spawnNode 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Mobile Touch Feedback */
+@media (hover: none) and (pointer: coarse) {
+    .clickable-node {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .graph-node:active circle {
+        transform: scale(0.95);
+    }
+
+    .graph-notification {
+        font-size: 12px;
+        padding: 12px 24px;
+    }
+}
+
+/* Improved Node Borders for Expansion State */
+.graph-node.expanded .expand-indicator {
+    color: #38ef7d;
+    text-shadow: 0 0 10px #38ef7d;
+}
+
+/* Stacking Context for Graph Elements */
+.cocktail-graph-container svg {
+    overflow: visible;
+}
+
+.links {
+    z-index: 1;
+}
+
+.nodes {
+    z-index: 2;
+}
