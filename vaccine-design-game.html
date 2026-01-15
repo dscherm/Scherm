@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaccine Design Game - How Vaccines Work</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        #game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script>
+        // Game States
+        const STATES = {
+            INTRO: 'intro',
+            VIRUS_LEARN: 'virus_learn',
+            IMMUNE_LEARN: 'immune_learn',
+            MEMORY_LEARN: 'memory_learn',
+            SPIKE_DESIGN: 'spike_design',
+            DESIGN_PUZZLE: 'design_puzzle',
+            SIMULATION: 'simulation',
+            MUTATION_LEARN: 'mutation_learn',
+            MUTATION_CHALLENGE: 'mutation_challenge',
+            RESULTS: 'results'
+        };
+
+        let gameState = STATES.INTRO;
+        let currentPage = 0;
+
+        // Virus and Vaccine Data
+        let virus = {
+            x: 0, y: 0,
+            antigens: [], // Shape patterns that need to be matched
+            color: null
+        };
+
+        let vaccineDesign = {
+            antibodies: [],
+            effectiveness: 0
+        };
+
+        // Draggable antibody pieces for puzzle
+        let antibodyPieces = [];
+        let selectedPiece = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Simulation variables
+        let immuneCells = [];
+        let memoryCells = [];
+        let invadingViruses = [];
+        let antibodies = [];
+        let simulationTime = 0;
+        let virusesBlocked = 0;
+        let virusesEscaped = 0;
+
+        // Mutation variables
+        let mutatedVirus = null;
+        let hasCompletedFirstChallenge = false;
+        let mutationEffectiveness = 0;
+
+        // Button
+        let nextButton;
+
+        function setup() {
+            let canvas = createCanvas(900, 700);
+            canvas.parent('game-container');
+
+            // Initialize virus with random antigens
+            initializeVirus();
+
+            // Create antibody pieces for puzzle
+            createAntibodyPieces();
+
+            textAlign(CENTER, CENTER);
+            textSize(16);
+        }
+
+        function draw() {
+            background(240, 248, 255);
+
+            switch(gameState) {
+                case STATES.INTRO:
+                    drawIntro();
+                    break;
+                case STATES.VIRUS_LEARN:
+                    drawVirusLearn();
+                    break;
+                case STATES.IMMUNE_LEARN:
+                    drawImmuneLearn();
+                    break;
+                case STATES.MEMORY_LEARN:
+                    drawMemoryLearn();
+                    break;
+                case STATES.SPIKE_DESIGN:
+                    drawSpikeDesign();
+                    break;
+                case STATES.DESIGN_PUZZLE:
+                    drawDesignPuzzle();
+                    break;
+                case STATES.SIMULATION:
+                    drawSimulation();
+                    break;
+                case STATES.MUTATION_LEARN:
+                    drawMutationLearn();
+                    break;
+                case STATES.MUTATION_CHALLENGE:
+                    drawMutationChallenge();
+                    break;
+                case STATES.RESULTS:
+                    drawResults();
+                    break;
+            }
+        }
+
+        function drawIntro() {
+            // Title
+            fill(70, 70, 130);
+            textSize(48);
+            textStyle(BOLD);
+            text("💉 Vaccine Design Lab", width/2, 100);
+
+            textStyle(NORMAL);
+            textSize(24);
+            fill(100);
+            text("Learn How Vaccines Work!", width/2, 160);
+
+            // Info box
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(3);
+            rect(100, 220, 700, 300, 20);
+
+            fill(50);
+            textSize(20);
+            textAlign(LEFT);
+            text("Welcome, Future Vaccine Designer!", 140, 260);
+
+            textSize(16);
+            let infoText = [
+                "In this game, you'll learn:",
+                "",
+                "🦠 How viruses and spike proteins work",
+                "🛡️ How our immune system fights back",
+                "💾 How memory cells provide long-lasting protection",
+                "🧬 How scientists design vaccines",
+                "🎯 How antibodies match viral antigens",
+                "🔄 Why viruses mutate and vaccines need updating",
+                "",
+                "Your mission: Design a vaccine to protect against a deadly virus!"
+            ];
+
+            for (let i = 0; i < infoText.length; i++) {
+                text(infoText[i], 140, 300 + i * 28);
+            }
+
+            // Start button
+            textAlign(CENTER, CENTER);
+            drawButton("Start Learning!", width/2, 580, 250, 60, color(76, 175, 80));
+        }
+
+        function drawVirusLearn() {
+            fill(70, 70, 130);
+            textSize(36);
+            textStyle(BOLD);
+            text("Understanding Viruses", width/2, 50);
+
+            // Animated virus
+            textStyle(NORMAL);
+            let virusX = width/2;
+            let virusY = 200;
+            drawVirus(virusX, virusY, 80, virus.antigens, virus.color);
+
+            // Info box
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(100, 320, 700, 280, 15);
+
+            fill(50);
+            textSize(18);
+            textAlign(LEFT);
+            let virusInfo = [
+                "🦠 Viruses are tiny invaders that can make us sick.",
+                "",
+                "🔑 The SPIKE PROTEINS (antigens) on their surface are like keys",
+                "   that unlock our cells and let the virus get inside.",
+                "",
+                "⚠️ Once inside, viruses hijack our cells to make copies of themselves,",
+                "   spreading the infection throughout our body.",
+                "",
+                "💡 To stop them, we need to block those spike proteins!"
+            ];
+
+            for (let i = 0; i < virusInfo.length; i++) {
+                text(virusInfo[i], 120, 345 + i * 30);
+            }
+
+            // Highlight antigens with arrows
+            fill(255, 100, 100);
+            textSize(14);
+            textAlign(CENTER);
+            text("Spike Proteins\n(Antigens)", virusX + 120, virusY - 50);
+            stroke(255, 100, 100);
+            strokeWeight(2);
+            drawArrow(virusX + 100, virusY - 30, virusX + 70, virusY - 40);
+
+            textAlign(CENTER, CENTER);
+            drawButton("Next: The Immune System", width/2, 640, 280, 50, color(76, 175, 80));
+        }
+
+        function drawMemoryLearn() {
+            fill(70, 70, 130);
+            textSize(36);
+            textStyle(BOLD);
+            text("💾 Immune Memory", width/2, 50);
+
+            textStyle(NORMAL);
+
+            // Timeline visualization
+            push();
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(100, 120, 700, 400, 15);
+
+            // Without vaccine timeline
+            fill(50);
+            textSize(20);
+            textStyle(BOLD);
+            textAlign(LEFT);
+            text("Without Vaccine:", 130, 155);
+
+            textStyle(NORMAL);
+            textSize(16);
+
+            // Timeline
+            stroke(200, 100, 100);
+            strokeWeight(3);
+            line(150, 220, 750, 220);
+
+            // Day 0: Infection
+            fill(220, 80, 80);
+            noStroke();
+            circle(200, 220, 30);
+            drawVirus(200, 220, 25, [0], color(220, 80, 80));
+            fill(200, 50, 50);
+            textSize(14);
+            textAlign(CENTER);
+            text("Day 0\nInfection", 200, 260);
+
+            // Day 5-7: Sick
+            fill(255, 150, 150);
+            textSize(40);
+            text("🤒", 400, 210);
+            fill(200, 50, 50);
+            textSize(14);
+            text("Days 5-7\nVery Sick!", 400, 260);
+
+            // Day 10: Recovery
+            fill(100, 200, 100);
+            textSize(40);
+            text("😊", 600, 210);
+            fill(50, 150, 50);
+            textSize(14);
+            text("Day 10+\nRecovery", 600, 260);
+
+            // With vaccine timeline
+            fill(50);
+            textSize(20);
+            textStyle(BOLD);
+            textAlign(LEFT);
+            text("With Vaccine:", 130, 330);
+
+            textStyle(NORMAL);
+
+            // Timeline
+            stroke(100, 200, 100);
+            strokeWeight(3);
+            line(150, 395, 750, 395);
+
+            // Vaccination
+            fill(100, 150, 255);
+            noStroke();
+            textSize(40);
+            textAlign(CENTER);
+            text("💉", 200, 385);
+            fill(50, 100, 200);
+            textSize(14);
+            text("Vaccination\nSafe training", 200, 435);
+
+            // Memory cells created
+            fill(150, 100, 255);
+            noStroke();
+            circle(400, 395, 35);
+            fill(255);
+            textSize(20);
+            text("💾", 400, 395);
+            fill(100, 50, 200);
+            textSize(14);
+            text("Memory Cells\nFormed!", 400, 445);
+
+            // Future exposure
+            fill(220, 80, 80);
+            noStroke();
+            circle(580, 395, 25);
+            drawVirus(580, 395, 20, [0], color(220, 80, 80));
+
+            // Blocked
+            fill(100, 200, 100);
+            textSize(50);
+            text("🛡️", 600, 385);
+            fill(50, 150, 50);
+            textSize(14);
+            text("Virus Blocked\nNo sickness!", 590, 445);
+
+            pop();
+
+            // Info box
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(100, 540, 700, 110, 15);
+
+            fill(50);
+            textSize(16);
+            textAlign(LEFT);
+            text("💡 KEY CONCEPT: Vaccines create MEMORY CELLS that remember the virus.", 120, 565);
+            text("   When the real virus shows up, your immune system responds in hours", 120, 590);
+            text("   instead of days - stopping the infection before you get sick!", 120, 615);
+
+            textAlign(CENTER, CENTER);
+            drawButton("Next: Design Spike Proteins", width/2, 670, 280, 50, color(76, 175, 80));
+        }
+
+        function drawSpikeDesign() {
+            fill(70, 70, 130);
+            textSize(32);
+            textStyle(BOLD);
+            text("🧬 Understanding Spike Proteins", width/2, 40);
+
+            textStyle(NORMAL);
+            textSize(16);
+            fill(100);
+            text("Learn how vaccines teach your body to recognize viral proteins", width/2, 75);
+
+            // Left side: Virus with spike proteins
+            push();
+            fill(255);
+            stroke(220, 100, 100);
+            strokeWeight(3);
+            rect(50, 110, 380, 470, 15);
+
+            fill(50);
+            textSize(20);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("The Real Virus", 240, 140);
+
+            textStyle(NORMAL);
+            textSize(15);
+            text("(Too dangerous to use directly!)", 240, 165);
+
+            // Draw detailed virus
+            drawVirus(240, 280, 120, virus.antigens, virus.color);
+
+            // Highlight spike
+            stroke(255, 100, 100);
+            strokeWeight(3);
+            fill(255, 100, 100, 100);
+            circle(240 + 80, 280 - 40, 50);
+
+            fill(50);
+            textSize(14);
+            textAlign(LEFT);
+            text("These SPIKE PROTEINS are what", 80, 400);
+            text("we need to teach the immune", 80, 420);
+            text("system about!", 80, 440);
+
+            text("Scientists identify which spike", 80, 470);
+            text("proteins are most important for", 80, 490);
+            text("the virus to infect cells.", 80, 510);
+
+            pop();
+
+            // Right side: Vaccine approaches
+            push();
+            fill(255);
+            stroke(100, 150, 250);
+            strokeWeight(3);
+            rect(470, 110, 380, 470, 15);
+
+            fill(50);
+            textSize(20);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("Vaccine Approaches", 660, 140);
+
+            textStyle(NORMAL);
+            textSize(16);
+
+            // mRNA vaccine
+            fill(240, 250, 255);
+            stroke(100, 150, 250);
+            strokeWeight(2);
+            rect(490, 170, 340, 90, 10);
+
+            fill(100, 150, 250);
+            textSize(18);
+            textStyle(BOLD);
+            textAlign(LEFT);
+            text("🧬 mRNA Vaccine", 510, 190);
+
+            fill(50);
+            textSize(14);
+            textStyle(NORMAL);
+            text("Gives cells instructions to make", 510, 215);
+            text("just the spike protein - no virus!", 510, 235);
+            text("(Like Pfizer, Moderna COVID vaccines)", 510, 250);
+
+            // Inactivated vaccine
+            fill(255, 245, 240);
+            stroke(250, 150, 100);
+            strokeWeight(2);
+            rect(490, 280, 340, 80, 10);
+
+            fill(250, 150, 100);
+            textSize(18);
+            textStyle(BOLD);
+            text("💀 Inactivated Vaccine", 510, 300);
+
+            fill(50);
+            textSize(14);
+            textStyle(NORMAL);
+            text("Uses killed virus - can't infect you,", 510, 325);
+            text("but shows immune system the spikes!", 510, 345);
+
+            // Protein subunit vaccine
+            fill(245, 255, 245);
+            stroke(100, 200, 100);
+            strokeWeight(2);
+            rect(490, 380, 340, 90, 10);
+
+            fill(100, 200, 100);
+            textSize(18);
+            textStyle(BOLD);
+            text("🔬 Protein Subunit", 510, 400);
+
+            fill(50);
+            textSize(14);
+            textStyle(NORMAL);
+            text("Contains only the spike proteins", 510, 425);
+            text("grown in a lab - the safest parts!", 510, 445);
+            text("(Like Hepatitis B, Novavax)", 510, 460);
+
+            fill(100, 150, 255);
+            textSize(15);
+            textAlign(CENTER);
+            text("All approaches train your body to recognize", 660, 510);
+            text("the SAME spike proteins! 🎯", 660, 530);
+
+            pop();
+
+            textAlign(CENTER, CENTER);
+            drawButton("Next: Design Your Vaccine", width/2, 640, 280, 50, color(255, 140, 0));
+        }
+
+        function drawImmuneLearn() {
+            fill(70, 70, 130);
+            textSize(36);
+            textStyle(BOLD);
+            text("Your Immune System", width/2, 50);
+
+            textStyle(NORMAL);
+
+            // Draw immune cells
+            let cellY = 180;
+
+            // B-Cell
+            push();
+            fill(100, 200, 255);
+            stroke(50);
+            strokeWeight(2);
+            circle(200, cellY, 80);
+            fill(255);
+            textSize(24);
+            text("🛡️", 200, cellY);
+            fill(50);
+            textSize(16);
+            text("B-Cell", 200, cellY + 70);
+            pop();
+
+            // Arrow
+            stroke(100);
+            strokeWeight(3);
+            drawArrow(250, cellY, 320, cellY);
+            fill(100);
+            textSize(14);
+            text("produces", 285, cellY - 20);
+
+            // Antibody
+            push();
+            fill(255, 200, 100);
+            stroke(50);
+            strokeWeight(2);
+            drawAntibody(380, cellY, 40, virus.antigens[0]);
+            fill(50);
+            textSize(16);
+            text("Antibody", 380, cellY + 70);
+            pop();
+
+            // Arrow
+            stroke(100);
+            strokeWeight(3);
+            drawArrow(430, cellY, 500, cellY);
+            fill(100);
+            textSize(14);
+            text("binds to", 465, cellY - 20);
+
+            // Virus
+            drawVirus(600, cellY, 60, virus.antigens, virus.color);
+            fill(50);
+            textSize(16);
+            text("Blocked Virus!", 600, cellY + 70);
+
+            // Info box
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(100, 300, 700, 280, 15);
+
+            fill(50);
+            textSize(18);
+            textAlign(LEFT);
+            let immuneInfo = [
+                "🛡️ Your immune system has special cells called B-CELLS that",
+                "   produce ANTIBODIES - proteins that stick to viruses.",
+                "",
+                "🔒 Antibodies are shaped to fit perfectly onto the virus's spike proteins,",
+                "   like a lock and key. This blocks the virus from entering cells!",
+                "",
+                "⏱️ Problem: It takes days for your body to learn to make the right",
+                "   antibodies. That's where vaccines come in!",
+                ""
+            ];
+
+            for (let i = 0; i < immuneInfo.length; i++) {
+                text(immuneInfo[i], 120, 325 + i * 30);
+            }
+
+            textAlign(CENTER, CENTER);
+            drawButton("Next: Memory Cells", width/2, 640, 280, 50, color(76, 175, 80));
+        }
+
+        function drawDesignPuzzle() {
+            fill(70, 70, 130);
+            textSize(32);
+            textStyle(BOLD);
+            text("🧬 Vaccine Design Puzzle", width/2, 40);
+
+            textStyle(NORMAL);
+            textSize(16);
+            fill(100);
+            text("Match antibody shapes to the virus's spike proteins!", width/2, 75);
+
+            // Virus to target
+            push();
+            fill(255);
+            stroke(200, 100, 100);
+            strokeWeight(3);
+            rect(50, 110, 300, 220, 15);
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            text("Target Virus", 200, 130);
+            textStyle(NORMAL);
+            drawVirus(200, 220, 70, virus.antigens, virus.color);
+            pop();
+
+            // Antibody toolbox
+            push();
+            fill(255);
+            stroke(100, 150, 250);
+            strokeWeight(3);
+            rect(50, 350, 300, 320, 15);
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            text("Antibody Pieces (Drag to Design Area)", 200, 370);
+            textStyle(NORMAL);
+
+            // Draw available antibody pieces
+            for (let piece of antibodyPieces) {
+                if (!piece.placed) {
+                    piece.display();
+                }
+            }
+            pop();
+
+            // Design area
+            push();
+            fill(255);
+            stroke(100, 200, 100);
+            strokeWeight(3);
+            rect(380, 110, 470, 560, 15);
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            text("Your Vaccine Design", 615, 130);
+            textStyle(NORMAL);
+            textSize(14);
+            fill(100);
+            text("Drag antibody pieces here. Match the shapes to the virus antigens!", 615, 155);
+
+            // Show design slots
+            for (let i = 0; i < virus.antigens.length; i++) {
+                let slotX = 480 + (i % 3) * 130;
+                let slotY = 200 + Math.floor(i / 3) * 150;
+
+                // Slot
+                fill(245);
+                stroke(150);
+                strokeWeight(2);
+                rect(slotX, slotY, 100, 100, 10);
+
+                // Show target shape
+                fill(200);
+                textSize(12);
+                text(`Antigen ${i+1}`, slotX + 50, slotY + 15);
+
+                // Draw target shape
+                push();
+                translate(slotX + 50, slotY + 50);
+                scale(0.5);
+                drawAntigenShape(0, 0, 30, virus.antigens[i]);
+                pop();
+
+                // Check if antibody is placed
+                let placedAntibody = antibodyPieces.find(p => p.placed && p.slotIndex === i);
+                if (placedAntibody) {
+                    placedAntibody.display();
+                }
+            }
+            pop();
+
+            // Calculate effectiveness
+            calculateVaccineEffectiveness();
+
+            // Show effectiveness meter
+            push();
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(380, 520, 470, 80, 15);
+
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            text("Vaccine Effectiveness: " + vaccineDesign.effectiveness + "%", 615, 540);
+
+            // Effectiveness bar
+            let barWidth = 400;
+            let barHeight = 25;
+            let barX = 615 - barWidth/2;
+            let barY = 560;
+
+            fill(230);
+            stroke(100);
+            strokeWeight(2);
+            rect(barX, barY, barWidth, barHeight, 5);
+
+            let fillWidth = (vaccineDesign.effectiveness / 100) * barWidth;
+            let barColor;
+            if (vaccineDesign.effectiveness < 40) barColor = color(255, 100, 100);
+            else if (vaccineDesign.effectiveness < 70) barColor = color(255, 200, 100);
+            else barColor = color(100, 255, 100);
+
+            fill(barColor);
+            noStroke();
+            rect(barX, barY, fillWidth, barHeight, 5);
+            pop();
+
+            // Test button
+            if (vaccineDesign.effectiveness > 0) {
+                drawButton("Test Vaccine in Simulation!", 615, 640, 300, 50,
+                          vaccineDesign.effectiveness >= 70 ? color(76, 175, 80) : color(255, 152, 0));
+            } else {
+                fill(200);
+                stroke(150);
+                strokeWeight(2);
+                rect(615 - 150, 615, 300, 50, 10);
+                fill(150);
+                textSize(16);
+                text("Drag antibodies to design area", 615, 640);
+            }
+        }
+
+        function drawSimulation() {
+            fill(70, 70, 130);
+            textSize(32);
+            textStyle(BOLD);
+            text("🧪 Vaccine Simulation", width/2, 40);
+
+            textStyle(NORMAL);
+            textSize(16);
+            fill(100);
+
+            if (simulationTime < 300) {
+                text("Watch how your vaccine protects the body!", width/2, 75);
+            }
+
+            // Simulation area
+            fill(255);
+            stroke(100);
+            strokeWeight(2);
+            rect(50, 100, 800, 450, 10);
+
+            // Stats
+            fill(50);
+            textSize(18);
+            textAlign(LEFT);
+            text("✅ Viruses Blocked: " + virusesBlocked, 70, 130);
+            text("❌ Viruses Escaped: " + virusesEscaped, 70, 160);
+
+            // Run simulation
+            if (simulationTime < 600) {
+                updateSimulation();
+                simulationTime++;
+            }
+
+            // Draw simulation elements
+            for (let antibody of antibodies) {
+                antibody.display();
+                antibody.update();
+            }
+
+            for (let i = invadingViruses.length - 1; i >= 0; i--) {
+                let v = invadingViruses[i];
+                v.display();
+                v.update();
+
+                // Check collision with antibodies
+                let blocked = false;
+                for (let j = antibodies.length - 1; j >= 0; j--) {
+                    let a = antibodies[j];
+                    let d = dist(v.x, v.y, a.x, a.y);
+                    if (d < 40 && !a.attached) {
+                        // Check if shapes match
+                        if (shapesMatch(v.antigenIndex, a.shapeIndex)) {
+                            a.attached = true;
+                            a.target = v;
+                            blocked = true;
+                            virusesBlocked++;
+
+                            // Remove virus
+                            invadingViruses.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+
+                // Check if virus escaped
+                if (!blocked && v.x > width - 50) {
+                    virusesEscaped++;
+                    invadingViruses.splice(i, 1);
+                }
+            }
+
+            // Info text
+            textAlign(CENTER);
+            if (simulationTime < 100) {
+                fill(100, 150, 255);
+                textSize(20);
+                text("Viruses are invading! →", width/2, 500);
+            } else if (simulationTime < 200) {
+                fill(255, 150, 100);
+                textSize(20);
+                text("Your antibodies are responding! 🛡️", width/2, 500);
+            }
+
+            // Done button
+            if (simulationTime >= 600) {
+                fill(76, 175, 80);
+                textSize(22);
+                text("Simulation Complete!", width/2, 500);
+                drawButton("See Results", width/2, 620, 200, 50, color(76, 175, 80));
+            }
+
+            textAlign(CENTER, CENTER);
+        }
+
+        function drawResults() {
+            fill(70, 70, 130);
+            textSize(42);
+            textStyle(BOLD);
+            text("🎉 Results", width/2, 70);
+
+            // Results box
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(3);
+            rect(100, 130, 700, 450, 20);
+
+            textStyle(NORMAL);
+            fill(50);
+            textSize(24);
+            text("Vaccine Effectiveness: " + vaccineDesign.effectiveness + "%", width/2, 180);
+
+            textSize(20);
+            let totalViruses = virusesBlocked + virusesEscaped;
+            let blockRate = totalViruses > 0 ? Math.round((virusesBlocked / totalViruses) * 100) : 0;
+
+            text("Blocked: " + virusesBlocked + " | Escaped: " + virusesEscaped, width/2, 220);
+            text("Success Rate: " + blockRate + "%", width/2, 250);
+
+            // Feedback
+            textSize(18);
+            textAlign(LEFT);
+            let feedback = [];
+
+            if (vaccineDesign.effectiveness >= 90) {
+                fill(50, 150, 50);
+                textSize(28);
+                textAlign(CENTER);
+                text("🏆 Excellent Work! Perfect Vaccine Design!", width/2, 300);
+                textSize(18);
+                feedback = [
+                    "",
+                    "Your antibodies matched the viral antigens perfectly!",
+                    "This is how real vaccines work - they train your immune",
+                    "system to recognize specific spike proteins.",
+                    "",
+                    "Memory cells will remember this threat for years,",
+                    "responding in hours instead of days if the virus returns!"
+                ];
+            } else if (vaccineDesign.effectiveness >= 70) {
+                fill(200, 150, 0);
+                textSize(26);
+                textAlign(CENTER);
+                text("🥈 Good Job! Effective Vaccine!", width/2, 300);
+                textSize(18);
+                feedback = [
+                    "",
+                    "Your vaccine provides good protection, though some viruses",
+                    "got through. In real life, vaccines with 70-90% effectiveness",
+                    "are still very useful for preventing disease!",
+                    "",
+                    "Your memory cells will still provide lasting immunity, making",
+                    "future infections much milder even if not completely prevented."
+                ];
+            } else if (vaccineDesign.effectiveness >= 40) {
+                fill(200, 100, 0);
+                textSize(26);
+                textAlign(CENTER);
+                text("🥉 Partial Protection", width/2, 300);
+                textSize(18);
+                feedback = [
+                    "",
+                    "Your vaccine provides some protection, but many viruses",
+                    "escaped. The antibody shapes don't match well enough",
+                    "to the viral antigens.",
+                    "",
+                    "Scientists work hard to design vaccines where the antibodies",
+                    "fit precisely onto the virus's spike proteins!"
+                ];
+            } else {
+                fill(200, 50, 50);
+                textSize(26);
+                textAlign(CENTER);
+                text("❌ Try Again!", width/2, 300);
+                textSize(18);
+                feedback = [
+                    "",
+                    "Your vaccine didn't provide much protection. The antibody",
+                    "shapes don't match the viral spike protein antigens well.",
+                    "",
+                    "Remember: Vaccines work by teaching your immune system",
+                    "to make antibodies that fit perfectly onto the spike proteins,",
+                    "creating memory cells that protect you for years!"
+                ];
+            }
+
+            for (let i = 0; i < feedback.length; i++) {
+                text(feedback[i], 130, 340 + i * 25);
+            }
+
+            // Buttons
+            textAlign(CENTER, CENTER);
+            if (!hasCompletedFirstChallenge && vaccineDesign.effectiveness >= 70) {
+                drawButton("Learn About Mutations", width/2, 620, 280, 50, color(255, 140, 0));
+            } else {
+                drawButton("Try Different Design", width/2 - 150, 620, 220, 50, color(100, 150, 255));
+                drawButton("Restart", width/2 + 150, 620, 150, 50, color(150, 150, 150));
+            }
+        }
+
+        function drawMutationLearn() {
+            fill(70, 70, 130);
+            textSize(36);
+            textStyle(BOLD);
+            text("🧬 Virus Mutations", width/2, 50);
+
+            textStyle(NORMAL);
+            textSize(16);
+            fill(100);
+            text("Viruses can change - here's why vaccine development is ongoing", width/2, 85);
+
+            // Main content area
+            push();
+            fill(255);
+            stroke(70, 70, 130);
+            strokeWeight(2);
+            rect(100, 120, 700, 450, 15);
+
+            // Original virus
+            fill(50);
+            textSize(22);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("Original Virus", 250, 150);
+
+            textStyle(NORMAL);
+            drawVirus(250, 240, 90, virus.antigens, virus.color);
+
+            fill(50);
+            textSize(14);
+            text("Your vaccine works\nagainst this! ✅", 250, 320);
+
+            // Arrow with mutation label
+            stroke(150);
+            strokeWeight(3);
+            drawArrow(340, 240, 460, 240);
+            fill(200, 100, 50);
+            textSize(16);
+            textStyle(BOLD);
+            text("MUTATION", 400, 220);
+
+            // Mutated virus
+            fill(50);
+            textSize(22);
+            textStyle(BOLD);
+            text("Mutated Virus", 650, 150);
+
+            textStyle(NORMAL);
+
+            // Create mutated antigens (change 1-2 shapes)
+            if (!mutatedVirus) {
+                mutatedVirus = {
+                    antigens: [...virus.antigens],
+                    color: color(180, 60, 150)
+                };
+                // Mutate 2 random positions
+                let mutations = Math.min(2, virus.antigens.length);
+                for (let i = 0; i < mutations; i++) {
+                    let mutatePos = int(random(virus.antigens.length));
+                    let newShape = int(random(0, 6));
+                    while (newShape === mutatedVirus.antigens[mutatePos]) {
+                        newShape = int(random(0, 6));
+                    }
+                    mutatedVirus.antigens[mutatePos] = newShape;
+                }
+            }
+
+            drawVirus(650, 240, 90, mutatedVirus.antigens, mutatedVirus.color);
+
+            // Highlight changed spikes
+            fill(255, 200, 0, 150);
+            stroke(255, 150, 0);
+            strokeWeight(3);
+
+            let changedCount = 0;
+            for (let i = 0; i < virus.antigens.length; i++) {
+                if (virus.antigens[i] !== mutatedVirus.antigens[i]) {
+                    let angle = (TWO_PI / virus.antigens.length) * i;
+                    let px = 650 + cos(angle) * 45;
+                    let py = 240 + sin(angle) * 45;
+                    circle(px, py, 40);
+                    changedCount++;
+                }
+            }
+
+            fill(200, 100, 50);
+            noStroke();
+            textSize(14);
+            text("Spike proteins\nchanged! ⚠️", 650, 320);
+
+            pop();
+
+            // Info boxes
+            fill(255, 240, 240);
+            stroke(220, 100, 100);
+            strokeWeight(2);
+            rect(120, 390, 330, 150, 10);
+
+            fill(220, 50, 50);
+            textSize(18);
+            textStyle(BOLD);
+            textAlign(LEFT);
+            text("❌ The Problem", 140, 415);
+
+            fill(50);
+            textSize(14);
+            textStyle(NORMAL);
+            text("When viruses copy themselves, they", 140, 440);
+            text("sometimes make mistakes. These", 140, 460);
+            text("MUTATIONS can change the spike", 140, 480);
+            text("proteins, making old antibodies", 140, 500);
+            text("less effective.", 140, 520);
+
+            fill(240, 250, 255);
+            stroke(100, 150, 250);
+            strokeWeight(2);
+            rect(470, 390, 310, 150, 10);
+
+            fill(50, 100, 200);
+            textSize(18);
+            textStyle(BOLD);
+            text("✅ The Solution", 490, 415);
+
+            fill(50);
+            textSize(14);
+            textStyle(NORMAL);
+            text("Scientists monitor virus mutations", 490, 440);
+            text("and update vaccines to match!", 490, 460);
+            text("", 490, 480);
+            text("That's why flu shots change yearly,", 490, 500);
+            text("and COVID boosters were updated.", 490, 520);
+
+            textAlign(CENTER, CENTER);
+            drawButton("Try Mutation Challenge!", width/2, 620, 280, 50, color(255, 140, 0));
+        }
+
+        function drawMutationChallenge() {
+            fill(70, 70, 130);
+            textSize(32);
+            textStyle(BOLD);
+            text("🎯 Mutation Challenge", width/2, 40);
+
+            textStyle(NORMAL);
+            textSize(16);
+            fill(100);
+            text("The virus has mutated! Update your vaccine to match the new strain.", width/2, 75);
+
+            // Side-by-side comparison
+            // Original virus
+            push();
+            fill(255);
+            stroke(150);
+            strokeWeight(2);
+            rect(50, 110, 380, 220, 15);
+
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("Original Virus (Your vaccine works for this)", 240, 135);
+
+            textStyle(NORMAL);
+            drawVirus(240, 220, 70, virus.antigens, virus.color);
+            pop();
+
+            // Mutated virus
+            push();
+            fill(255);
+            stroke(200, 100, 50);
+            strokeWeight(3);
+            rect(470, 110, 380, 220, 15);
+
+            fill(200, 100, 50);
+            textSize(18);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("⚠️ Mutated Virus (NEW THREAT)", 660, 135);
+
+            textStyle(NORMAL);
+            drawVirus(660, 220, 70, mutatedVirus.antigens, mutatedVirus.color);
+
+            // Highlight differences
+            for (let i = 0; i < virus.antigens.length; i++) {
+                if (virus.antigens[i] !== mutatedVirus.antigens[i]) {
+                    let angle = (TWO_PI / virus.antigens.length) * i;
+                    let px = 660 + cos(angle) * 35;
+                    let py = 220 + sin(angle) * 35;
+
+                    fill(255, 200, 0, 150);
+                    stroke(255, 150, 0);
+                    strokeWeight(3);
+                    circle(px, py, 35);
+
+                    fill(255, 150, 0);
+                    noStroke();
+                    textSize(20);
+                    text("!", px, py);
+                }
+            }
+            pop();
+
+            // Design area (similar to original puzzle but with mutated virus)
+            push();
+            fill(255);
+            stroke(100, 200, 100);
+            strokeWeight(3);
+            rect(50, 350, 800, 280, 15);
+
+            fill(50);
+            textSize(18);
+            textStyle(BOLD);
+            textAlign(CENTER);
+            text("Update Your Vaccine Design", 450, 375);
+
+            textStyle(NORMAL);
+            textSize(14);
+            fill(100);
+            text("Drag antibodies to match the MUTATED virus antigens", 450, 395);
+
+            // Show design slots for mutated virus
+            for (let i = 0; i < mutatedVirus.antigens.length; i++) {
+                let slotX = 100 + (i % 5) * 140;
+                let slotY = 440 + Math.floor(i / 5) * 130;
+
+                // Check if this antigen changed
+                let isChanged = virus.antigens[i] !== mutatedVirus.antigens[i];
+
+                // Slot
+                if (isChanged) {
+                    fill(255, 240, 230);
+                    stroke(255, 150, 0);
+                    strokeWeight(3);
+                } else {
+                    fill(245);
+                    stroke(150);
+                    strokeWeight(2);
+                }
+                rect(slotX, slotY, 110, 90, 10);
+
+                // Show target shape
+                fill(isChanged ? 200 : 100);
+                textSize(11);
+                textAlign(CENTER);
+                text(isChanged ? "MUTATED!" : "Same", slotX + 55, slotY + 15);
+
+                // Draw target shape
+                push();
+                translate(slotX + 55, slotY + 50);
+                scale(0.4);
+                drawAntigenShape(0, 0, 30, mutatedVirus.antigens[i]);
+                pop();
+            }
+
+            pop();
+
+            // Note: We can reuse the antibody pieces interaction from design puzzle
+            // For simplicity, we'll just show effectiveness
+
+            // Calculate how well old vaccine works on mutated virus
+            let matchCount = 0;
+            for (let i = 0; i < virus.antigens.length; i++) {
+                let placedAntibody = antibodyPieces.find(p => p.placed && p.slotIndex === i);
+                if (placedAntibody && virus.antigens[i] === mutatedVirus.antigens[i]) {
+                    matchCount++;
+                }
+            }
+            mutationEffectiveness = Math.round((matchCount / mutatedVirus.antigens.length) * 100);
+
+            textAlign(CENTER, CENTER);
+            fill(50);
+            textSize(16);
+            text("Your current vaccine effectiveness against mutated virus: " + mutationEffectiveness + "%", width/2, 645);
+
+            if (mutationEffectiveness < 70) {
+                fill(220, 100, 50);
+                textSize(14);
+                text("⚠️ Vaccine needs updating! This is why boosters and new vaccines are developed.", width/2, 665);
+            }
+
+            drawButton("Return to Results", width/2, 680, 200, 40, color(100, 150, 255));
+        }
+
+        // Helper Functions
+
+        function initializeVirus() {
+            virus.x = width / 2;
+            virus.y = 200;
+            virus.color = color(220, 80, 80);
+
+            // Create 4-6 random antigen shapes
+            let numAntigens = int(random(4, 7));
+            virus.antigens = [];
+            for (let i = 0; i < numAntigens; i++) {
+                virus.antigens.push(int(random(0, 6))); // 6 different shape types
+            }
+        }
+
+        function createAntibodyPieces() {
+            antibodyPieces = [];
+            let startX = 80;
+            let startY = 410;
+
+            // Create 2 copies of each antigen shape + some wrong ones
+            for (let i = 0; i < virus.antigens.length; i++) {
+                for (let copy = 0; copy < 2; copy++) {
+                    let x = startX + (antibodyPieces.length % 3) * 90;
+                    let y = startY + Math.floor(antibodyPieces.length / 3) * 90;
+                    antibodyPieces.push(new AntibodyPiece(x, y, virus.antigens[i], i));
+                }
+            }
+
+            // Add some incorrect shapes
+            for (let i = 0; i < 4; i++) {
+                let wrongShape = int(random(0, 6));
+                while (virus.antigens.includes(wrongShape)) {
+                    wrongShape = int(random(0, 6));
+                }
+                let x = startX + (antibodyPieces.length % 3) * 90;
+                let y = startY + Math.floor(antibodyPieces.length / 3) * 90;
+                antibodyPieces.push(new AntibodyPiece(x, y, wrongShape, -1));
+            }
+
+            // Shuffle
+            antibodyPieces = shuffle(antibodyPieces);
+        }
+
+        function drawVirus(x, y, size, antigens, col) {
+            push();
+            translate(x, y);
+
+            // Virus body
+            fill(col);
+            stroke(150, 50, 50);
+            strokeWeight(2);
+            circle(0, 0, size);
+
+            // Draw antigens around the virus
+            let numAntigens = antigens.length;
+            for (let i = 0; i < numAntigens; i++) {
+                let angle = (TWO_PI / numAntigens) * i;
+                let px = cos(angle) * (size/2);
+                let py = sin(angle) * (size/2);
+
+                push();
+                translate(px, py);
+                rotate(angle + PI/2);
+                drawAntigenShape(0, 0, size/4, antigens[i]);
+                pop();
+            }
+            pop();
+        }
+
+        function drawAntigenShape(x, y, size, shapeType) {
+            push();
+            translate(x, y);
+            fill(255, 100, 100);
+            stroke(150, 50, 50);
+            strokeWeight(2);
+
+            switch(shapeType) {
+                case 0: // Triangle
+                    triangle(-size, size, size, size, 0, -size);
+                    break;
+                case 1: // Square
+                    rect(-size, -size, size*2, size*2);
+                    break;
+                case 2: // Circle
+                    circle(0, 0, size*2);
+                    break;
+                case 3: // Star
+                    drawStar(0, 0, size/2, size, 5);
+                    break;
+                case 4: // Pentagon
+                    drawPolygon(0, 0, size, 5);
+                    break;
+                case 5: // Hexagon
+                    drawPolygon(0, 0, size, 6);
+                    break;
+            }
+            pop();
+        }
+
+        function drawAntibody(x, y, size, shapeType) {
+            push();
+            translate(x, y);
+
+            // Y-shaped antibody body
+            fill(255, 200, 100);
+            stroke(150, 100, 50);
+            strokeWeight(2);
+
+            // Stem
+            rect(-5, 0, 10, size);
+
+            // Arms
+            line(0, 10, -size/2, -size/2);
+            line(0, 10, size/2, -size/2);
+            circle(-size/2, -size/2, 12);
+            circle(size/2, -size/2, 12);
+
+            // Binding site (matches antigen shape)
+            push();
+            translate(0, -size);
+            scale(0.6);
+            fill(100, 200, 255);
+            drawAntigenShape(0, 0, 15, shapeType);
+            pop();
+
+            pop();
+        }
+
+        function drawStar(x, y, radius1, radius2, npoints) {
+            let angle = TWO_PI / npoints;
+            let halfAngle = angle / 2.0;
+            beginShape();
+            for (let a = -PI/2; a < TWO_PI - PI/2; a += angle) {
+                let sx = x + cos(a) * radius2;
+                let sy = y + sin(a) * radius2;
+                vertex(sx, sy);
+                sx = x + cos(a + halfAngle) * radius1;
+                sy = y + sin(a + halfAngle) * radius1;
+                vertex(sx, sy);
+            }
+            endShape(CLOSE);
+        }
+
+        function drawPolygon(x, y, radius, npoints) {
+            let angle = TWO_PI / npoints;
+            beginShape();
+            for (let a = -PI/2; a < TWO_PI - PI/2; a += angle) {
+                let sx = x + cos(a) * radius;
+                let sy = y + sin(a) * radius;
+                vertex(sx, sy);
+            }
+            endShape(CLOSE);
+        }
+
+        function drawArrow(x1, y1, x2, y2) {
+            line(x1, y1, x2, y2);
+            push();
+            let angle = atan2(y2 - y1, x2 - x1);
+            translate(x2, y2);
+            rotate(angle);
+            triangle(-10, -5, -10, 5, 0, 0);
+            pop();
+        }
+
+        function drawButton(label, x, y, w, h, col) {
+            push();
+
+            // Check hover
+            let hover = mouseX > x - w/2 && mouseX < x + w/2 &&
+                       mouseY > y - h/2 && mouseY < y + h/2;
+
+            if (hover) {
+                fill(red(col) * 0.9, green(col) * 0.9, blue(col) * 0.9);
+            } else {
+                fill(col);
+            }
+
+            stroke(0);
+            strokeWeight(2);
+            rect(x - w/2, y - h/2, w, h, 10);
+
+            fill(255);
+            noStroke();
+            textSize(18);
+            textStyle(BOLD);
+            text(label, x, y);
+
+            pop();
+        }
+
+        function calculateVaccineEffectiveness() {
+            let correctMatches = 0;
+            let totalSlots = virus.antigens.length;
+
+            for (let i = 0; i < totalSlots; i++) {
+                let placedAntibody = antibodyPieces.find(p => p.placed && p.slotIndex === i);
+                if (placedAntibody && placedAntibody.targetIndex === i) {
+                    correctMatches++;
+                }
+            }
+
+            vaccineDesign.effectiveness = Math.round((correctMatches / totalSlots) * 100);
+        }
+
+        function shapesMatch(antigenIndex, antibodyShapeIndex) {
+            return virus.antigens[antigenIndex] === antibodyShapeIndex;
+        }
+
+        function updateSimulation() {
+            // Spawn viruses
+            if (frameCount % 30 === 0 && invadingViruses.length < 15) {
+                let antigenIndex = int(random(virus.antigens.length));
+                invadingViruses.push(new InvadingVirus(50, random(150, 500), antigenIndex));
+            }
+
+            // Spawn antibodies based on vaccine effectiveness
+            if (frameCount % 20 === 0 && antibodies.length < vaccineDesign.effectiveness / 10) {
+                for (let i = 0; i < virus.antigens.length; i++) {
+                    let placedAntibody = antibodyPieces.find(p => p.placed && p.slotIndex === i);
+                    if (placedAntibody && placedAntibody.targetIndex === i) {
+                        antibodies.push(new SimulationAntibody(200, random(150, 500), placedAntibody.shapeType));
+                    }
+                }
+            }
+        }
+
+        // Classes
+
+        class AntibodyPiece {
+            constructor(x, y, shapeType, targetIndex) {
+                this.homeX = x;
+                this.homeY = y;
+                this.x = x;
+                this.y = y;
+                this.shapeType = shapeType;
+                this.targetIndex = targetIndex;
+                this.placed = false;
+                this.slotIndex = -1;
+                this.dragging = false;
+            }
+
+            display() {
+                if (this.placed) {
+                    let slotX = 480 + (this.slotIndex % 3) * 130 + 50;
+                    let slotY = 200 + Math.floor(this.slotIndex / 3) * 150 + 50;
+                    this.x = slotX;
+                    this.y = slotY;
+                }
+
+                push();
+                if (this.dragging) {
+                    fill(255, 255, 150, 200);
+                } else if (this.placed) {
+                    if (this.targetIndex === this.slotIndex) {
+                        fill(150, 255, 150, 200);
+                    } else {
+                        fill(255, 150, 150, 200);
+                    }
+                } else {
+                    fill(255, 220, 150, 200);
+                }
+                stroke(100);
+                strokeWeight(2);
+                circle(this.x, this.y, 60);
+
+                // Draw shape
+                push();
+                translate(this.x, this.y);
+                scale(0.6);
+                fill(100, 150, 255);
+                drawAntigenShape(0, 0, 20, this.shapeType);
+                pop();
+
+                pop();
+            }
+
+            contains(px, py) {
+                return dist(px, py, this.x, this.y) < 30;
+            }
+
+            snapToSlot(slotIndex) {
+                this.placed = true;
+                this.slotIndex = slotIndex;
+            }
+
+            returnHome() {
+                this.placed = false;
+                this.slotIndex = -1;
+                this.x = this.homeX;
+                this.y = this.homeY;
+            }
+        }
+
+        class InvadingVirus {
+            constructor(x, y, antigenIndex) {
+                this.x = x;
+                this.y = y;
+                this.antigenIndex = antigenIndex;
+                this.speed = random(1, 2);
+                this.size = 30;
+            }
+
+            update() {
+                this.x += this.speed;
+            }
+
+            display() {
+                push();
+                fill(220, 80, 80);
+                stroke(150, 50, 50);
+                strokeWeight(2);
+                circle(this.x, this.y, this.size);
+
+                // Draw one antigen
+                let angle = frameCount * 0.05;
+                let px = cos(angle) * (this.size/2);
+                let py = sin(angle) * (this.size/2);
+
+                push();
+                translate(this.x + px, this.y + py);
+                rotate(angle + PI/2);
+                scale(0.5);
+                drawAntigenShape(0, 0, 15, virus.antigens[this.antigenIndex]);
+                pop();
+
+                pop();
+            }
+        }
+
+        class SimulationAntibody {
+            constructor(x, y, shapeType) {
+                this.x = x;
+                this.y = y;
+                this.shapeType = shapeType;
+                this.speed = random(2, 3);
+                this.attached = false;
+                this.target = null;
+            }
+
+            update() {
+                if (!this.attached) {
+                    this.x += this.speed;
+                } else if (this.target) {
+                    this.x = this.target.x;
+                    this.y = this.target.y;
+                }
+            }
+
+            display() {
+                push();
+                fill(255, 200, 100);
+                stroke(150, 100, 50);
+                strokeWeight(2);
+
+                // Simple Y-shape
+                line(this.x, this.y, this.x - 8, this.y + 12);
+                line(this.x, this.y, this.x + 8, this.y + 12);
+                line(this.x, this.y, this.x, this.y - 12);
+                circle(this.x, this.y - 12, 8);
+
+                // Binding site
+                push();
+                translate(this.x, this.y - 18);
+                scale(0.4);
+                fill(100, 200, 255);
+                drawAntigenShape(0, 0, 12, this.shapeType);
+                pop();
+
+                pop();
+            }
+        }
+
+        // Mouse interaction
+
+        function mousePressed() {
+            // Check button clicks
+            if (gameState === STATES.INTRO) {
+                if (mouseX > width/2 - 125 && mouseX < width/2 + 125 &&
+                    mouseY > 550 && mouseY < 610) {
+                    gameState = STATES.VIRUS_LEARN;
+                }
+            } else if (gameState === STATES.VIRUS_LEARN) {
+                if (mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 615 && mouseY < 665) {
+                    gameState = STATES.IMMUNE_LEARN;
+                }
+            } else if (gameState === STATES.IMMUNE_LEARN) {
+                if (mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 615 && mouseY < 665) {
+                    gameState = STATES.MEMORY_LEARN;
+                }
+            } else if (gameState === STATES.MEMORY_LEARN) {
+                if (mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 645 && mouseY < 695) {
+                    gameState = STATES.SPIKE_DESIGN;
+                }
+            } else if (gameState === STATES.SPIKE_DESIGN) {
+                if (mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 615 && mouseY < 665) {
+                    gameState = STATES.DESIGN_PUZZLE;
+                }
+            } else if (gameState === STATES.DESIGN_PUZZLE) {
+                // Check for dragging antibody pieces
+                for (let piece of antibodyPieces) {
+                    if (!piece.placed && piece.contains(mouseX, mouseY)) {
+                        selectedPiece = piece;
+                        selectedPiece.dragging = true;
+                        dragOffset.x = selectedPiece.x - mouseX;
+                        dragOffset.y = selectedPiece.y - mouseY;
+                        return;
+                    }
+                }
+
+                // Check for removing placed pieces
+                for (let piece of antibodyPieces) {
+                    if (piece.placed && piece.contains(mouseX, mouseY)) {
+                        piece.returnHome();
+                        return;
+                    }
+                }
+
+                // Check test button
+                if (vaccineDesign.effectiveness > 0 &&
+                    mouseX > 465 && mouseX < 765 &&
+                    mouseY > 615 && mouseY < 665) {
+                    // Initialize simulation
+                    simulationTime = 0;
+                    virusesBlocked = 0;
+                    virusesEscaped = 0;
+                    invadingViruses = [];
+                    antibodies = [];
+                    immuneCells = [];
+                    gameState = STATES.SIMULATION;
+                }
+            } else if (gameState === STATES.SIMULATION) {
+                if (simulationTime >= 600) {
+                    if (mouseX > width/2 - 100 && mouseX < width/2 + 100 &&
+                        mouseY > 595 && mouseY < 645) {
+                        gameState = STATES.RESULTS;
+                    }
+                }
+            } else if (gameState === STATES.RESULTS) {
+                // Learn about mutations button
+                if (!hasCompletedFirstChallenge && vaccineDesign.effectiveness >= 70 &&
+                    mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 595 && mouseY < 645) {
+                    hasCompletedFirstChallenge = true;
+                    gameState = STATES.MUTATION_LEARN;
+                    return;
+                }
+
+                // Try different design
+                if (mouseX > width/2 - 260 && mouseX < width/2 - 40 &&
+                    mouseY > 595 && mouseY < 645) {
+                    gameState = STATES.DESIGN_PUZZLE;
+                }
+                // Restart
+                if (mouseX > width/2 + 75 && mouseX < width/2 + 225 &&
+                    mouseY > 595 && mouseY < 645) {
+                    initializeVirus();
+                    createAntibodyPieces();
+                    vaccineDesign.effectiveness = 0;
+                    mutatedVirus = null;
+                    hasCompletedFirstChallenge = false;
+                    gameState = STATES.INTRO;
+                }
+            } else if (gameState === STATES.MUTATION_LEARN) {
+                if (mouseX > width/2 - 140 && mouseX < width/2 + 140 &&
+                    mouseY > 595 && mouseY < 645) {
+                    gameState = STATES.MUTATION_CHALLENGE;
+                }
+            } else if (gameState === STATES.MUTATION_CHALLENGE) {
+                if (mouseX > width/2 - 100 && mouseX < width/2 + 100 &&
+                    mouseY > 660 && mouseY < 700) {
+                    gameState = STATES.RESULTS;
+                }
+            }
+        }
+
+        function mouseDragged() {
+            if (gameState === STATES.DESIGN_PUZZLE && selectedPiece) {
+                selectedPiece.x = mouseX + dragOffset.x;
+                selectedPiece.y = mouseY + dragOffset.y;
+            }
+        }
+
+        function mouseReleased() {
+            if (gameState === STATES.DESIGN_PUZZLE && selectedPiece) {
+                selectedPiece.dragging = false;
+
+                // Check if dropped in a slot
+                for (let i = 0; i < virus.antigens.length; i++) {
+                    let slotX = 480 + (i % 3) * 130 + 50;
+                    let slotY = 200 + Math.floor(i / 3) * 150 + 50;
+
+                    if (dist(mouseX, mouseY, slotX, slotY) < 50) {
+                        // Check if slot is empty
+                        let occupied = antibodyPieces.find(p => p.placed && p.slotIndex === i);
+                        if (!occupied) {
+                            selectedPiece.snapToSlot(i);
+                        } else {
+                            selectedPiece.returnHome();
+                        }
+                        selectedPiece = null;
+                        return;
+                    }
+                }
+
+                // Return to home if not dropped in slot
+                selectedPiece.returnHome();
+                selectedPiece = null;
+            }
+        }
+    </script>
+</body>
+</html>
