@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USA Vaccination Policy Tracker (2015-2025)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #0066CC;
+            --secondary-teal: #00A896;
+            --accent-orange: #FF6B35;
+            --success-green: #52B788;
+            --warning-yellow: #FFB800;
+            --danger-red: #E63946;
+            --bg-dark: #1A1A2E;
+            --bg-medium: #16213E;
+            --bg-light: #0F3460;
+            --text-light: #F4F4F4;
+            --text-muted: #B8B8B8;
+            --border-color: #2A2A3A;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--border-color);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Topic Navigation */
+        .topic-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .topic-card {
+            background: linear-gradient(135deg, rgba(0, 168, 150, 0.1), rgba(0, 102, 204, 0.1));
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-teal));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .topic-card.active::before,
+        .topic-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .topic-card.active {
+            border-color: var(--primary-blue);
+            background: linear-gradient(135deg, rgba(0, 168, 150, 0.2), rgba(0, 102, 204, 0.2));
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 168, 150, 0.3);
+        }
+
+        .topic-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .topic-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .topic-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Timeline Section */
+        .timeline-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+
+        .year-filter {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .year-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .year-btn:hover {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .year-btn.active {
+            background: var(--secondary-teal);
+            border-color: var(--secondary-teal);
+        }
+
+        /* Timeline Visualization */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline-axis {
+            position: relative;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-teal));
+            border-radius: 2px;
+            margin: 2rem 0;
+        }
+
+        .timeline-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-year {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .timeline-events {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .timeline-event {
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 4px solid var(--secondary-teal);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-event:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(5px);
+        }
+
+        .timeline-event.policy {
+            border-left-color: var(--primary-blue);
+        }
+
+        .timeline-event.outcome {
+            border-left-color: var(--success-green);
+        }
+
+        .timeline-event.mandate {
+            border-left-color: var(--accent-orange);
+        }
+
+        .timeline-event.safety {
+            border-left-color: var(--warning-yellow);
+        }
+
+        .event-date {
+            font-size: 0.85rem;
+            color: var(--secondary-teal);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .event-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .event-tag {
+            background: rgba(0, 168, 150, 0.2);
+            border: 1px solid var(--secondary-teal);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--secondary-teal);
+        }
+
+        /* Data Visualization Section */
+        .data-viz-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .chart-placeholder {
+            background: rgba(0, 102, 204, 0.1);
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.2), rgba(0, 168, 150, 0.2));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary-teal);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* API Status */
+        .api-status {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .api-source {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-green);
+            display: inline-block;
+        }
+
+        .status-dot.inactive {
+            background: var(--text-muted);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--secondary-teal);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .topic-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .data-viz-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>USA Vaccination Policy Tracker</h1>
+            <p class="subtitle">Analyzing policies, mandates, and outcomes from 2015-2025</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- API Data Sources -->
+        <div class="api-status">
+            <strong>Data Sources:</strong>
+            <span class="api-source">
+                <span class="status-dot"></span>
+                CDC Data.gov (Socrata API)
+            </span>
+            <span class="api-source">
+                <span class="status-dot"></span>
+                CDC NIS Survey
+            </span>
+            <span class="api-source">
+                <span class="status-dot inactive"></span>
+                CDC WONDER (VAERS)
+            </span>
+        </div>
+
+        <!-- Topic Navigation -->
+        <div class="topic-nav" id="topicNav">
+            <div class="topic-card active" data-topic="all">
+                <span class="topic-icon">📊</span>
+                <div class="topic-title">All Topics</div>
+                <div class="topic-description">View comprehensive vaccination data</div>
+            </div>
+            <div class="topic-card" data-topic="childhood">
+                <span class="topic-icon">👶</span>
+                <div class="topic-title">Childhood Vaccines</div>
+                <div class="topic-description">MMR, DTaP, Polio, Hep B</div>
+            </div>
+            <div class="topic-card" data-topic="covid">
+                <span class="topic-icon">💉</span>
+                <div class="topic-title">COVID-19</div>
+                <div class="topic-description">Pandemic response 2020-2025</div>
+            </div>
+            <div class="topic-card" data-topic="flu">
+                <span class="topic-icon">🦠</span>
+                <div class="topic-title">Influenza</div>
+                <div class="topic-description">Annual flu campaigns</div>
+            </div>
+            <div class="topic-card" data-topic="hpv">
+                <span class="topic-icon">🏥</span>
+                <div class="topic-title">HPV Vaccines</div>
+                <div class="topic-description">Adolescent programs</div>
+            </div>
+            <div class="topic-card" data-topic="adult">
+                <span class="topic-icon">👴</span>
+                <div class="topic-title">Adult Vaccines</div>
+                <div class="topic-description">Pneumonia, Shingles, Tdap</div>
+            </div>
+            <div class="topic-card" data-topic="mandates">
+                <span class="topic-icon">⚖️</span>
+                <div class="topic-title">Mandates</div>
+                <div class="topic-description">School & healthcare requirements</div>
+            </div>
+            <div class="topic-card" data-topic="safety">
+                <span class="topic-icon">🛡️</span>
+                <div class="topic-title">Safety Monitoring</div>
+                <div class="topic-description">VAERS & adverse events</div>
+            </div>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-section">
+            <div class="section-header">
+                <h2 class="section-title">Policy & Outcome Timeline</h2>
+                <div class="year-filter" id="yearFilter">
+                    <button class="year-btn active" data-year="all">All Years</button>
+                    <button class="year-btn" data-year="2015">2015</button>
+                    <button class="year-btn" data-year="2016">2016</button>
+                    <button class="year-btn" data-year="2017">2017</button>
+                    <button class="year-btn" data-year="2018">2018</button>
+                    <button class="year-btn" data-year="2019">2019</button>
+                    <button class="year-btn" data-year="2020">2020</button>
+                    <button class="year-btn" data-year="2021">2021</button>
+                    <button class="year-btn" data-year="2022">2022</button>
+                    <button class="year-btn" data-year="2023">2023</button>
+                    <button class="year-btn" data-year="2024">2024</button>
+                    <button class="year-btn" data-year="2025">2025</button>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-markers">
+                    <div class="timeline-year">2015</div>
+                    <div class="timeline-year">2017</div>
+                    <div class="timeline-year">2019</div>
+                    <div class="timeline-year">2021</div>
+                    <div class="timeline-year">2023</div>
+                    <div class="timeline-year">2025</div>
+                </div>
+                <div class="timeline-axis"></div>
+
+                <div class="timeline-events" id="timelineEvents">
+                    <!-- Timeline events will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Visualization -->
+        <div class="data-viz-section">
+            <div class="chart-container">
+                <h3 class="chart-title">Vaccination Coverage Trends</h3>
+                <div class="chart-placeholder" id="coverageChart">
+                    Chart will be populated with CDC NIS data
+                </div>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">State-by-State Comparison</h3>
+                <div class="chart-placeholder" id="stateChart">
+                    Geographic visualization will be rendered here
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
