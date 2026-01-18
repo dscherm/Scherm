@@ -205,7 +205,8 @@ function calculateTemplateDistance(cocktail, rootCocktail) {
  * Get ingredient categories for color coding
  */
 function getIngredientCategory(ingredient) {
-    const profile = FlavorProfiles[ingredient];
+    const normalized = normalizeIngredient(ingredient);
+    const profile = FlavorProfiles[normalized];
     if (!profile) return 'unknown';
 
     const category = profile.category;

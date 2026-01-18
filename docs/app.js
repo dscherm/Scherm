@@ -283,7 +283,7 @@ function showCocktailDetail(cocktail) {
                 <h3>Ingredients</h3>
                 <p class="section-hint">Click any ingredient to see flavor pairings and alternatives</p>
                 ${ingredients.map(ing => {
-                    const profile = FlavorProfiles[ing.name];
+                    const profile = getFlavorProfile(ing.name);
                     return `
                         <div class="ingredient-item ${profile ? 'has-profile' : ''}" data-ingredient="${ing.name}">
                             <span class="ingredient-name">
@@ -345,7 +345,8 @@ function showCocktailDetail(cocktail) {
 // INGREDIENT DETAIL WITH FLAVOR PAIRINGS
 // =============================================================================
 function showIngredientDetail(ingredientName, cocktailIngredients = []) {
-    const profile = FlavorProfiles[ingredientName];
+    const normalized = normalizeIngredient(ingredientName);
+    const profile = FlavorProfiles[normalized];
 
     if (!profile) {
         // Fallback for ingredients not in our database
@@ -365,11 +366,11 @@ function showIngredientDetail(ingredientName, cocktailIngredients = []) {
         .map(([flavor, weight]) => ({ flavor, weight }));
 
     // Get ingredient recommendations
-    const recommendations = getIngredientRecommendations([ingredientName], cocktailIngredients);
+    const recommendations = getIngredientRecommendations([normalized], cocktailIngredients);
 
     // Get alternatives with similar flavor profiles
     const alternatives = Object.keys(FlavorProfiles)
-        .filter(ing => ing !== ingredientName && FlavorProfiles[ing].category === profile.category)
+        .filter(ing => ing !== normalized && FlavorProfiles[ing].category === profile.category)
         .map(ing => ({
             ingredient: ing,
             similarity: calculateJaccardSimilarity(ingredientName, ing)

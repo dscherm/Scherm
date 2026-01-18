@@ -4,6 +4,149 @@
 // Weight Scale: 0 = incompatible, 1 = compatible, 2 = good pairing, 3 = excellent pairing
 
 // =============================================================================
+// INGREDIENT NORMALIZATION SYSTEM
+// =============================================================================
+
+/**
+ * Common ingredient modifiers to strip when normalizing
+ */
+const INGREDIENT_MODIFIERS = [
+    'juice', 'fresh', 'dried', 'extract', 'syrup', 'liqueur', 'concentrate',
+    'zest', 'peel', 'wedge', 'slice', 'twist', 'leaf', 'leaves',
+    'ground', 'whole', 'crushed', 'muddled', 'infused',
+    'simple', 'homemade', 'organic', 'premium', 'top shelf',
+    'squeezed', 'squeezed', 'pure', 'natural'
+];
+
+/**
+ * Ingredient aliases - maps variations to canonical names in FlavorProfiles
+ */
+const INGREDIENT_ALIASES = {
+    // Citrus variations
+    'lime': 'Lime juice',
+    'lemon': 'Lemon juice',
+    'orange': 'Orange juice',
+    'grapefruit': 'Grapefruit juice',
+    'lemon peel': 'Lemon juice',
+    'lime peel': 'Lime juice',
+    'orange peel': 'Orange juice',
+
+    // Spirits
+    'white rum': 'Light rum',
+    'silver rum': 'Light rum',
+    'gold rum': 'Dark rum',
+    'aged rum': 'Dark rum',
+    'spiced rum': 'Dark rum',
+    'whisky': 'Bourbon',
+    'rye': 'Rye whiskey',
+    'scotch': 'Bourbon',
+    'blended scotch': 'Bourbon',
+    'tequila': 'Tequila',
+    'mezcal': 'Tequila',
+    'cognac': 'Brandy',
+    'armagnac': 'Brandy',
+
+    // Sweeteners
+    'sugar': 'Simple syrup',
+    'simple': 'Simple syrup',
+    'syrup': 'Simple syrup',
+    'agave': 'Simple syrup',
+    'agave nectar': 'Simple syrup',
+    'honey': 'Simple syrup',
+    'demerara': 'Simple syrup',
+
+    // Carbonated
+    'soda': 'Club soda',
+    'soda water': 'Club soda',
+    'sparkling water': 'Club soda',
+    'tonic': 'Tonic water',
+    'ginger ale': 'Ginger beer',
+    'coke': 'Cola',
+    'coca cola': 'Cola',
+
+    // Liqueurs
+    'curacao': 'Triple sec',
+    'cointreau': 'Triple sec',
+    'grand marnier': 'Triple sec',
+    'kahlua': 'Coffee liqueur',
+    'tia maria': 'Coffee liqueur',
+    'amaretto': 'Almond liqueur',
+    'chambord': 'Raspberry liqueur',
+    'baileys': 'Irish cream',
+    'irish cream': 'Irish cream',
+
+    // Bitters
+    'angostura': 'Bitters',
+    'angostura bitters': 'Bitters',
+    'peychauds': 'Bitters',
+    'orange bitters': 'Bitters',
+
+    // Herbs & Garnish
+    'mint leaf': 'Mint',
+    'mint leaves': 'Mint',
+    'fresh mint': 'Mint',
+    'basil leaf': 'Basil',
+    'basil leaves': 'Basil',
+    'rosemary sprig': 'Rosemary',
+
+    // Vermouth
+    'dry vermouth': 'Vermouth',
+    'sweet vermouth': 'Vermouth',
+    'bianco vermouth': 'Vermouth'
+};
+
+/**
+ * Normalize ingredient name by removing modifiers and converting to canonical form
+ */
+function normalizeIngredient(ingredient) {
+    if (!ingredient) return null;
+
+    let normalized = ingredient.toLowerCase().trim();
+
+    // Check if there's a direct alias match first
+    if (INGREDIENT_ALIASES[normalized]) {
+        return INGREDIENT_ALIASES[normalized];
+    }
+
+    // Remove common modifiers
+    INGREDIENT_MODIFIERS.forEach(modifier => {
+        const regex = new RegExp(`\\b${modifier}\\b`, 'gi');
+        normalized = normalized.replace(regex, '').trim();
+    });
+
+    // Remove extra whitespace
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+
+    // Check aliases again after normalization
+    if (INGREDIENT_ALIASES[normalized]) {
+        return INGREDIENT_ALIASES[normalized];
+    }
+
+    // Try to find a case-insensitive match in FlavorProfiles
+    const profileKeys = Object.keys(FlavorProfiles);
+    const exactMatch = profileKeys.find(key => key.toLowerCase() === normalized);
+    if (exactMatch) return exactMatch;
+
+    // Try partial matching - find the best match
+    const partialMatch = profileKeys.find(key => {
+        const keyLower = key.toLowerCase();
+        return keyLower.includes(normalized) || normalized.includes(keyLower);
+    });
+    if (partialMatch) return partialMatch;
+
+    // Return original if no match found
+    return ingredient;
+}
+
+/**
+ * Get flavor profile for an ingredient with normalization
+ */
+function getFlavorProfile(ingredient) {
+    const normalized = normalizeIngredient(ingredient);
+    return FlavorProfiles[normalized] || null;
+}
+
+// =============================================================================
 // COCKTAIL TYPE TAXONOMY
 // =============================================================================
 const CocktailTypes = {
@@ -452,8 +595,10 @@ const FlavorProfiles = {
  * Returns a score from 0 to 1
  */
 function calculateJaccardSimilarity(ingredient1, ingredient2) {
-    const profile1 = FlavorProfiles[ingredient1];
-    const profile2 = FlavorProfiles[ingredient2];
+    const normalized1 = normalizeIngredient(ingredient1);
+    const normalized2 = normalizeIngredient(ingredient2);
+    const profile1 = FlavorProfiles[normalized1];
+    const profile2 = FlavorProfiles[normalized2];
 
     if (!profile1 || !profile2) return 0;
 
@@ -472,19 +617,21 @@ function calculateJaccardSimilarity(ingredient1, ingredient2) {
  * Returns a score from 0 to 3
  */
 function calculateCompatibilityScore(ingredient1, ingredient2) {
-    const profile1 = FlavorProfiles[ingredient1];
-    const profile2 = FlavorProfiles[ingredient2];
+    const normalized1 = normalizeIngredient(ingredient1);
+    const normalized2 = normalizeIngredient(ingredient2);
+    const profile1 = FlavorProfiles[normalized1];
+    const profile2 = FlavorProfiles[normalized2];
 
     if (!profile1 || !profile2) return 0;
 
-    // Check direct pairing
-    if (profile1.pairings && profile1.pairings[ingredient2]) {
-        return profile1.pairings[ingredient2];
+    // Check direct pairing (using normalized names)
+    if (profile1.pairings && profile1.pairings[normalized2]) {
+        return profile1.pairings[normalized2];
     }
 
-    // Check reverse pairing
-    if (profile2.pairings && profile2.pairings[ingredient1]) {
-        return profile2.pairings[ingredient1];
+    // Check reverse pairing (using normalized names)
+    if (profile2.pairings && profile2.pairings[normalized1]) {
+        return profile2.pairings[normalized1];
     }
 
     // Fall back to Jaccard similarity
@@ -498,11 +645,14 @@ function calculateCompatibilityScore(ingredient1, ingredient2) {
  */
 function getIngredientRecommendations(currentIngredients, excludeIngredients = []) {
     const recommendations = new Map();
-    const currentSet = new Set(currentIngredients);
-    const excludeSet = new Set(excludeIngredients);
+    // Normalize all ingredients
+    const normalizedCurrent = currentIngredients.map(normalizeIngredient);
+    const normalizedExclude = excludeIngredients.map(normalizeIngredient);
+    const currentSet = new Set(normalizedCurrent);
+    const excludeSet = new Set(normalizedExclude);
 
     // For each current ingredient, find its best pairings
-    currentIngredients.forEach(ingredient => {
+    normalizedCurrent.forEach(ingredient => {
         const profile = FlavorProfiles[ingredient];
         if (!profile || !profile.pairings) return;
 
@@ -547,7 +697,8 @@ function analyzeCocktailFlavorProfile(ingredients) {
     const flavorScores = {};
 
     ingredients.forEach(ingredient => {
-        const profile = FlavorProfiles[ingredient];
+        const normalized = normalizeIngredient(ingredient);
+        const profile = FlavorProfiles[normalized];
         if (!profile || !profile.flavors) return;
 
         Object.entries(profile.flavors).forEach(([flavor, weight]) => {
@@ -570,15 +721,19 @@ function suggestCocktailType(ingredients) {
     const flavorProfile = analyzeCocktailFlavorProfile(ingredients);
     const dominantFlavors = flavorProfile.slice(0, 3).map(f => f.flavor);
 
-    // Check categories
-    const categories = ingredients.map(ing => FlavorProfiles[ing]?.category).filter(Boolean);
+    // Check categories (with normalization)
+    const categories = ingredients.map(ing => {
+        const normalized = normalizeIngredient(ing);
+        return FlavorProfiles[normalized]?.category;
+    }).filter(Boolean);
     const hasSpirit = categories.includes('spirit');
     const hasCitrus = categories.includes('citrus');
     const hasCarbonated = categories.includes('carbonated');
     const hasCream = ingredients.some(ing => ing.toLowerCase().includes('cream'));
-    const hasTropical = ingredients.some(ing =>
-        FlavorProfiles[ing]?.flavors?.tropical > 0
-    );
+    const hasTropical = ingredients.some(ing => {
+        const normalized = normalizeIngredient(ing);
+        return FlavorProfiles[normalized]?.flavors?.tropical > 0;
+    });
 
     // Determine cocktail type
     if (hasCream) return CocktailTypes.CREAMY;

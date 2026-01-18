@@ -125,7 +125,7 @@ function createCocktailGraph(containerId, cocktailName, ingredients, onIngredien
     // Parse ingredients and create nodes
     const ingredientNodes = ingredients.map((ing, i) => {
         const measurement = parseMeasurement(ing.measure);
-        const profile = FlavorProfiles[ing.name];
+        const profile = getFlavorProfile(ing.name);
         const isSpirit = profile && profile.category === 'spirit';
 
         return {
