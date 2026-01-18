@@ -1,7 +1,24 @@
-// Vaccination Policy Tracker - Main Application Logic
+// Vaccination Policy Tracker - Enhanced with Real CDC API Integration
+// Version 2.0 - Includes Chart.js visualizations and state-by-state data
 
-// Sample data structure - this will be replaced with real CDC API data
-const vaccinationData = {
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = {
+    CDC_COVID_API: 'https://data.cdc.gov/resource/unsk-b7fc.json',
+    CDC_NIS_TEEN_API: 'https://data.cdc.gov/resource/c7yr-jaxa.json',
+    CDC_COVID_TRENDS_API: 'https://data.cdc.gov/resource/rh2h-3yt2.json',
+    CACHE_DURATION: 1000 * 60 * 60, // 1 hour
+    MAX_RETRIES: 3,
+    RETRY_DELAY: 2000 // 2 seconds
+};
+
+// ============================================================================
+// SAMPLE DATA - Historical policy events
+// ============================================================================
+
+const policyEventsData = {
     childhood: [
         {
             date: '2015-02-01',
@@ -121,15 +138,6 @@ const vaccinationData = {
             description: 'CDC recommends updated 2024-2025 COVID-19 vaccines for everyone 6 months and older.',
             tags: ['CDC', 'ACIP', 'recommendation'],
             impact: 'medium'
-        },
-        {
-            date: '2025-05-27',
-            year: 2025,
-            type: 'policy',
-            title: 'COVID-19 Vaccines Removed from CDC Schedule',
-            description: 'CDC removes COVID-19 vaccines from recommended immunization schedules for healthy children and pregnant women.',
-            tags: ['CDC', 'schedule-change'],
-            impact: 'critical'
         }
     ],
     flu: [
@@ -288,104 +296,358 @@ const vaccinationData = {
     ]
 };
 
+// Combined vaccination data (static + API)
+let vaccinationData = { ...policyEventsData };
+
+// API data storage
+let apiData = {
+    covidVaccination: [],
+    stateData: {},
+    teenVaccination: [],
+    lastUpdated: null
+};
+
+// Chart instances (for cleanup/updates)
+let chartInstances = {
+    coverageChart: null,
+    stateChart: null
+};
+
 // State management
 let currentTopic = 'all';
 let currentYear = 'all';
+let dataLoaded = false;
 
-// Initialize the app
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeTopicNavigation();
     initializeYearFilter();
-    updateDisplay();
+    loadAllData(); // Load data on startup
 });
 
-// Topic navigation
+// ============================================================================
+// NAVIGATION & FILTERING
+// ============================================================================
+
 function initializeTopicNavigation() {
     const topicCards = document.querySelectorAll('.topic-card');
 
     topicCards.forEach(card => {
         card.addEventListener('click', function() {
-            // Remove active class from all cards
             topicCards.forEach(c => c.classList.remove('active'));
-
-            // Add active class to clicked card
             this.classList.add('active');
-
-            // Update current topic
             currentTopic = this.getAttribute('data-topic');
-
-            // Update display
             updateDisplay();
         });
     });
 }
 
-// Year filter
 function initializeYearFilter() {
     const yearButtons = document.querySelectorAll('.year-btn');
 
     yearButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Remove active class from all buttons
             yearButtons.forEach(b => b.classList.remove('active'));
-
-            // Add active class to clicked button
             this.classList.add('active');
-
-            // Update current year
             currentYear = this.getAttribute('data-year');
-
-            // Update display
             updateDisplay();
         });
     });
 }
 
-// Get filtered events based on current topic and year
+// ============================================================================
+// DATA FETCHING & API INTEGRATION
+// ============================================================================
+
+/**
+ * Load all data from CDC APIs with caching and error handling
+ */
+async function loadAllData() {
+    showLoadingState();
+
+    try {
+        // Check cache first
+        const cached = getCachedData();
+        if (cached && !isCacheExpired(cached.timestamp)) {
+            console.log('Using cached data');
+            apiData = cached;
+            mergeApiData();
+            updateDisplay();
+            updateCharts();
+            return;
+        }
+
+        // Fetch fresh data from multiple APIs in parallel
+        const results = await Promise.allSettled([
+            fetchCOVIDVaccinationData(),
+            fetchTeenVaccinationData(),
+            fetchStateComparisonData()
+        ]);
+
+        // Process results
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                console.log(`API ${index + 1} fetch successful`);
+            } else {
+                console.warn(`API ${index + 1} fetch failed:`, result.reason);
+            }
+        });
+
+        // Cache the data
+        apiData.lastUpdated = new Date().toISOString();
+        cacheData(apiData);
+
+        // Merge and display
+        mergeApiData();
+        updateDisplay();
+        updateCharts();
+
+    } catch (error) {
+        console.error('Error loading data:', error);
+        showErrorState(error.message);
+        // Fall back to static data
+        updateDisplay();
+    }
+}
+
+/**
+ * Fetch COVID-19 vaccination data from CDC
+ */
+async function fetchCOVIDVaccinationData() {
+    try {
+        const params = new URLSearchParams({
+            '$limit': 5000,
+            '$order': 'date DESC',
+            '$where': `date >= '2020-12-01' AND location = 'US'`
+        });
+
+        const response = await fetchWithRetry(
+            `${CONFIG.CDC_COVID_API}?${params}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        apiData.covidVaccination = transformCOVIDData(data);
+
+        console.log(`Fetched ${data.length} COVID-19 vaccination records`);
+        return data;
+    } catch (error) {
+        console.error('Error fetching COVID-19 data:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch teen vaccination data from CDC NIS
+ */
+async function fetchTeenVaccinationData() {
+    try {
+        const params = new URLSearchParams({
+            '$limit': 1000,
+            '$order': 'year DESC',
+            '$where': `geography = 'United States'`
+        });
+
+        const response = await fetchWithRetry(
+            `${CONFIG.CDC_NIS_TEEN_API}?${params}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        apiData.teenVaccination = data;
+
+        console.log(`Fetched ${data.length} teen vaccination records`);
+        return data;
+    } catch (error) {
+        console.error('Error fetching teen vaccination data:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch state-by-state comparison data
+ */
+async function fetchStateComparisonData() {
+    try {
+        const params = new URLSearchParams({
+            '$limit': 5000,
+            '$order': 'date DESC',
+            '$where': `date >= '2023-01-01'`,
+            '$select': 'location,date,series_complete_pop_pct,administered_dose1_recip'
+        });
+
+        const response = await fetchWithRetry(
+            `${CONFIG.CDC_COVID_API}?${params}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Group by state
+        const stateData = {};
+        data.forEach(record => {
+            if (record.location && record.location !== 'US') {
+                if (!stateData[record.location]) {
+                    stateData[record.location] = [];
+                }
+                stateData[record.location].push(record);
+            }
+        });
+
+        apiData.stateData = stateData;
+        console.log(`Fetched data for ${Object.keys(stateData).length} states`);
+        return stateData;
+    } catch (error) {
+        console.error('Error fetching state data:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch with retry logic for network resilience
+ */
+async function fetchWithRetry(url, retries = CONFIG.MAX_RETRIES) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url);
+            return response;
+        } catch (error) {
+            if (i === retries - 1) throw error;
+
+            const delay = CONFIG.RETRY_DELAY * Math.pow(2, i);
+            console.log(`Fetch failed, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
+// ============================================================================
+// DATA TRANSFORMATION
+// ============================================================================
+
+/**
+ * Transform CDC COVID data to match app structure
+ */
+function transformCOVIDData(data) {
+    return data
+        .filter(item => item.date && item.series_complete_pop_pct)
+        .map(item => {
+            const date = item.date;
+            const year = new Date(date).getFullYear();
+            const coverage = parseFloat(item.series_complete_pop_pct) || 0;
+
+            return {
+                date: date,
+                year: year,
+                type: 'outcome',
+                title: `COVID-19 Vaccination Coverage Update`,
+                description: `${coverage.toFixed(1)}% of US population fully vaccinated`,
+                tags: ['COVID-19', 'CDC-data', 'vaccination-coverage'],
+                coverage: coverage,
+                rawData: item
+            };
+        });
+}
+
+/**
+ * Merge API data with static policy events
+ */
+function mergeApiData() {
+    // Add COVID vaccination coverage milestones
+    if (apiData.covidVaccination && apiData.covidVaccination.length > 0) {
+        // Sample every 30th record to avoid overwhelming timeline
+        const sampledData = apiData.covidVaccination.filter((_, index) => index % 30 === 0);
+        vaccinationData.covid = [...policyEventsData.covid, ...sampledData];
+    }
+
+    // Add teen vaccination data to childhood/hpv categories
+    if (apiData.teenVaccination && apiData.teenVaccination.length > 0) {
+        // Process and add to relevant categories
+        // This would require more specific transformation based on vaccine type
+    }
+
+    console.log('API data merged with static data');
+}
+
+// ============================================================================
+// CACHING
+// ============================================================================
+
+function getCachedData() {
+    try {
+        const cached = localStorage.getItem('vaccinationAPIData');
+        return cached ? JSON.parse(cached) : null;
+    } catch (error) {
+        console.warn('Error reading cache:', error);
+        return null;
+    }
+}
+
+function cacheData(data) {
+    try {
+        localStorage.setItem('vaccinationAPIData', JSON.stringify(data));
+    } catch (error) {
+        console.warn('Error caching data:', error);
+    }
+}
+
+function isCacheExpired(timestamp) {
+    if (!timestamp) return true;
+    const age = Date.now() - new Date(timestamp).getTime();
+    return age > CONFIG.CACHE_DURATION;
+}
+
+// ============================================================================
+// DISPLAY UPDATES
+// ============================================================================
+
 function getFilteredEvents() {
     let events = [];
 
-    // Collect events from selected topic(s)
     if (currentTopic === 'all') {
-        // Combine all topics
         Object.values(vaccinationData).forEach(topicEvents => {
             events = events.concat(topicEvents);
         });
     } else {
-        // Get events from specific topic
         events = vaccinationData[currentTopic] || [];
     }
 
-    // Filter by year if not 'all'
     if (currentYear !== 'all') {
         const year = parseInt(currentYear);
         events = events.filter(event => event.year === year);
     }
 
-    // Sort by date (most recent first)
     events.sort((a, b) => new Date(b.date) - new Date(a.date));
-
     return events;
 }
 
-// Update the entire display
 function updateDisplay() {
     updateStatistics();
     updateTimeline();
+    updateCharts();
+    updateMap();
 }
 
-// Update statistics cards
 function updateStatistics() {
     const events = getFilteredEvents();
     const statsGrid = document.getElementById('statsGrid');
 
-    // Calculate statistics
     const totalEvents = events.length;
     const policyChanges = events.filter(e => e.type === 'policy').length;
     const mandates = events.filter(e => e.type === 'mandate').length;
-    const safetyEvents = events.filter(e => e.type === 'safety').length;
 
-    // Calculate average coverage for events that have coverage data
     const coverageEvents = events.filter(e => e.coverage);
     const avgCoverage = coverageEvents.length > 0
         ? (coverageEvents.reduce((sum, e) => sum + e.coverage, 0) / coverageEvents.length).toFixed(1)
@@ -411,7 +673,6 @@ function updateStatistics() {
     `;
 }
 
-// Update timeline display
 function updateTimeline() {
     const events = getFilteredEvents();
     const timelineContainer = document.getElementById('timelineEvents');
@@ -453,59 +714,284 @@ function updateTimeline() {
     }).join('');
 }
 
-// API Integration Functions (to be implemented with real data)
+// ============================================================================
+// CHART.JS VISUALIZATIONS
+// ============================================================================
 
-/**
- * Fetch data from CDC NIS (National Immunization Survey)
- * Documentation: https://www.cdc.gov/nis/php/datasets-child/index.html
- */
-async function fetchNISData() {
-    // TODO: Implement CDC NIS API integration
-    // This will fetch vaccination coverage data for children and teens
-    // Can use CDC's FTP server or data.cdc.gov Socrata API
-    console.log('Fetching NIS data...');
+function updateCharts() {
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not loaded - charts will not render');
+        return;
+    }
+
+    updateCoverageChart();
+    updateStateChart();
 }
 
-/**
- * Fetch data from CDC COVID-19 Data API
- * Documentation: https://data.cdc.gov/
- * Using Socrata Open Data API (SODA)
- */
-async function fetchCOVIDData() {
-    // TODO: Implement CDC COVID-19 data API
-    // Example endpoint: https://data.cdc.gov/resource/unsk-b7fc.json
-    // Can filter by date, location, demographics
-    console.log('Fetching COVID-19 data...');
+function updateCoverageChart() {
+    const events = getFilteredEvents();
+    const coverageData = events
+        .filter(e => e.coverage)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (coverageData.length === 0) return;
+
+    const ctx = document.getElementById('coverageChart');
+    if (!ctx) return;
+
+    // Destroy existing chart
+    if (chartInstances.coverageChart) {
+        chartInstances.coverageChart.destroy();
+    }
+
+    // Create canvas if placeholder exists
+    if (ctx.classList.contains('chart-placeholder')) {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'coverageChart';
+        ctx.parentNode.replaceChild(canvas, ctx);
+    }
+
+    const chartCanvas = document.getElementById('coverageChart');
+
+    chartInstances.coverageChart = new Chart(chartCanvas, {
+        type: 'line',
+        data: {
+            labels: coverageData.map(d => new Date(d.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short'
+            })),
+            datasets: [{
+                label: 'Vaccination Coverage %',
+                data: coverageData.map(d => d.coverage),
+                borderColor: 'rgb(0, 168, 150)',
+                backgroundColor: 'rgba(0, 168, 150, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Vaccination Coverage Trends Over Time',
+                    color: '#F4F4F4',
+                    font: { size: 16 }
+                },
+                legend: {
+                    labels: { color: '#F4F4F4' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Coverage: ${context.parsed.y.toFixed(1)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#B8B8B8',
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#B8B8B8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
 }
 
-/**
- * Fetch data from CDC WONDER VAERS API
- * Documentation: https://wonder.cdc.gov/wonder/help/WONDER-API.html
- * Note: Uses XML format, not JSON
- */
-async function fetchVAERSData() {
-    // TODO: Implement CDC WONDER API integration
-    // This API uses XML POST requests
-    // Can query adverse event reports by vaccine, date range, etc.
-    console.log('Fetching VAERS data...');
+function updateStateChart() {
+    if (!apiData.stateData || Object.keys(apiData.stateData).length === 0) {
+        return;
+    }
+
+    const ctx = document.getElementById('stateChart');
+    if (!ctx) return;
+
+    // Destroy existing chart
+    if (chartInstances.stateChart) {
+        chartInstances.stateChart.destroy();
+    }
+
+    // Create canvas if placeholder exists
+    if (ctx.classList.contains('chart-placeholder')) {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'stateChart';
+        ctx.parentNode.replaceChild(canvas, ctx);
+    }
+
+    // Get latest data for each state
+    const stateLatest = {};
+    Object.entries(apiData.stateData).forEach(([state, records]) => {
+        if (records.length > 0) {
+            const latest = records[0];
+            if (latest.series_complete_pop_pct) {
+                stateLatest[state] = parseFloat(latest.series_complete_pop_pct);
+            }
+        }
+    });
+
+    // Sort by coverage and take top 15
+    const sorted = Object.entries(stateLatest)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15);
+
+    const chartCanvas = document.getElementById('stateChart');
+
+    chartInstances.stateChart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+            labels: sorted.map(s => s[0]),
+            datasets: [{
+                label: 'Vaccination Coverage %',
+                data: sorted.map(s => s[1]),
+                backgroundColor: 'rgba(0, 168, 150, 0.7)',
+                borderColor: 'rgb(0, 168, 150)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Top 15 States by Vaccination Coverage',
+                    color: '#F4F4F4',
+                    font: { size: 16 }
+                },
+                legend: {
+                    labels: { color: '#F4F4F4' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#B8B8B8',
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#B8B8B8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
 }
 
-/**
- * Fetch influenza vaccination data from FluVaxView
- * Documentation: https://www.cdc.gov/fluvaxview/
- */
-async function fetchFluData() {
-    // TODO: Implement flu vaccination coverage API
-    console.log('Fetching flu vaccination data...');
+// ============================================================================
+// MAP VISUALIZATION
+// ============================================================================
+
+function updateMap() {
+    if (typeof renderStateComparison === 'undefined') {
+        console.warn('Map visualization library not loaded');
+        return;
+    }
+
+    if (!apiData.stateData || Object.keys(apiData.stateData).length === 0) {
+        // Show placeholder
+        const mapContainer = document.getElementById('usMap');
+        if (mapContainer) {
+            mapContainer.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    State-by-state data will appear here once loaded from CDC API
+                </div>
+            `;
+        }
+        return;
+    }
+
+    // Render state comparison visualization
+    renderStateComparison(apiData.stateData, 'usMap');
 }
 
-// Export functions for external use
+// ============================================================================
+// UI STATE MANAGEMENT
+// ============================================================================
+
+function showLoadingState() {
+    const timelineContainer = document.getElementById('timelineEvents');
+    timelineContainer.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading CDC vaccination data...</p>
+        </div>
+    `;
+}
+
+function showErrorState(message) {
+    const timelineContainer = document.getElementById('timelineEvents');
+    timelineContainer.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--danger-red);">
+            <strong>Error loading data</strong><br>
+            ${message}<br>
+            <em style="color: var(--text-muted);">Displaying cached or sample data instead.</em>
+        </div>
+    `;
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS FOR STATE VISUALIZATION
+// ============================================================================
+
+/**
+ * Get state abbreviation to full name mapping
+ */
+const stateNames = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia',
+    'PR': 'Puerto Rico', 'US': 'United States'
+};
+
+/**
+ * Get full state name from abbreviation
+ */
+function getStateName(abbr) {
+    return stateNames[abbr] || abbr;
+}
+
+// ============================================================================
+// EXPORT FOR TESTING
+// ============================================================================
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         getFilteredEvents,
-        fetchNISData,
-        fetchCOVIDData,
-        fetchVAERSData,
-        fetchFluData
+        fetchCOVIDVaccinationData,
+        fetchTeenVaccinationData,
+        fetchStateComparisonData,
+        transformCOVIDData,
+        updateCharts
     };
 }
