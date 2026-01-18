@@ -12,33 +12,86 @@
         }
 
         :root {
-            --primary-blue: #0066CC;
-            --secondary-teal: #00A896;
-            --accent-orange: #FF6B35;
-            --success-green: #52B788;
-            --warning-yellow: #FFB800;
-            --danger-red: #E63946;
-            --bg-dark: #1A1A2E;
-            --bg-medium: #16213E;
-            --bg-light: #0F3460;
-            --text-light: #F4F4F4;
-            --text-muted: #B8B8B8;
-            --border-color: #2A2A3A;
+            /* Medical/Data Synthwave Palette - Cool tech vibes */
+            --neon-cyan: #00F0FF;
+            --neon-blue: #0066CC;
+            --ice-blue: #5BC0EB;
+            --electric-white: #E0FBFC;
+            --data-green: #00FF9F;
+            --warning-amber: #FFB627;
+            --danger-red: #FF3366;
+            --dark-bg: #0a0e1a;
+            --darker-bg: #050810;
+            --grid-color: rgba(0, 240, 255, 0.25);
+            --card-bg: rgba(10, 14, 26, 0.85);
+            --text-light: #E0FBFC;
+            --text-glow: #00F0FF;
+            --border-color: rgba(0, 240, 255, 0.3);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            font-family: 'Courier New', monospace;
+            /* Cool blue medical gradient */
+            background: linear-gradient(180deg, #050810 0%, #0a1628 40%, #0d1b30 100%);
             color: var(--text-light);
             line-height: 1.6;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Retro grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(0deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            perspective: 1000px;
+            transform: rotateX(60deg) translateY(50%);
+            transform-origin: center bottom;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Data stars */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background-image:
+                radial-gradient(2px 2px at 20% 30%, var(--neon-cyan), transparent),
+                radial-gradient(1px 1px at 60% 70%, white, transparent),
+                radial-gradient(1px 1px at 50% 50%, var(--ice-blue), transparent),
+                radial-gradient(2px 2px at 80% 10%, var(--neon-cyan), transparent),
+                radial-gradient(1px 1px at 90% 60%, white, transparent);
+            background-size: 200% 200%;
+            animation: twinkle 4s ease-in-out infinite;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
         }
 
         /* Header */
         header {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
             border-bottom: 2px solid var(--border-color);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
             padding: 2rem;
             position: sticky;
             top: 0;
@@ -48,21 +101,47 @@
         .header-content {
             max-width: 1400px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-icon {
+            display: inline-block;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         h1 {
             font-size: 2.5rem;
-            font-weight: 300;
+            font-weight: 900;
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--ice-blue), var(--electric-white));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5));
+            animation: neonPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neonPulse {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5)) brightness(1); }
+            50% { filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.8)) brightness(1.2); }
         }
 
         .subtitle {
-            color: var(--text-muted);
+            color: var(--ice-blue);
             font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 10px rgba(91, 192, 235, 0.5);
         }
 
         /* Main Container */
@@ -70,25 +149,28 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         /* Topic Navigation */
         .topic-nav {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 3rem;
         }
 
         .topic-card {
-            background: linear-gradient(135deg, rgba(0, 168, 150, 0.1), rgba(0, 102, 204, 0.1));
+            background: var(--card-bg);
             border: 2px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 0;
             padding: 1.5rem;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
 
         .topic-card::before {
@@ -96,9 +178,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-teal));
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--ice-blue), var(--data-green));
             transform: scaleX(0);
             transition: transform 0.3s ease;
         }
@@ -109,39 +191,64 @@
         }
 
         .topic-card.active {
-            border-color: var(--primary-blue);
-            background: linear-gradient(135deg, rgba(0, 168, 150, 0.2), rgba(0, 102, 204, 0.2));
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3), inset 0 0 20px rgba(0, 240, 255, 0.1);
         }
 
         .topic-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 168, 150, 0.3);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+            border-color: var(--ice-blue);
         }
 
         .topic-icon {
             font-size: 2rem;
             margin-bottom: 0.5rem;
             display: block;
+            filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.5));
         }
 
         .topic-title {
             font-size: 1.2rem;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--electric-white);
         }
 
         .topic-description {
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: var(--ice-blue);
+            letter-spacing: 0.02em;
         }
 
         /* Timeline Section */
         .timeline-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
+            background: var(--card-bg);
+            border-radius: 0;
             padding: 2rem;
             margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .timeline-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--data-green), transparent);
+            animation: slideGradient 3s linear infinite;
+        }
+
+        @keyframes slideGradient {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
 
         .section-header {
@@ -422,8 +529,58 @@
 <body>
     <header>
         <div class="header-content">
+            <div class="logo-icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+                    <!-- Central hexagon with syringe -->
+                    <polygon points="50,15 65,23 65,38 50,46 35,38 35,23" fill="#0066CC" opacity="0.2" stroke="#00F0FF" stroke-width="2"/>
+                    <path d="M45 28 L45 36 M48 25 L48 28 M42 28 L55 28 M48 36 L52 36" stroke="#00F0FF" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="48" cy="26" r="1.5" fill="#00F0FF">
+                        <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+
+                    <!-- Surrounding hexagons with symbols -->
+                    <!-- Top left - Heart -->
+                    <polygon points="20,20 30,15 40,20 40,30 30,35 20,30" fill="none" stroke="#5BC0EB" stroke-width="1.5"/>
+                    <circle cx="30" cy="25" r="3" fill="#5BC0EB" opacity="0.6">
+                        <animate attributeName="r" values="3;3.5;3" dur="1.5s" repeatCount="indefinite"/>
+                    </circle>
+
+                    <!-- Top right - Pills -->
+                    <polygon points="60,20 70,15 80,20 80,30 70,35 60,30" fill="none" stroke="#00FF9F" stroke-width="1.5"/>
+                    <ellipse cx="70" cy="25" rx="4" ry="2.5" fill="#00FF9F" opacity="0.6"/>
+
+                    <!-- Bottom left - Data chart -->
+                    <polygon points="20,50 30,45 40,50 40,60 30,65 20,60" fill="none" stroke="#00F0FF" stroke-width="1.5"/>
+                    <path d="M25 57 L27 54 L29 56 L31 52 L33 55 L35 53" stroke="#00F0FF" stroke-width="1.5" fill="none">
+                        <animate attributeName="opacity" values="0.3;1;0.3" dur="2.5s" repeatCount="indefinite"/>
+                    </path>
+
+                    <!-- Bottom center - Brain/Analysis -->
+                    <polygon points="35,65 45,60 55,65 55,75 45,80 35,75" fill="none" stroke="#5BC0EB" stroke-width="1.5"/>
+                    <circle cx="45" cy="70" r="5" fill="none" stroke="#5BC0EB" stroke-width="1"/>
+
+                    <!-- Bottom right - Graph bars -->
+                    <polygon points="60,50 70,45 80,50 80,60 70,65 60,60" fill="none" stroke="#00FF9F" stroke-width="1.5"/>
+                    <rect x="65" y="56" width="2" height="4" fill="#00FF9F" opacity="0.6"/>
+                    <rect x="68" y="54" width="2" height="6" fill="#00FF9F" opacity="0.6"/>
+                    <rect x="71" y="52" width="2" height="8" fill="#00FF9F" opacity="0.6"/>
+
+                    <!-- Connection lines -->
+                    <line x1="40" y1="25" x2="45" y2="28" stroke="#00F0FF" stroke-width="0.5" opacity="0.3"/>
+                    <line x1="60" y1="25" x2="55" y2="28" stroke="#00F0FF" stroke-width="0.5" opacity="0.3"/>
+                    <line x1="40" y1="55" x2="45" y2="40" stroke="#00F0FF" stroke-width="0.5" opacity="0.3"/>
+                    <line x1="60" y1="55" x2="55" y2="40" stroke="#00F0FF" stroke-width="0.5" opacity="0.3"/>
+                    <line x1="45" y1="65" x2="48" y2="46" stroke="#00F0FF" stroke-width="0.5" opacity="0.3"/>
+
+                    <!-- Data nodes -->
+                    <circle cx="40" cy="25" r="1.5" fill="#00F0FF"/>
+                    <circle cx="60" cy="25" r="1.5" fill="#00F0FF"/>
+                    <circle cx="40" cy="55" r="1.5" fill="#00F0FF"/>
+                    <circle cx="60" cy="55" r="1.5" fill="#00F0FF"/>
+                </svg>
+            </div>
             <h1>USA Vaccination Policy Tracker</h1>
-            <p class="subtitle">Analyzing policies, mandates, and outcomes from 2015-2025</p>
+            <p class="subtitle">Data • Analysis • Policy Insights</p>
         </div>
     </header>
 
