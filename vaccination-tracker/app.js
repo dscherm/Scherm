@@ -730,11 +730,18 @@ function updateCharts() {
 
 function updateCoverageChart() {
     const events = getFilteredEvents();
-    const coverageData = events
+    let coverageData = events
         .filter(e => e.coverage)
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (coverageData.length === 0) return;
+
+    // Smart sampling: if too many points, show every Nth point
+    const maxPoints = 20; // Maximum data points to display
+    if (coverageData.length > maxPoints) {
+        const step = Math.ceil(coverageData.length / maxPoints);
+        coverageData = coverageData.filter((_, index) => index % step === 0);
+    }
 
     const ctx = document.getElementById('coverageChart');
     if (!ctx) return;
@@ -748,6 +755,7 @@ function updateCoverageChart() {
     if (ctx.classList.contains('chart-placeholder')) {
         const canvas = document.createElement('canvas');
         canvas.id = 'coverageChart';
+        canvas.style.height = '400px';
         ctx.parentNode.replaceChild(canvas, ctx);
     }
 
@@ -767,8 +775,11 @@ function updateCoverageChart() {
                 backgroundColor: 'rgba(0, 168, 150, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointBackgroundColor: 'rgb(0, 168, 150)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
             }]
         },
         options: {
@@ -779,12 +790,23 @@ function updateCoverageChart() {
                     display: true,
                     text: 'Vaccination Coverage Trends Over Time',
                     color: '#F4F4F4',
-                    font: { size: 16 }
+                    font: { size: 18, weight: '600' },
+                    padding: { top: 10, bottom: 20 }
                 },
                 legend: {
-                    labels: { color: '#F4F4F4' }
+                    labels: {
+                        color: '#F4F4F4',
+                        font: { size: 14 },
+                        padding: 15
+                    }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 13 },
+                    padding: 12,
+                    borderColor: 'rgb(0, 168, 150)',
+                    borderWidth: 2,
                     callbacks: {
                         label: function(context) {
                             return `Coverage: ${context.parsed.y.toFixed(1)}%`;
@@ -798,15 +820,28 @@ function updateCoverageChart() {
                     max: 100,
                     ticks: {
                         color: '#B8B8B8',
+                        font: { size: 13 },
+                        padding: 10,
                         callback: function(value) {
                             return value + '%';
                         }
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        lineWidth: 1
+                    }
                 },
                 x: {
-                    ticks: { color: '#B8B8B8' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: {
+                        color: '#B8B8B8',
+                        font: { size: 12 },
+                        padding: 8,
+                        maxRotation: 45,
+                        minRotation: 0
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    }
                 }
             }
         }
@@ -830,6 +865,7 @@ function updateStateChart() {
     if (ctx.classList.contains('chart-placeholder')) {
         const canvas = document.createElement('canvas');
         canvas.id = 'stateChart';
+        canvas.style.height = '400px';
         ctx.parentNode.replaceChild(canvas, ctx);
     }
 
@@ -844,54 +880,91 @@ function updateStateChart() {
         }
     });
 
-    // Sort by coverage and take top 15
+    // Sort by coverage and take top 10 for better readability
     const sorted = Object.entries(stateLatest)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 15);
+        .slice(0, 10);
 
     const chartCanvas = document.getElementById('stateChart');
+
+    // Create gradient colors for bars
+    const colors = sorted.map((_, index) => {
+        const intensity = 1 - (index * 0.08); // Fade from brightest to slightly dimmer
+        return `rgba(0, 168, 150, ${intensity})`;
+    });
 
     chartInstances.stateChart = new Chart(chartCanvas, {
         type: 'bar',
         data: {
-            labels: sorted.map(s => s[0]),
+            labels: sorted.map(s => getStateName(s[0])), // Use full state names
             datasets: [{
                 label: 'Vaccination Coverage %',
                 data: sorted.map(s => s[1]),
-                backgroundColor: 'rgba(0, 168, 150, 0.7)',
+                backgroundColor: colors,
                 borderColor: 'rgb(0, 168, 150)',
-                borderWidth: 1
+                borderWidth: 2,
+                borderRadius: 8
             }]
         },
         options: {
+            indexAxis: 'y', // Horizontal bars for better label readability
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
-                    text: 'Top 15 States by Vaccination Coverage',
+                    text: 'Top 10 States by Vaccination Coverage',
                     color: '#F4F4F4',
-                    font: { size: 16 }
+                    font: { size: 18, weight: '600' },
+                    padding: { top: 10, bottom: 20 }
                 },
                 legend: {
-                    labels: { color: '#F4F4F4' }
+                    labels: {
+                        color: '#F4F4F4',
+                        font: { size: 14 },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleFont: { size: 14 },
+                    bodyFont: { size: 13 },
+                    padding: 12,
+                    borderColor: 'rgb(0, 168, 150)',
+                    borderWidth: 2,
+                    callbacks: {
+                        label: function(context) {
+                            return `Coverage: ${context.parsed.x.toFixed(1)}%`;
+                        }
+                    }
                 }
             },
             scales: {
-                y: {
+                x: {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
                         color: '#B8B8B8',
+                        font: { size: 13 },
+                        padding: 10,
                         callback: function(value) {
                             return value + '%';
                         }
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        lineWidth: 1
+                    }
                 },
-                x: {
-                    ticks: { color: '#B8B8B8' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                y: {
+                    ticks: {
+                        color: '#B8B8B8',
+                        font: { size: 13 },
+                        padding: 10
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    }
                 }
             }
         }

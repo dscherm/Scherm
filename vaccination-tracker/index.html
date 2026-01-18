@@ -284,7 +284,7 @@
         /* Data Visualization Section */
         .data-viz-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: 1fr;
             gap: 2rem;
             margin-bottom: 2rem;
         }
@@ -294,24 +294,30 @@
             border-radius: 15px;
             padding: 2rem;
             border: 1px solid var(--border-color);
+            min-height: 500px;
         }
 
         .chart-title {
-            font-size: 1.3rem;
-            margin-bottom: 1rem;
-            font-weight: 500;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            color: var(--secondary-teal);
         }
 
         .chart-placeholder {
             background: rgba(0, 102, 204, 0.1);
             border: 2px dashed var(--border-color);
             border-radius: 10px;
-            height: 300px;
+            height: 400px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
             font-style: italic;
+        }
+
+        .chart-placeholder canvas {
+            max-height: 400px;
         }
 
         /* Stats Cards */
