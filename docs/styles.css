@@ -1,0 +1,1880 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Sunset Synthwave Palette - Warm cocktail vibes */
+    --neon-pink: #FF2E97;
+    --neon-magenta: #FF006E;
+    --neon-orange: #FF6B35;
+    --neon-yellow: #FFCF40;
+    --neon-gold: #FFB800;
+    --purple-shadow: #B721FF;
+    --dark-bg: #1a0a28;
+    --darker-bg: #0f0514;
+    --grid-color: rgba(255, 46, 151, 0.3);
+    --card-bg: rgba(26, 10, 40, 0.85);
+    --text-light: #FFE5F1;
+    --text-glow: #FF2E97;
+    --shadow: 0 10px 40px rgba(255, 46, 151, 0.4);
+    --hover-shadow: 0 15px 50px rgba(255, 46, 151, 0.6);
+    --glow: 0 0 20px rgba(255, 207, 64, 0.6);
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    /* Sunset gradient - purple to pink to orange */
+    background: linear-gradient(180deg, #0f0514 0%, #2d1b3d 30%, #4a2545 60%, #5c1f3a 100%);
+    color: var(--text-light);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Retro grid background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 50px 50px;
+    perspective: 1000px;
+    transform: rotateX(60deg) translateY(50%);
+    transform-origin: center bottom;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Animated stars */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background-image:
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 85%, white, transparent),
+        radial-gradient(2px 2px at 15% 70%, white, transparent);
+    background-size: 200% 200%;
+    animation: twinkle 4s ease-in-out infinite;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.7; }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* Header */
+header {
+    text-align: center;
+    color: var(--text-light);
+    margin-bottom: 40px;
+    animation: fadeIn 1s ease-in;
+    position: relative;
+}
+
+.logo-icon {
+    display: inline-block;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px rgba(255, 46, 151, 0.6));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+header h1 {
+    font-size: 3.5em;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, var(--neon-pink), var(--neon-orange), var(--neon-yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255, 46, 151, 0.6));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 900;
+    animation: neonPulse 2s ease-in-out infinite;
+}
+
+.tagline {
+    font-size: 1.2em;
+    color: var(--neon-yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 15px var(--neon-yellow);
+}
+
+@keyframes neonPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.tab-btn {
+    padding: 15px 35px;
+    font-size: 1.1em;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    border: 2px solid var(--neon-orange);
+    background: transparent;
+    color: var(--neon-orange);
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.tab-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--neon-orange), transparent);
+    transition: left 0.5s;
+}
+
+.tab-btn:hover {
+    box-shadow: 0 0 20px var(--neon-orange), inset 0 0 20px rgba(255, 107, 53, 0.2);
+    transform: translateY(-2px);
+}
+
+.tab-btn:hover::before {
+    left: 100%;
+}
+
+.tab-btn.active {
+    background: var(--neon-orange);
+    color: var(--dark-bg);
+    box-shadow: 0 0 30px var(--neon-orange);
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Search Section */
+.search-section {
+    background: var(--card-bg);
+    padding: 35px;
+    border: 2px solid var(--neon-pink);
+    box-shadow: 0 0 40px rgba(255, 0, 110, 0.4), inset 0 0 20px rgba(255, 0, 110, 0.1);
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+.search-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-orange));
+    animation: slideGradient 3s linear infinite;
+}
+
+@keyframes slideGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+.search-options {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.search-type-btn {
+    padding: 12px 28px;
+    border: 2px solid var(--neon-pink);
+    background: transparent;
+    color: var(--neon-pink);
+    cursor: pointer;
+    font-size: 1em;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.search-type-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px var(--neon-pink);
+    background: rgba(255, 0, 110, 0.1);
+}
+
+.search-type-btn.active {
+    background: var(--neon-pink);
+    color: var(--dark-bg);
+    box-shadow: 0 0 25px var(--neon-pink);
+}
+
+.search-input-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+#search-input {
+    flex: 1;
+    padding: 15px 25px;
+    font-size: 1.1em;
+    font-family: 'Courier New', monospace;
+    border: 2px solid var(--neon-yellow);
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--text-light);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#search-input::placeholder {
+    color: rgba(255, 207, 64, 0.5);
+}
+
+#search-input:focus {
+    border-color: var(--neon-yellow);
+    box-shadow: 0 0 20px var(--neon-yellow), inset 0 0 10px rgba(255, 207, 64, 0.2);
+}
+
+#search-btn {
+    padding: 15px 35px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.1em;
+    border: 2px solid var(--neon-gold);
+    background: var(--neon-gold);
+    color: var(--dark-bg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+#search-btn:hover {
+    box-shadow: 0 0 25px var(--neon-gold);
+    transform: translateY(-2px);
+}
+
+/* Liquor Grid */
+.liquor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.liquor-btn {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.liquor-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Results Section */
+#results-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.cocktail-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    animation: slideIn 0.5s ease-out;
+}
+
+.cocktail-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--hover-shadow);
+}
+
+.cocktail-card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+
+.cocktail-card-content {
+    padding: 20px;
+}
+
+.cocktail-card h3 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.cocktail-card .category {
+    display: inline-block;
+    padding: 5px 15px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.cocktail-card .glass-type {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    animation: fadeIn 0.3s ease-in;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 20px;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease-out;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 35px;
+    font-weight: bold;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+    color: var(--secondary-color);
+}
+
+.cocktail-detail-header {
+    position: relative;
+    height: 400px;
+    overflow: hidden;
+}
+
+.cocktail-detail-header img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cocktail-detail-header h2 {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: white;
+    font-size: 3em;
+    text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.7);
+    margin: 0;
+}
+
+.cocktail-detail-body {
+    padding: 30px;
+}
+
+.cocktail-tags {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    padding: 8px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.ingredients-section {
+    margin: 30px 0;
+}
+
+.ingredients-section h3 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.ingredient-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-color);
+}
+
+.ingredient-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.ingredient-name {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.ingredient-measure {
+    color: #666;
+    font-style: italic;
+}
+
+.instructions-section {
+    margin: 30px 0;
+}
+
+.instructions-section h3 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.instructions-section p {
+    line-height: 1.8;
+    font-size: 1.1em;
+    color: var(--text-dark);
+}
+
+/* Ingredient Modal */
+.ingredient-detail-content {
+    padding: 30px;
+}
+
+.ingredient-detail-content h2 {
+    color: var(--secondary-color);
+    margin-bottom: 20px;
+}
+
+.ingredient-options {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.ingredient-option-btn {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.ingredient-option-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.ingredient-option-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.brands-list, .alternatives-list {
+    display: none;
+}
+
+.brands-list.active, .alternatives-list.active {
+    display: block;
+}
+
+.brand-item, .alternative-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-color);
+}
+
+/* Create Section */
+.create-section {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.create-section h2 {
+    color: var(--secondary-color);
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 2em;
+}
+
+.create-form {
+    max-width: 600px;
+    margin: 0 auto 40px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--text-dark);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+}
+
+.ingredient-input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ingredient-input-row input {
+    margin-bottom: 0;
+}
+
+.ingredient-name {
+    flex: 2;
+}
+
+.ingredient-measure {
+    flex: 1;
+}
+
+.remove-ingredient-btn {
+    width: 40px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.5em;
+    transition: all 0.3s ease;
+}
+
+.remove-ingredient-btn:hover {
+    background: #a0344f;
+    transform: scale(1.1);
+}
+
+#add-ingredient-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+#add-ingredient-btn:hover {
+    background: rgba(255, 107, 157, 0.1);
+}
+
+.primary-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.primary-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+#saved-cocktails-section {
+    margin-top: 40px;
+}
+
+#saved-cocktails-section h3 {
+    color: var(--secondary-color);
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.8em;
+}
+
+#saved-cocktails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-size: 1.1em;
+}
+
+/* Loading Spinner */
+.loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.2em;
+    color: var(--text-light);
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2.5em;
+    }
+
+    .search-options {
+        flex-direction: column;
+    }
+
+    .search-input-container {
+        flex-direction: column;
+    }
+
+    .liquor-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #results-section {
+        grid-template-columns: 1fr;
+    }
+
+    .cocktail-detail-header h2 {
+        font-size: 2em;
+    }
+
+    .modal-content {
+        margin: 5% auto;
+        max-width: 95%;
+    }
+}
+
+/* =============================================================================
+   FLAVOR PAIRING SYSTEM STYLES
+   ============================================================================= */
+
+/* Flavor Profile Section */
+.flavor-profile-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(255, 160, 122, 0.1));
+    border-radius: 15px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.flavor-profile-section h3 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.flavor-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.flavor-tag {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.flavor-tag:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Pairing Section */
+.pairing-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    border-left: 4px solid #667eea;
+}
+
+.pairing-section h3 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: var(--secondary-color);
+}
+
+.section-hint {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.pairing-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.pairing-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.compatibility-score,
+.compat-badge {
+    font-size: 0.85em;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.compat-badge.excellent {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+}
+
+.compat-badge.good {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.compat-badge.okay {
+    background: linear-gradient(135deg, #FFA07A, #FF6B9D);
+    color: white;
+}
+
+.compat-badge.neutral {
+    background: #e9ecef;
+    color: #666;
+}
+
+/* Ingredient Item Enhancements */
+.ingredient-item.has-profile {
+    border-left-color: var(--primary-color);
+    border-left-width: 4px;
+}
+
+.profile-indicator {
+    margin-left: 5px;
+    font-size: 0.85em;
+}
+
+/* Ingredient Detail Modal Enhancements */
+.ingredient-detail-content {
+    padding: 30px;
+}
+
+.ingredient-detail-content h2 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+}
+
+.flavor-section {
+    margin: 25px 0;
+}
+
+.flavor-section h3 {
+    font-size: 1.3em;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+}
+
+.pairings-list,
+.alternatives-list {
+    display: none;
+    margin-top: 20px;
+}
+
+.pairings-list.active,
+.alternatives-list.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.pairing-category {
+    font-size: 0.75em;
+    color: #999;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+.synergy-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(255, 107, 157, 0.2);
+    color: var(--primary-color);
+    border-radius: 10px;
+    font-size: 0.75em;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.similarity-score {
+    font-size: 0.85em;
+    color: #666;
+    font-weight: normal;
+}
+
+.alternative-item {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.alternative-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+/* Recommendation Panel */
+.recommendation-panel {
+    margin: 25px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 15px;
+    border: 2px dashed var(--primary-color);
+}
+
+.recommendation-panel h4 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.recommendation-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.recommendation-chip {
+    padding: 10px 16px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommendation-chip:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+}
+
+.recommendation-chip .compat-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+}
+
+/* Delete Button */
+.delete-btn {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .flavor-tags {
+        justify-content: center;
+    }
+
+    .pairing-item {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .recommendation-chips {
+        justify-content: center;
+    }
+
+    .recommendation-chip {
+        font-size: 0.85em;
+    }
+}
+
+/* Enhanced Animations */
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 107, 157, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 107, 157, 0.8);
+    }
+}
+
+.has-profile:hover {
+    animation: pulseGlow 2s infinite;
+}
+
+/* =============================================================================
+   INTERACTIVE NODE GRAPH STYLES
+   ============================================================================= */
+
+/* Graph Section */
+.graph-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border-radius: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.graph-section h3 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.cocktail-graph-container {
+    width: 100%;
+    min-height: 500px;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05), transparent);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Graph Nodes */
+.graph-node {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cocktail-node circle {
+    filter: drop-shadow(0 5px 15px rgba(255, 107, 157, 0.5));
+}
+
+.ingredient-node circle {
+    filter: drop-shadow(0 3px 10px rgba(102, 126, 234, 0.4));
+    transition: all 0.3s ease;
+}
+
+.clickable-node {
+    cursor: pointer;
+}
+
+.clickable-node:hover {
+    filter: drop-shadow(0 5px 15px rgba(255, 255, 255, 0.8)) brightness(1.2);
+}
+
+/* Graph Labels */
+.node-label {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    user-select: none;
+}
+
+.measure-label {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    user-select: none;
+}
+
+/* Graph Links */
+.graph-link {
+    transition: all 0.3s ease;
+}
+
+.graph-link:hover {
+    stroke-width: 4px !important;
+    stroke-opacity: 1 !important;
+}
+
+/* Graph Tooltip */
+.graph-tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 12px 16px;
+    font-size: 13px;
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 73, 94, 0.95));
+    color: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 10000;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.graph-tooltip strong {
+    color: var(--accent-color);
+    font-size: 14px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.graph-tooltip em {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Graph Animations */
+@keyframes nodeAppear {
+    from {
+        opacity: 0;
+        transform: scale(0);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.graph-node {
+    animation: nodeAppear 0.5s ease-out;
+}
+
+@keyframes linkAppear {
+    from {
+        stroke-opacity: 0;
+    }
+    to {
+        stroke-opacity: 0.6;
+    }
+}
+
+.graph-link {
+    animation: linkAppear 0.5s ease-out;
+}
+
+/* Interactive Node Pulse */
+@keyframes nodePulse {
+    0%, 100% {
+        filter: drop-shadow(0 3px 10px rgba(102, 126, 234, 0.4));
+    }
+    50% {
+        filter: drop-shadow(0 5px 20px rgba(255, 107, 157, 0.8));
+    }
+}
+
+.ingredient-node:hover circle {
+    animation: nodePulse 1s infinite;
+}
+
+/* Alternatives Graph Container */
+.alternatives-graph-container {
+    width: 100%;
+    height: 300px;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.03), transparent);
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+/* Responsive Graph */
+@media (max-width: 768px) {
+    .cocktail-graph-container {
+        min-height: 400px;
+    }
+
+    .alternatives-graph-container {
+        height: 250px;
+    }
+
+    .node-label {
+        font-size: 10px !important;
+    }
+
+    .measure-label {
+        font-size: 8px !important;
+    }
+
+    .graph-tooltip {
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+}
+
+/* Loading State for Graph */
+.graph-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    color: var(--text-light);
+}
+
+.graph-loading .spinner {
+    width: 40px;
+    height: 40px;
+}
+
+/* =============================================================================
+   DYNAMIC FLAVOR EXPANSION STYLES
+   ============================================================================= */
+
+/* Expand/Collapse Indicator */
+.expand-indicator {
+    cursor: pointer;
+    user-select: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: all 0.3s ease;
+}
+
+.graph-node:hover .expand-indicator {
+    transform: scale(1.2);
+    filter: drop-shadow(0 3px 6px rgba(255, 255, 255, 0.8));
+}
+
+/* Complementary Nodes (Level 2) */
+.level-2 circle {
+    filter: drop-shadow(0 3px 8px rgba(17, 153, 142, 0.6));
+}
+
+.level-2:hover circle {
+    filter: drop-shadow(0 5px 12px rgba(56, 239, 125, 0.8));
+}
+
+/* Complementary Links */
+.graph-link[stroke="#11998e"] {
+    stroke-dasharray: 4, 4;
+    animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -8;
+    }
+}
+
+/* Graph Notification */
+.graph-notification {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+}
+
+/* Long Press Visual Feedback */
+@keyframes longPressRipple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+.graph-node.pressing circle {
+    animation: longPressRipple 0.75s ease-out;
+}
+
+/* Enhanced Tooltip for Hold Instructions */
+.graph-tooltip em {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    color: #38ef7d;
+    font-style: normal;
+    font-weight: bold;
+}
+
+/* Node Level Differentiation */
+.level-1 {
+    z-index: 10;
+}
+
+.level-2 {
+    z-index: 5;
+}
+
+.cocktail-node {
+    z-index: 20;
+}
+
+/* Expand Animation */
+@keyframes expandPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.graph-node.expanding {
+    animation: expandPulse 0.5s ease-out;
+}
+
+/* Complementary Node Spawn Animation */
+@keyframes spawnNode {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+.level-2.spawning {
+    animation: spawnNode 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Mobile Touch Feedback */
+@media (hover: none) and (pointer: coarse) {
+    .clickable-node {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .graph-node:active circle {
+        transform: scale(0.95);
+    }
+
+    .graph-notification {
+        font-size: 12px;
+        padding: 12px 24px;
+    }
+}
+
+/* Improved Node Borders for Expansion State */
+.graph-node.expanded .expand-indicator {
+    color: #38ef7d;
+    text-shadow: 0 0 10px #38ef7d;
+}
+
+/* Stacking Context for Graph Elements */
+.cocktail-graph-container svg {
+    overflow: visible;
+}
+
+.links {
+    z-index: 1;
+}
+
+.nodes {
+    z-index: 2;
+}
+
+/* =============================================================================
+   COCKTAIL CODEX SECTION STYLES
+   ============================================================================= */
+
+/* Codex Section */
+.codex-section {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.codex-section h2 {
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: 2.5em;
+    margin-bottom: 15px;
+}
+
+.codex-intro {
+    text-align: center;
+    color: #666;
+    font-size: 1.1em;
+    max-width: 800px;
+    margin: 0 auto 30px;
+    line-height: 1.6;
+}
+
+/* Codex Graph Container */
+.codex-graph-container {
+    width: 100%;
+    min-height: 600px;
+    background: radial-gradient(circle at center, rgba(102, 126, 234, 0.05), transparent);
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Codex Nodes */
+.codex-node {
+    transition: all 0.3s ease;
+}
+
+.root-node circle,
+.focused-root-node circle {
+    filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.4));
+}
+
+.center-node circle {
+    filter: drop-shadow(0 8px 30px rgba(255, 107, 157, 0.6));
+}
+
+.template-ingredient-node circle {
+    filter: drop-shadow(0 3px 12px rgba(0, 0, 0, 0.3));
+}
+
+.variation-node circle {
+    filter: drop-shadow(0 2px 8px rgba(17, 153, 142, 0.4));
+}
+
+/* Back Button */
+.back-button {
+    transition: all 0.3s ease;
+}
+
+.back-button:hover circle {
+    fill: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.back-button:active circle {
+    transform: scale(0.95);
+}
+
+/* Codex Tooltip */
+.codex-tooltip {
+    z-index: 10002 !important;
+}
+
+/* Category Color Legend (optional) */
+.category-legend {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.category-legend h4 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--text-dark);
+    text-transform: uppercase;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 11px;
+    color: #666;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Codex Filters */
+.codex-filters {
+    margin: 25px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.codex-filters h3 {
+    margin: 0 0 15px 0;
+    color: var(--secondary-color);
+    font-size: 1.3em;
+    text-align: center;
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.filter-chip {
+    padding: 10px 18px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.filter-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+    background: rgba(255, 107, 157, 0.1);
+}
+
+.filter-chip.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.5);
+}
+
+.filter-chip.reset-filters {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.filter-chip.reset-filters:hover {
+    background: #dc3545;
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.filter-chip.reset-filters.active {
+    background: #dc3545;
+    color: white;
+}
+
+/* Enhanced Hexagon Styles */
+.root-node path,
+.focused-root-node path {
+    transition: all 0.3s ease;
+}
+
+.root-node:hover path,
+.focused-root-node:hover path {
+    filter: drop-shadow(0 8px 25px rgba(0,0,0,0.4)) brightness(1.1);
+}
+
+/* Responsive Codex */
+@media (max-width: 768px) {
+    .codex-section h2 {
+        font-size: 2em;
+    }
+
+    .codex-intro {
+        font-size: 1em;
+    }
+
+    .codex-graph-container {
+        min-height: 500px;
+    }
+
+    .category-legend {
+        display: none; /* Hide legend on mobile */
+    }
+
+    .codex-filters {
+        padding: 15px;
+        margin: 20px 0;
+    }
+
+    .filter-chips {
+        gap: 8px;
+    }
+
+    .filter-chip {
+        padding: 8px 14px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-chip {
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+}
+
+/* =============================================================================
+   NODE ACTION BUTTONS (MOBILE TAP-TO-SELECT INTERACTION)
+   ============================================================================= */
+
+/* Action Buttons Container */
+.node-action-buttons {
+    position: fixed;
+    bottom: -200px; /* Hidden by default */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border-radius: 25px 25px 0 0;
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.3);
+    transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 107, 157, 0.3);
+    border-bottom: none;
+    max-width: 95%;
+}
+
+.node-action-buttons.visible {
+    bottom: 0;
+}
+
+/* Action Buttons */
+.node-action-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 20px;
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.node-action-btn:active {
+    transform: scale(0.95);
+}
+
+.node-action-btn .btn-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.node-action-btn .btn-text {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Button Variants */
+.node-action-btn:nth-child(1) {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.node-action-btn:nth-child(1):hover,
+.node-action-btn:nth-child(1):active {
+    background: #667eea;
+    color: white;
+}
+
+.node-action-btn:nth-child(2) {
+    border-color: #11998e;
+    color: #11998e;
+}
+
+.node-action-btn:nth-child(2):hover,
+.node-action-btn:nth-child(2):active {
+    background: #11998e;
+    color: white;
+}
+
+.node-action-btn.close-btn {
+    border-color: #dc3545;
+    color: #dc3545;
+    flex: 0 0 80px;
+}
+
+.node-action-btn.close-btn:hover,
+.node-action-btn.close-btn:active {
+    background: #dc3545;
+    color: white;
+}
+
+/* Selected Node Highlight */
+.graph-node.selected circle {
+    stroke: #FFD700 !important;
+    stroke-width: 5px !important;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) brightness(1.2);
+}
+
+.graph-node.selected {
+    z-index: 100;
+}
+
+/* Selected Node Pulse Animation */
+@keyframes selectedPulse {
+    0%, 100% {
+        stroke-width: 5px;
+    }
+    50% {
+        stroke-width: 7px;
+    }
+}
+
+.graph-node.selected circle {
+    animation: selectedPulse 2s infinite;
+}
+
+/* Responsive Action Buttons */
+@media (max-width: 768px) {
+    .node-action-buttons {
+        gap: 8px;
+        padding: 16px;
+    }
+
+    .node-action-btn {
+        padding: 14px 12px;
+        min-width: 80px;
+    }
+
+    .node-action-btn .btn-icon {
+        font-size: 20px;
+    }
+
+    .node-action-btn .btn-text {
+        font-size: 10px;
+    }
+
+    .node-action-btn.close-btn {
+        flex: 0 0 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .node-action-buttons {
+        gap: 6px;
+        padding: 12px;
+    }
+
+    .node-action-btn {
+        padding: 12px 8px;
+        min-width: 70px;
+    }
+
+    .node-action-btn .btn-icon {
+        font-size: 18px;
+    }
+
+    .node-action-btn .btn-text {
+        font-size: 9px;
+    }
+}
