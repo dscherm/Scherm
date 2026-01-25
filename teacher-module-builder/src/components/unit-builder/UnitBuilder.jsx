@@ -1,33 +1,107 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUnitStore from '../../hooks/useUnitStore';
+import { useUnit } from '../../hooks/useUnits';
+import { useAuth } from '../../contexts/AuthContext';
 import WizardProgress from './WizardProgress';
 import Step1BasicInfo from './steps/Step1BasicInfo';
 import Step2Objectives from './steps/Step2Objectives';
 import Step3Phases from './steps/Step3Phases';
 import Step4Lessons from './steps/Step4Lessons';
 import Step5Review from './steps/Step5Review';
-import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Loader2, CheckCircle } from 'lucide-react';
 
 function UnitBuilder() {
   const { unitId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [saveStatus, setSaveStatus] = useState(null); // null, 'saving', 'saved', 'error'
+
   const {
     currentStep,
     totalSteps,
     currentUnit,
     nextStep,
     prevStep,
-    resetUnit
+    resetUnit,
+    loadUnit
   } = useUnitStore();
 
-  // Reset on new unit
+  // Firestore integration
+  const { unit: firestoreUnit, lessons: firestoreLessons, loading, saving, save, publish } = useUnit(unitId);
+
+  // Load existing unit from Firestore
   useEffect(() => {
-    if (!unitId) {
+    if (unitId === 'new' || !unitId) {
       resetUnit();
+    } else if (firestoreUnit && !loading) {
+      loadUnit({
+        ...firestoreUnit,
+        lessons: firestoreLessons || []
+      });
     }
-    // TODO: Load existing unit if unitId is provided
-  }, [unitId]);
+  }, [unitId, firestoreUnit, firestoreLessons, loading]);
+
+  // Auto-save functionality (debounced)
+  useEffect(() => {
+    if (!user || unitId === 'new') return;
+
+    const timeoutId = setTimeout(() => {
+      // Auto-save only if we have an existing unit
+      if (unitId && unitId !== 'new' && currentUnit.title) {
+        handleSave(true);
+      }
+    }, 5000); // Auto-save after 5 seconds of inactivity
+
+    return () => clearTimeout(timeoutId);
+  }, [currentUnit]);
+
+  const handleSave = async (isAutoSave = false) => {
+    if (!user) {
+      alert('Please sign in to save');
+      return;
+    }
+
+    try {
+      setSaveStatus('saving');
+      const savedId = await save(currentUnit, currentUnit.lessons || []);
+
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 2000);
+
+      // If this was a new unit, redirect to the edit URL
+      if (unitId === 'new' && savedId) {
+        navigate(`/unit/${savedId}`, { replace: true });
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      setSaveStatus('error');
+      if (!isAutoSave) {
+        alert('Failed to save: ' + err.message);
+      }
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!user) {
+      alert('Please sign in to publish');
+      return;
+    }
+
+    try {
+      // First save
+      const savedId = await save(currentUnit, currentUnit.lessons || []);
+
+      // Then publish
+      await publish();
+
+      alert('Unit published successfully!');
+      navigate('/');
+    } catch (err) {
+      console.error('Publish error:', err);
+      alert('Failed to publish: ' + err.message);
+    }
+  };
 
   const renderStep = () => {
     switch (currentStep) {
@@ -63,13 +137,24 @@ function UnitBuilder() {
       case 3:
         return currentUnit.duration.totalDays > 0;
       case 4:
-        return true; // Can proceed even without lessons
+        return true;
       case 5:
         return true;
       default:
         return true;
     }
   };
+
+  if (loading && unitId !== 'new') {
+    return (
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-accent-purple animate-spin mx-auto mb-4" />
+          <p className="text-text-muted">Loading unit...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-dark-bg">
@@ -80,14 +165,35 @@ function UnitBuilder() {
             <div>
               <p className="text-sm text-text-muted">
                 Step {currentStep} of {totalSteps}
+                {currentUnit.title && (
+                  <span className="ml-2">• {currentUnit.title}</span>
+                )}
               </p>
               <h1 className="text-xl font-semibold text-text-primary">
                 {stepTitles[currentStep - 1]}
               </h1>
             </div>
-            <button className="btn btn-secondary flex items-center gap-2">
-              <Save className="w-4 h-4" />
-              Save Draft
+            <button
+              onClick={() => handleSave(false)}
+              disabled={saving || saveStatus === 'saving'}
+              className="btn btn-secondary flex items-center gap-2"
+            >
+              {saveStatus === 'saving' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : saveStatus === 'saved' ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Draft
+                </>
+              )}
             </button>
           </div>
 
@@ -132,15 +238,21 @@ function UnitBuilder() {
               </button>
             ) : (
               <button
-                onClick={() => {
-                  // TODO: Save to Firestore and redirect
-                  console.log('Publishing unit:', currentUnit);
-                  alert('Unit published! (Firestore integration coming soon)');
-                }}
+                onClick={handlePublish}
+                disabled={saving}
                 className="btn btn-primary flex items-center gap-2"
               >
-                Publish Unit
-                <ArrowRight className="w-4 h-4" />
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Publishing...
+                  </>
+                ) : (
+                  <>
+                    Publish Unit
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             )}
           </div>
