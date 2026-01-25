@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  @apply bg-dark-bg text-text-primary font-sans antialiased;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-text-muted;
+}
+
+/* Focus styles */
+*:focus-visible {
+  @apply outline-none ring-2 ring-accent-purple ring-offset-2 ring-offset-dark-bg;
+}
+
+/* Custom component classes */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-bg;
+  }
+
+  .btn-primary {
+    @apply bg-accent-purple text-white hover:bg-purple-600;
+    @apply focus:ring-accent-purple;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-surface text-text-primary border border-dark-border;
+    @apply hover:bg-dark-hover hover:border-text-muted;
+    @apply focus:ring-dark-border;
+  }
+
+  .btn-ghost {
+    @apply text-text-secondary hover:text-text-primary hover:bg-dark-hover;
+  }
+
+  .card {
+    @apply bg-dark-surface border border-dark-border rounded-xl p-6;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-dark-bg border border-dark-border rounded-lg;
+    @apply text-text-primary placeholder-text-muted;
+    @apply focus:border-accent-purple focus:ring-1 focus:ring-accent-purple;
+    @apply transition-colors duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text-secondary mb-2;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-purple {
+    @apply bg-purple-500/20 text-purple-300;
+  }
+
+  .badge-blue {
+    @apply bg-blue-500/20 text-blue-300;
+  }
+
+  .badge-green {
+    @apply bg-green-500/20 text-green-300;
+  }
+
+  .badge-yellow {
+    @apply bg-yellow-500/20 text-yellow-300;
+  }
+
+  .badge-red {
+    @apply bg-red-500/20 text-red-300;
+  }
+}
+
+/* Phase colors for 5E */
+.phase-engage {
+  @apply text-yellow-400 border-yellow-400/30 bg-yellow-400/10;
+}
+
+.phase-explore {
+  @apply text-blue-400 border-blue-400/30 bg-blue-400/10;
+}
+
+.phase-explain {
+  @apply text-purple-400 border-purple-400/30 bg-purple-400/10;
+}
+
+.phase-elaborate {
+  @apply text-green-400 border-green-400/30 bg-green-400/10;
+}
+
+.phase-evaluate {
+  @apply text-red-400 border-red-400/30 bg-red-400/10;
+}
