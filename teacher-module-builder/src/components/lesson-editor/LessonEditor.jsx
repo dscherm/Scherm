@@ -4,6 +4,7 @@ import useUnitStore from '../../hooks/useUnitStore';
 import ActivityPicker from '../activities/ActivityPicker';
 import ActivityEditor from '../activities/ActivityEditor';
 import TeamRolesConfig from './TeamRolesConfig';
+import SlidesGeneratorModal from '../slides/SlidesGeneratorModal';
 import {
   ArrowLeft,
   Save,
@@ -32,6 +33,7 @@ function LessonEditor() {
   const { currentUnit, updateLesson } = useUnitStore();
   const [saveStatus, setSaveStatus] = useState(null);
   const [showActivityPicker, setShowActivityPicker] = useState(false);
+  const [showSlidesModal, setShowSlidesModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['mindsOn', 'workTime', 'shareOut']);
 
   const lesson = currentUnit.lessons.find(l => l.id === lessonId);
@@ -132,7 +134,10 @@ function LessonEditor() {
                 <Play className="w-4 h-4" />
                 Preview
               </button>
-              <button className="btn btn-secondary flex items-center gap-2">
+              <button
+                onClick={() => setShowSlidesModal(true)}
+                className="btn btn-secondary flex items-center gap-2"
+              >
                 <Presentation className="w-4 h-4" />
                 Generate Slides
               </button>
@@ -371,6 +376,13 @@ function LessonEditor() {
         onClose={() => setShowActivityPicker(false)}
         onSelect={addActivity}
         phase={lesson.phase}
+      />
+
+      <SlidesGeneratorModal
+        isOpen={showSlidesModal}
+        onClose={() => setShowSlidesModal(false)}
+        lesson={lesson}
+        unit={currentUnit}
       />
     </div>
   );
