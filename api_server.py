@@ -312,6 +312,149 @@ def upload_image():
             return jsonify({"error": "Failed to save image"}), 500
 
 
+@app.route('/api/inpaint', methods=['POST'])
+def inpaint():
+    """
+    Run inpainting workflow
+
+    Request body:
+    {
+        "workflow": "EP19 SDXL INPAINT.json" (optional, uses default if not provided),
+        "image_path": "/path/to/image_with_mask.png",
+        "prompt": "what to generate in masked area",
+        "negative_prompt": "what to avoid" (optional),
+        "denoise": 0.75 (optional, 0.0-1.0)
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing request body"}), 400
+
+    workflow_name = data.get('workflow', 'EP19 SDXL INPAINT.json')
+    image_path = data.get('image_path')
+    prompt = data.get('prompt', '')
+    negative_prompt = data.get('negative_prompt', 'ugly, text, watermark')
+    denoise = data.get('denoise', 0.75)
+
+    if not image_path:
+        return jsonify({"error": "Missing 'image_path'"}), 400
+
+    # Load workflow
+    workflow_data = workflow_manager.load_workflow(workflow_name)
+    if not workflow_data:
+        return jsonify({"error": f"Failed to load workflow: {workflow_name}"}), 400
+
+    # Copy image to input folder
+    input_image_name = _copy_image_to_input(image_path)
+    if not input_image_name:
+        return jsonify({"error": "Failed to copy input image"}), 500
+
+    # Modify workflow
+    workflow_data = workflow_manager.modify_image_input(workflow_data, input_image_name)
+    workflow_data = workflow_manager.modify_prompt(workflow_data, prompt, negative_prompt)
+    workflow_data = workflow_manager.modify_inpaint_settings(workflow_data, denoise)
+
+    # Convert to API format
+    api_workflow = workflow_manager.convert_to_api_format(workflow_data)
+    if not api_workflow:
+        return jsonify({"error": "Failed to convert workflow to API format"}), 500
+
+    # Queue in ComfyUI
+    result = comfyui.queue_prompt(api_workflow)
+    if not result:
+        return jsonify({"error": "Failed to queue inpainting workflow"}), 500
+
+    prompt_id = result.get('prompt_id')
+    job_id = str(uuid.uuid4())
+    active_jobs[job_id] = {
+        "prompt_id": prompt_id,
+        "workflow": workflow_name,
+        "type": "inpainting",
+        "status": "queued"
+    }
+
+    return jsonify({
+        "success": True,
+        "job_id": job_id,
+        "prompt_id": prompt_id,
+        "message": "Inpainting job queued successfully"
+    })
+
+
+@app.route('/api/sketch-to-image', methods=['POST'])
+def sketch_to_image():
+    """
+    Run sketch-to-image workflow
+
+    Request body:
+    {
+        "workflow": "EP20 Flux Dev Q8 Sketch 2 Image.json" (optional),
+        "image_path": "/path/to/sketch.png",
+        "prompt": "description of what to generate",
+        "negative_prompt": "what to avoid" (optional),
+        "controlnet_strength": 0.8 (optional),
+        "controlnet_end": 0.3 (optional)
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing request body"}), 400
+
+    workflow_name = data.get('workflow', 'EP20 Flux Dev Q8 Sketch 2 Image.json')
+    image_path = data.get('image_path')
+    prompt = data.get('prompt', '')
+    negative_prompt = data.get('negative_prompt', '')
+    strength = data.get('controlnet_strength', 0.8)
+    end_percent = data.get('controlnet_end', 0.3)
+
+    if not image_path:
+        return jsonify({"error": "Missing 'image_path'"}), 400
+    if not prompt:
+        return jsonify({"error": "Missing 'prompt'"}), 400
+
+    # Load workflow
+    workflow_data = workflow_manager.load_workflow(workflow_name)
+    if not workflow_data:
+        return jsonify({"error": f"Failed to load workflow: {workflow_name}"}), 400
+
+    # Copy image to input folder
+    input_image_name = _copy_image_to_input(image_path)
+    if not input_image_name:
+        return jsonify({"error": "Failed to copy input image"}), 500
+
+    # Modify workflow
+    workflow_data = workflow_manager.modify_image_input(workflow_data, input_image_name)
+    workflow_data = workflow_manager.modify_prompt(workflow_data, prompt, negative_prompt)
+    workflow_data = workflow_manager.set_generation_defaults(workflow_data)
+    workflow_data = workflow_manager.modify_controlnet_settings(workflow_data, strength, 0.0, end_percent)
+
+    # Convert to API format
+    api_workflow = workflow_manager.convert_to_api_format(workflow_data)
+    if not api_workflow:
+        return jsonify({"error": "Failed to convert workflow to API format"}), 500
+
+    # Queue in ComfyUI
+    result = comfyui.queue_prompt(api_workflow)
+    if not result:
+        return jsonify({"error": "Failed to queue sketch-to-image workflow"}), 500
+
+    prompt_id = result.get('prompt_id')
+    job_id = str(uuid.uuid4())
+    active_jobs[job_id] = {
+        "prompt_id": prompt_id,
+        "workflow": workflow_name,
+        "type": "sketch_to_image",
+        "status": "queued"
+    }
+
+    return jsonify({
+        "success": True,
+        "job_id": job_id,
+        "prompt_id": prompt_id,
+        "message": "Sketch-to-image job queued successfully"
+    })
+
+
 def _run_text_to_image(prompt: str, t2i_workflow: str = None) -> dict:
     """
     Run text-to-image workflow and wait for completion.
@@ -479,11 +622,13 @@ if __name__ == '__main__':
         print("Ollama: NOT CONNECTED - AI recommendations will use fallback mode")
 
     print("\nAPI Endpoints:")
-    print("  GET  /api/status     - Check connectivity")
-    print("  POST /api/analyze    - Get AI recommendation")
-    print("  GET  /api/workflows  - List workflows")
-    print("  POST /api/generate   - Start generation")
-    print("  GET  /api/job/<id>   - Get job status")
-    print("  POST /api/upload     - Upload image")
+    print("  GET  /api/status         - Check connectivity")
+    print("  POST /api/analyze        - Get AI recommendation")
+    print("  GET  /api/workflows      - List workflows")
+    print("  POST /api/generate       - Start generation (3D, text-to-3D)")
+    print("  POST /api/inpaint        - Run inpainting workflow")
+    print("  POST /api/sketch-to-image - Run sketch-to-image workflow")
+    print("  GET  /api/job/<id>       - Get job status")
+    print("  POST /api/upload         - Upload image")
 
     app.run(host=API_SERVER_HOST, port=API_SERVER_PORT, debug=True)

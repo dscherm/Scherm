@@ -265,6 +265,109 @@ class WorkflowManager:
 
         return modified_workflow
 
+    def modify_inpaint_settings(self, workflow_data: Dict, denoise: float = 0.75) -> Dict:
+        """
+        Modify inpainting-specific settings in the workflow.
+
+        Args:
+            workflow_data: The workflow dictionary
+            denoise: Denoise strength for inpainting (0.0-1.0, default 0.75)
+
+        Returns:
+            Modified workflow dictionary
+        """
+        if workflow_data is None:
+            return None
+
+        import copy
+        modified_workflow = copy.deepcopy(workflow_data)
+        nodes = modified_workflow.get('nodes', [])
+
+        for node in nodes:
+            node_type = node.get('type', '')
+
+            # Set denoise for KSampler in inpainting workflows
+            if node_type == 'KSampler':
+                widgets = node.get('widgets_values', [])
+                if widgets and len(widgets) >= 7:
+                    # widgets_values: [seed, control_after_generate, steps, cfg, sampler_name, scheduler, denoise]
+                    node['widgets_values'][6] = denoise
+                    print(f"Set inpaint denoise to {denoise}")
+
+        return modified_workflow
+
+    def modify_controlnet_settings(self, workflow_data: Dict,
+                                    strength: float = 0.8,
+                                    start_percent: float = 0.0,
+                                    end_percent: float = 0.3) -> Dict:
+        """
+        Modify ControlNet settings for sketch-to-image workflows.
+
+        Args:
+            workflow_data: The workflow dictionary
+            strength: ControlNet strength (0.0-1.0)
+            start_percent: Start percentage for ControlNet application
+            end_percent: End percentage for ControlNet application
+
+        Returns:
+            Modified workflow dictionary
+        """
+        if workflow_data is None:
+            return None
+
+        import copy
+        modified_workflow = copy.deepcopy(workflow_data)
+        nodes = modified_workflow.get('nodes', [])
+
+        for node in nodes:
+            node_type = node.get('type', '')
+
+            if node_type == 'ControlNetApplyAdvanced':
+                widgets = node.get('widgets_values', [])
+                if widgets and len(widgets) >= 3:
+                    # widgets_values: [strength, start_percent, end_percent]
+                    node['widgets_values'][0] = strength
+                    node['widgets_values'][1] = start_percent
+                    node['widgets_values'][2] = end_percent
+                    print(f"Set ControlNet: strength={strength}, start={start_percent}, end={end_percent}")
+
+        return modified_workflow
+
+    def detect_workflow_type(self, workflow_data: Dict) -> str:
+        """
+        Detect the type of workflow based on node types present.
+
+        Returns:
+            One of: 'inpainting', 'sketch_to_image', 'image_to_3d', 'text_to_image', 'video', 'unknown'
+        """
+        if workflow_data is None:
+            return 'unknown'
+
+        nodes = workflow_data.get('nodes', [])
+        node_types = {node.get('type', '') for node in nodes}
+
+        # Check for inpainting nodes
+        if 'InpaintModelConditioning' in node_types or 'InpaintCropImproved' in node_types:
+            return 'inpainting'
+
+        # Check for ControlNet (sketch-to-image)
+        if 'ControlNetApplyAdvanced' in node_types or 'AIO_Preprocessor' in node_types:
+            return 'sketch_to_image'
+
+        # Check for 3D generation
+        if 'TripoSGModelLoader' in node_types or 'Hy3DModelLoader' in node_types:
+            return 'image_to_3d'
+
+        # Check for video generation
+        if 'WanVideoSampler' in node_types or 'HunyuanVideoSampler' in node_types:
+            return 'video'
+
+        # Default to text-to-image
+        if 'KSampler' in node_types and 'CLIPTextEncode' in node_types:
+            return 'text_to_image'
+
+        return 'unknown'
+
     def get_3d_workflows(self) -> Dict:
         """
         Get all 3D generation workflows
