@@ -155,15 +155,17 @@ export function useUnit(unitId) {
   };
 
   // Publish unit
-  const publish = async () => {
-    if (!unitId || unitId === 'new') {
+  const publish = async (overrideUnitId = null) => {
+    const idToPublish = overrideUnitId || unitId;
+
+    if (!idToPublish || idToPublish === 'new') {
       throw new Error('Cannot publish unsaved unit');
     }
 
     try {
       setSaving(true);
-      await publishUnit(unitId);
-      setUnit(prev => ({ ...prev, status: 'published' }));
+      await publishUnit(idToPublish);
+      setUnit(prev => prev ? { ...prev, status: 'published' } : prev);
     } catch (err) {
       console.error('Error publishing unit:', err);
       throw err;
