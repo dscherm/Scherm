@@ -5,6 +5,7 @@ import ActivityPicker from '../activities/ActivityPicker';
 import ActivityEditor from '../activities/ActivityEditor';
 import TeamRolesConfig from './TeamRolesConfig';
 import SlidesGeneratorModal from '../slides/SlidesGeneratorModal';
+import ActivitySuggestions from './ActivitySuggestions';
 import {
   ArrowLeft,
   Save,
@@ -16,7 +17,10 @@ import {
   Loader2,
   CheckCircle,
   Play,
-  Presentation
+  Presentation,
+  Sparkles,
+  PanelRightOpen,
+  PanelRightClose
 } from 'lucide-react';
 
 const PHASES = {
@@ -34,6 +38,7 @@ function LessonEditor() {
   const [saveStatus, setSaveStatus] = useState(null);
   const [showActivityPicker, setShowActivityPicker] = useState(false);
   const [showSlidesModal, setShowSlidesModal] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['mindsOn', 'workTime', 'shareOut']);
 
   const lesson = currentUnit.lessons.find(l => l.id === lessonId);
@@ -98,6 +103,60 @@ function LessonEditor() {
     }, 500);
   };
 
+  // Handle suggestion selection
+  const handleSelectSuggestion = (suggestion) => {
+    const section = suggestion.section;
+
+    if (section === 'mindsOn') {
+      // Apply to Minds On section
+      updateLessonField('mindsOn', {
+        ...lesson.mindsOn,
+        prompt: suggestion.prompt || lesson.mindsOn?.prompt || '',
+        teacherNotes: suggestion.instructions
+          ? (Array.isArray(suggestion.instructions) ? suggestion.instructions.join('\n') : suggestion.instructions)
+          : lesson.mindsOn?.teacherNotes || '',
+        suggestedActivity: suggestion.name,
+      });
+    } else if (section === 'workTime') {
+      // Add as a new activity
+      const activities = lesson.activities || [];
+      const activityType = suggestion.type || 'manipulative';
+      updateLesson(lessonId, {
+        activities: [...activities, {
+          id: `activity-${Date.now()}`,
+          type: activityType,
+          title: suggestion.name || '',
+          content: {
+            instructions: suggestion.description || '',
+            materials: suggestion.materials || [],
+            structure: suggestion.structure || [],
+            prompt: suggestion.prompt || '',
+          },
+          config: {},
+          source: suggestion.source || '',
+        }]
+      });
+    } else if (section === 'shareOut') {
+      // Apply to Share Out section
+      updateLessonField('shareOut', {
+        ...lesson.shareOut,
+        format: suggestion.id || lesson.shareOut?.format,
+        prompts: suggestion.prompt || suggestion.description || lesson.shareOut?.prompts || '',
+        suggestedProtocol: suggestion.name,
+      });
+    } else if (section === 'exitTicket') {
+      // Apply to Exit Ticket section
+      updateLessonField('exitTicket', {
+        ...lesson.exitTicket,
+        type: suggestion.id || 'question',
+        prompt: Array.isArray(suggestion.prompts)
+          ? suggestion.prompts.join('\n')
+          : suggestion.prompt || lesson.exitTicket?.prompt || '',
+        suggestedType: suggestion.name,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg">
       {/* Header */}
@@ -130,6 +189,15 @@ function LessonEditor() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSuggestions(!showSuggestions)}
+                className={`btn flex items-center gap-2 ${showSuggestions ? 'btn-primary' : 'btn-secondary'}`}
+                title="Activity Suggestions"
+              >
+                <Sparkles className="w-4 h-4" />
+                Suggestions
+                {showSuggestions ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+              </button>
               <button className="btn btn-secondary flex items-center gap-2">
                 <Play className="w-4 h-4" />
                 Preview
@@ -167,8 +235,10 @@ function LessonEditor() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+      {/* Main Content with Optional Suggestions Panel */}
+      <div className={`flex gap-6 ${showSuggestions ? 'max-w-7xl' : 'max-w-5xl'} mx-auto px-6 py-8 transition-all`}>
+        {/* Left: Lesson Content */}
+        <div className={`${showSuggestions ? 'flex-1' : 'w-full'} space-y-6`}
         {/* Lesson Overview */}
         <div className="p-4 bg-dark-surface border border-dark-border rounded-lg">
           <label className="label">Learning Objective for This Lesson</label>
@@ -369,6 +439,18 @@ function LessonEditor() {
             </div>
           </div>
         </LessonSection>
+        </div>
+
+        {/* Right: Suggestions Panel */}
+        {showSuggestions && (
+          <div className="w-96 flex-shrink-0 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-hidden">
+            <ActivitySuggestions
+              phase={lesson.phase}
+              onSelectActivity={handleSelectSuggestion}
+              onClose={() => setShowSuggestions(false)}
+            />
+          </div>
+        )}
       </div>
 
       <ActivityPicker
