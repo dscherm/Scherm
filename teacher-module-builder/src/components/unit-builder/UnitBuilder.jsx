@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUnitStore from '../../hooks/useUnitStore';
 import { useUnit } from '../../hooks/useUnits';
@@ -17,6 +17,11 @@ function UnitBuilder() {
   const { user } = useAuth();
   const [saveStatus, setSaveStatus] = useState(null); // null, 'saving', 'saved', 'error'
 
+  // Track which unit we've loaded to prevent reloading on auto-save
+  const loadedForUnitId = useRef(null);
+  // Track unit ID when redirecting after creating new unit
+  const justCreatedUnitId = useRef(null);
+
   const {
     currentStep,
     totalSteps,
@@ -30,15 +35,26 @@ function UnitBuilder() {
   // Firestore integration
   const { unit: firestoreUnit, lessons: firestoreLessons, loading, saving, save, publish } = useUnit(unitId);
 
-  // Load existing unit from Firestore
+  // Load existing unit from Firestore - only once per unitId
   useEffect(() => {
+    // Skip if we've already loaded for this unitId
+    if (loadedForUnitId.current === unitId) return;
+
     if (unitId === 'new' || !unitId) {
       resetUnit();
+      loadedForUnitId.current = unitId;
     } else if (firestoreUnit && !loading) {
-      loadUnit({
-        ...firestoreUnit,
-        lessons: firestoreLessons || []
-      });
+      // Skip loading if this unit was just created (we already have the data in store)
+      if (justCreatedUnitId.current === unitId) {
+        loadedForUnitId.current = unitId;
+        justCreatedUnitId.current = null;
+      } else {
+        loadUnit({
+          ...firestoreUnit,
+          lessons: firestoreLessons || []
+        });
+        loadedForUnitId.current = unitId;
+      }
     }
   }, [unitId, firestoreUnit, firestoreLessons, loading]);
 
@@ -71,6 +87,8 @@ function UnitBuilder() {
 
       // If this was a new unit, redirect to the edit URL
       if (unitId === 'new' && savedId) {
+        // Mark that we just created this unit so we don't reload and reset step
+        justCreatedUnitId.current = savedId;
         navigate(`/unit/${savedId}`, { replace: true });
       }
     } catch (err) {
