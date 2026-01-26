@@ -92,8 +92,8 @@ function UnitBuilder() {
       // First save
       const savedId = await save(currentUnit, currentUnit.lessons || []);
 
-      // Then publish
-      await publish();
+      // Then publish with the saved ID
+      await publish(savedId);
 
       alert('Unit published successfully!');
       navigate('/');
