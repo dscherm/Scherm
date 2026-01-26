@@ -497,17 +497,26 @@ class ComfyUIPrompterGUI:
         workflow_name = self.workflow_var.get()
         checkpoint_name = self.checkpoint_var.get()
         user_prompt = self.prompt_text.get("1.0", tk.END).strip()
-        
+
         if not workflow_name:
             messagebox.showwarning("No Workflow", "Please select a workflow first!")
             return
-        
+
+        # Check for missing models before starting
+        model_check = self.workflow_manager.check_required_models(workflow_name)
+        if not model_check['has_checkpoint'] and model_check['missing_models']:
+            missing = ', '.join(model_check['missing_models'])
+            if not messagebox.askyesno("Missing Models",
+                f"The following models are missing:\n{missing}\n\n"
+                "Generation may fail. Continue anyway?"):
+                return
+
         self.log(f"\n🎨 Starting generation...")
         self.log(f"Workflow: {workflow_name}")
-        self.log(f"Checkpoint: {checkpoint_name if checkpoint_name else 'None'}")
-        
+        self.log(f"Checkpoint: {checkpoint_name if checkpoint_name else 'Default'}")
+
         self.generate_button.config(state='disabled')
-        
+
         # Run generation in background thread
         def generate_thread():
             try:
@@ -516,35 +525,91 @@ class ComfyUIPrompterGUI:
                 if not workflow_data:
                     self.log("❌ Failed to load workflow")
                     return
-                
-                # Modify checkpoint if needed
+
+                # Set generation defaults for placeholder workflows
+                workflow_data = self.workflow_manager.set_generation_defaults(
+                    workflow_data,
+                    checkpoint=checkpoint_name if checkpoint_name else "flux1-dev-fp8.safetensors"
+                )
+
+                # Modify checkpoint if specified (overrides default)
                 if checkpoint_name:
                     workflow_data = self.workflow_manager.modify_checkpoint(
                         workflow_data, checkpoint_name
                     )
-                
+
                 # Modify prompts
-                workflow_data = self.workflow_manager.modify_prompt(
-                    workflow_data, user_prompt
-                )
-                
+                if user_prompt:
+                    workflow_data = self.workflow_manager.modify_prompt(
+                        workflow_data, user_prompt
+                    )
+
+                # Convert to API format
+                api_workflow = self.workflow_manager.convert_to_api_format(workflow_data)
+                if not api_workflow:
+                    self.log("❌ Failed to convert workflow to API format")
+                    return
+
                 # Queue in ComfyUI
-                result = self.comfyui_api.queue_prompt(workflow_data)
-                
+                result = self.comfyui_api.queue_prompt(api_workflow)
+
                 if result:
                     prompt_id = result.get('prompt_id')
                     self.log(f"✅ Queued in ComfyUI! Prompt ID: {prompt_id}")
-                    self.log("Check ComfyUI interface to see the generation progress")
+                    # Start monitoring progress
+                    self.root.after(0, lambda: self.start_progress_monitoring(prompt_id))
                 else:
                     self.log("❌ Failed to queue prompt in ComfyUI")
-                
+                    self.root.after(0, lambda: self.generate_button.config(state='normal'))
+
             except Exception as e:
                 self.log(f"❌ Error: {e}")
-            finally:
                 self.root.after(0, lambda: self.generate_button.config(state='normal'))
-        
+
         thread = threading.Thread(target=generate_thread, daemon=True)
         thread.start()
+
+    def start_progress_monitoring(self, prompt_id: str):
+        """Start monitoring job progress"""
+        self.current_prompt_id = prompt_id
+        self.monitor_progress()
+
+    def monitor_progress(self):
+        """Check job progress periodically"""
+        if not hasattr(self, 'current_prompt_id') or not self.current_prompt_id:
+            return
+
+        def check_thread():
+            status = self.comfyui_api.get_job_status(self.current_prompt_id)
+            self.root.after(0, lambda: self.update_progress_display(status))
+
+        thread = threading.Thread(target=check_thread, daemon=True)
+        thread.start()
+
+    def update_progress_display(self, status: dict):
+        """Update the UI with job progress"""
+        job_status = status.get('status', 'unknown')
+        progress = status.get('progress', 0)
+
+        if job_status == 'running':
+            self.log(f"⏳ Progress: {progress:.0f}%")
+            # Check again in 2 seconds
+            self.root.after(2000, self.monitor_progress)
+        elif job_status == 'completed':
+            self.log(f"✅ Generation complete!")
+            outputs = status.get('outputs', [])
+            if outputs:
+                for output in outputs:
+                    self.log(f"   📁 Output: {output}")
+            self.generate_button.config(state='normal')
+            self.current_prompt_id = None
+        elif job_status == 'error':
+            self.log(f"❌ Generation failed: {status.get('error', 'Unknown error')}")
+            self.generate_button.config(state='normal')
+            self.current_prompt_id = None
+        else:
+            # Still pending or unknown, check again
+            self.root.after(2000, self.monitor_progress)
     
     def open_workflows_folder(self):
         """Open the workflows folder in file explorer"""

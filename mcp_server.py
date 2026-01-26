@@ -82,9 +82,18 @@ def handle_request(request: dict) -> dict:
                                 "checkpoint": {
                                     "type": "string",
                                     "description": "Checkpoint/model name (optional, uses workflow default if not specified)"
+                                },
+                                "mode": {
+                                    "type": "string",
+                                    "enum": ["standard", "text_to_3d"],
+                                    "description": "Generation mode: 'standard' for direct workflow, 'text_to_3d' for text->image->3D pipeline"
+                                },
+                                "image_path": {
+                                    "type": "string",
+                                    "description": "Path to input image (for image-to-3D or image-to-video workflows)"
                                 }
                             },
-                            "required": ["prompt", "workflow"]
+                            "required": ["workflow"]
                         }
                     },
                     {
@@ -190,9 +199,9 @@ def call_tool(tool_name: str, args: dict) -> dict:
         prompt = args.get("prompt", "")
         workflow_name = args.get("workflow", "")
         checkpoint = args.get("checkpoint")
+        mode = args.get("mode", "standard")
+        image_path = args.get("image_path")
 
-        if not prompt:
-            return {"error": "No prompt provided"}
         if not workflow_name:
             return {"error": "No workflow specified. Use analyze_prompt first to get a recommendation."}
 
@@ -200,20 +209,70 @@ def call_tool(tool_name: str, args: dict) -> dict:
         if not comfyui_api.check_connection():
             return {"error": "ComfyUI is not running. Please start ComfyUI first."}
 
+        # Check for required models
+        model_check = workflow_manager.check_required_models(workflow_name)
+        if not model_check['has_checkpoint'] and model_check['missing_models']:
+            missing = ', '.join(model_check['missing_models'])
+            return {"error": f"Missing required models: {missing}. Please download them first."}
+
+        # Handle text-to-3D mode (uses API server for two-step pipeline)
+        if mode == "text_to_3d":
+            if not prompt:
+                return {"error": "text_to_3d mode requires a prompt"}
+            import requests
+            try:
+                response = requests.post(
+                    "http://127.0.0.1:5050/api/generate",
+                    json={
+                        "workflow": workflow_name,
+                        "mode": "text_to_3d",
+                        "prompt": prompt
+                    },
+                    timeout=30
+                )
+                return response.json()
+            except Exception as e:
+                return {"error": f"Failed to call API server: {e}. Make sure api_server.py is running."}
+
+        # Standard generation mode
         # Load workflow
         workflow_data = workflow_manager.load_workflow(workflow_name)
         if not workflow_data:
             return {"error": f"Failed to load workflow: {workflow_name}"}
 
+        # Set generation defaults for placeholder workflows
+        workflow_data = workflow_manager.set_generation_defaults(
+            workflow_data,
+            checkpoint=checkpoint if checkpoint else "flux1-dev-fp8.safetensors"
+        )
+
         # Modify checkpoint if specified
         if checkpoint:
             workflow_data = workflow_manager.modify_checkpoint(workflow_data, checkpoint)
 
-        # Modify prompt
-        workflow_data = workflow_manager.modify_prompt(workflow_data, prompt)
+        # Modify prompt if provided
+        if prompt:
+            workflow_data = workflow_manager.modify_prompt(workflow_data, prompt)
+
+        # Handle image input for image-based workflows
+        if image_path:
+            import shutil
+            from pathlib import Path
+            from config import COMFYUI_PATH
+            input_folder = COMFYUI_PATH / "input"
+            src_path = Path(image_path)
+            if src_path.exists():
+                dest_path = input_folder / src_path.name
+                shutil.copy2(src_path, dest_path)
+                workflow_data = workflow_manager.modify_image_input(workflow_data, src_path.name)
+
+        # Convert to API format
+        api_workflow = workflow_manager.convert_to_api_format(workflow_data)
+        if not api_workflow:
+            return {"error": "Failed to convert workflow to API format"}
 
         # Queue in ComfyUI
-        result = comfyui_api.queue_prompt(workflow_data)
+        result = comfyui_api.queue_prompt(api_workflow)
 
         if result:
             prompt_id = result.get("prompt_id")

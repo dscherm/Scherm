@@ -117,6 +117,16 @@ def generate():
     if not workflow_name:
         return jsonify({"error": "Missing 'workflow' in request"}), 400
 
+    # Check if required models are available
+    model_check = workflow_manager.check_required_models(workflow_name)
+    if not model_check['has_checkpoint'] and model_check['missing_models']:
+        missing = ', '.join(model_check['missing_models'])
+        return jsonify({
+            "error": f"Missing required models: {missing}",
+            "missing_models": model_check['missing_models'],
+            "suggestion": "Download the required models or choose a different workflow"
+        }), 400
+
     # Load the workflow
     workflow_data = workflow_manager.load_workflow(workflow_name)
     if not workflow_data:
