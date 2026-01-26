@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cyber-range-platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: cyber-range-platform
+        run: npm ci
+
+      - name: Build cyber-range-platform
+        working-directory: cyber-range-platform
+        run: npm run build
+
+      - name: Prepare deployment
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp vaccine-design-game.html _site/
+          cp -r cocktail-app _site/
+          cp -r vaccination-tracker _site/
+          cp -r docs _site/ 2>/dev/null || true
+          cp -r cyber-range-platform/dist _site/cyber-range-platform
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site

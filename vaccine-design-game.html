@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaccine Defense - Learn How Vaccines Work</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        #game-container {
+            background: #0f0f1e;
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(0, 217, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script>
+        // Game States
+        const GAME_STATE = {
+            INTRO: 'intro',
+            TUTORIAL_1: 'tutorial_1', // Pre-vaccine: dodge
+            GAMEPLAY_UNVACCINATED: 'unvaccinated',
+            VACCINE_UNLOCK: 'vaccine_unlock',
+            TUTORIAL_2: 'tutorial_2', // Post-vaccine: match
+            GAMEPLAY_VACCINATED: 'vaccinated',
+            MUTATION_WARNING: 'mutation_warning',
+            GAMEPLAY_MUTATION: 'mutation',
+            GAME_OVER: 'game_over',
+            VICTORY: 'victory'
+        };
+
+        let gameState = GAME_STATE.INTRO;
+
+        // Player
+        let player;
+
+        // Game objects
+        let viruses = [];
+        let antibodyShots = [];
+        let cells = [];
+        let particles = [];
+        let memoryBCells = [];
+
+        // Score and stats
+        let score = 0;
+        let health = 100;
+        let virusesDestroyed = 0;
+        let cellsInfected = 0;
+        let hasVaccine = false;
+        let mutationPhase = false;
+
+        // Wave management
+        let waveTimer = 0;
+        let waveCount = 0;
+        let virusSpawnRate = 120;
+
+        // Shape types for antigens
+        const SHAPES = {
+            TRIANGLE: 0,
+            SQUARE: 1,
+            CIRCLE: 2,
+            STAR: 3,
+            PENTAGON: 4,
+            HEXAGON: 5
+        };
+
+        const SHAPE_COLORS = {
+            0: [255, 80, 80],    // Red
+            1: [80, 255, 80],    // Green
+            2: [80, 80, 255],    // Blue
+            3: [255, 255, 80],   // Yellow
+            4: [255, 80, 255],   // Magenta
+            5: [80, 255, 255]    // Cyan
+        };
+
+        // Tutorial text
+        let tutorialTimer = 0;
+        let showTutorial = true;
+
+        function setup() {
+            let canvas = createCanvas(800, 900);
+            canvas.parent('game-container');
+
+            player = new Player();
+
+            // Create cells at bottom
+            for (let i = 0; i < 8; i++) {
+                cells.push(new Cell(100 + i * 75, height - 60));
+            }
+
+            frameRate(60);
+        }
+
+        function draw() {
+            background(15, 15, 30);
+
+            // Draw starfield background
+            drawStarfield();
+
+            switch(gameState) {
+                case GAME_STATE.INTRO:
+                    drawIntro();
+                    break;
+                case GAME_STATE.TUTORIAL_1:
+                    drawTutorial1();
+                    updateGameplay();
+                    break;
+                case GAME_STATE.GAMEPLAY_UNVACCINATED:
+                    updateGameplay();
+                    drawGameplay();
+                    checkVaccineUnlock();
+                    break;
+                case GAME_STATE.VACCINE_UNLOCK:
+                    drawVaccineUnlock();
+                    break;
+                case GAME_STATE.TUTORIAL_2:
+                    drawTutorial2();
+                    updateGameplay();
+                    break;
+                case GAME_STATE.GAMEPLAY_VACCINATED:
+                    updateGameplay();
+                    drawGameplay();
+                    checkMutationTrigger();
+                    break;
+                case GAME_STATE.MUTATION_WARNING:
+                    drawMutationWarning();
+                    break;
+                case GAME_STATE.GAMEPLAY_MUTATION:
+                    updateGameplay();
+                    drawGameplay();
+                    break;
+                case GAME_STATE.GAME_OVER:
+                    drawGameOver();
+                    break;
+                case GAME_STATE.VICTORY:
+                    drawVictory();
+                    break;
+            }
+        }
+
+        function drawStarfield() {
+            for (let i = 0; i < 50; i++) {
+                let x = (i * 137) % width;
+                let y = (i * 197 + frameCount * 0.5) % height;
+                let brightness = (sin(frameCount * 0.05 + i) + 1) * 127;
+                fill(brightness);
+                noStroke();
+                circle(x, y, 2);
+            }
+        }
+
+        function drawIntro() {
+            push();
+
+            // Title
+            fill(0, 217, 255);
+            textAlign(CENTER, CENTER);
+            textSize(48);
+            textStyle(BOLD);
+            text("⚔️ VACCINE DEFENSE ⚔️", width/2, 150);
+
+            // Pixel art virus
+            drawPixelVirus(width/2, 300, 3, [SHAPES.TRIANGLE, SHAPES.CIRCLE, SHAPES.SQUARE]);
+
+            // Instructions
+            fill(255);
+            textSize(20);
+            text("THE VIRUS IS INVADING!", width/2, 450);
+
+            textSize(16);
+            fill(200);
+            text("Without a vaccine, your immune system is unprepared.", width/2, 500);
+            text("You must survive until your body can develop immunity!", width/2, 530);
+
+            // Controls
+            fill(0, 255, 150);
+            textSize(18);
+            text("CONTROLS", width/2, 600);
+
+            fill(255);
+            textSize(14);
+            text("← → ARROW KEYS: Move", width/2, 640);
+            text("SPACE: Shoot (when vaccinated)", width/2, 670);
+            text("1-6 KEYS: Change antibody shape (when vaccinated)", width/2, 700);
+
+            // Start button
+            let buttonY = 780;
+            let hover = mouseX > width/2 - 150 && mouseX < width/2 + 150 &&
+                       mouseY > buttonY - 25 && mouseY < buttonY + 25;
+
+            fill(hover ? 255 : 0, 217, 255);
+            stroke(0, 217, 255);
+            strokeWeight(3);
+            rect(width/2 - 150, buttonY - 25, 300, 50, 10);
+
+            fill(0);
+            noStroke();
+            textSize(20);
+            text("START GAME", width/2, buttonY);
+
+            pop();
+        }
+
+        function drawTutorial1() {
+            drawGameplay();
+
+            // Tutorial overlay
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            fill(255, 255, 0);
+            textAlign(CENTER, CENTER);
+            textSize(32);
+            text("🦠 WAVE 1: UNVACCINATED", width/2, 200);
+
+            fill(255);
+            textSize(18);
+            text("You don't have a vaccine yet!", width/2, 280);
+            text("Your antibodies can't recognize the virus.", width/2, 320);
+
+            fill(255, 100, 100);
+            textSize(22);
+            text("⚠️ DODGE THE VIRUSES ⚠️", width/2, 400);
+
+            fill(255);
+            textSize(16);
+            text("Use ← → to move", width/2, 460);
+            text("Don't let viruses reach your cells!", width/2, 490);
+            text("Survive to unlock the vaccine!", width/2, 520);
+
+            fill(0, 255, 150);
+            textSize(14);
+            text("Press SPACE to begin", width/2, 600);
+
+            pop();
+        }
+
+        function drawTutorial2() {
+            drawGameplay();
+
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            fill(0, 255, 150);
+            textAlign(CENTER, CENTER);
+            textSize(32);
+            text("💉 VACCINE ACQUIRED!", width/2, 200);
+
+            fill(255);
+            textSize(18);
+            text("Your immune system has developed MEMORY CELLS!", width/2, 280);
+            text("Now your antibodies can recognize and destroy viruses.", width/2, 320);
+
+            fill(100, 200, 255);
+            textSize(22);
+            text("🎯 MATCH THE SPIKE PROTEINS", width/2, 400);
+
+            fill(255);
+            textSize(16);
+            text("Press 1-6 to change your antibody shape", width/2, 460);
+            text("MATCH the shape to the virus's spike protein", width/2, 490);
+            text("Press SPACE to shoot when matched!", width/2, 520);
+
+            // Show example
+            drawAntigenShape(width/2 - 100, 600, 20, SHAPES.CIRCLE);
+            fill(255);
+            text("Virus Spike", width/2 - 100, 660);
+
+            fill(255, 255, 0);
+            textSize(30);
+            text("=", width/2, 620);
+
+            drawAntigenShape(width/2 + 100, 600, 20, SHAPES.CIRCLE);
+            fill(0, 255, 150);
+            text("Your Antibody", width/2 + 100, 660);
+
+            fill(255, 255, 0);
+            textSize(14);
+            text("Press SPACE to continue", width/2, 750);
+
+            pop();
+        }
+
+        function drawVaccineUnlock() {
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            // Animated vaccine syringe
+            let pulse = sin(frameCount * 0.1) * 10;
+            fill(100, 200, 255);
+            stroke(255);
+            strokeWeight(3);
+            rect(width/2 - 20, 300 + pulse, 40, 80, 5);
+            triangle(width/2 - 15, 380 + pulse, width/2 + 15, 380 + pulse, width/2, 400 + pulse);
+
+            fill(0, 255, 150);
+            textAlign(CENTER, CENTER);
+            textSize(40);
+            text("💉 VACCINE UNLOCKED!", width/2, 200);
+
+            fill(255);
+            textSize(18);
+            text("Your immune system has been trained!", width/2, 480);
+            text("Memory B-cells are ready to fight.", width/2, 510);
+
+            fill(255, 255, 0);
+            textSize(16);
+            text("Press SPACE to continue", width/2, 600);
+
+            tutorialTimer++;
+
+            pop();
+        }
+
+        function drawMutationWarning() {
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            fill(255, 150, 0);
+            textAlign(CENTER, CENTER);
+            textSize(36);
+            text("⚠️ MUTATION DETECTED! ⚠️", width/2, 200);
+
+            fill(255);
+            textSize(18);
+            text("The virus has mutated its spike proteins!", width/2, 280);
+            text("Some of your antibodies may not work anymore.", width/2, 310);
+
+            // Show mutation example
+            fill(150);
+            textSize(14);
+            text("Original Virus", width/2 - 150, 380);
+            drawPixelVirus(width/2 - 150, 430, 2, [SHAPES.CIRCLE, SHAPES.SQUARE]);
+
+            fill(255, 150, 0);
+            textSize(30);
+            text("→", width/2, 430);
+
+            fill(255, 150, 0);
+            textSize(14);
+            text("Mutated Virus", width/2 + 150, 380);
+            drawPixelVirus(width/2 + 150, 430, 2, [SHAPES.STAR, SHAPES.PENTAGON]);
+
+            fill(255);
+            textSize(16);
+            text("This is why vaccines need regular updates!", width/2, 520);
+            text("Adapt your antibodies to the new variants.", width/2, 550);
+
+            fill(255, 255, 0);
+            textSize(14);
+            text("Press SPACE to continue", width/2, 650);
+
+            pop();
+        }
+
+        function updateGameplay() {
+            // Update player
+            player.update();
+            player.display();
+
+            // Spawn viruses
+            waveTimer++;
+            if (waveTimer > virusSpawnRate) {
+                waveTimer = 0;
+                spawnVirus();
+            }
+
+            // Update viruses
+            for (let i = viruses.length - 1; i >= 0; i--) {
+                viruses[i].update();
+                viruses[i].display();
+
+                // Check collision with player (unvaccinated)
+                if (!hasVaccine && viruses[i].collidesWith(player)) {
+                    health -= 10;
+                    createExplosion(viruses[i].x, viruses[i].y, color(255, 100, 100));
+                    viruses.splice(i, 1);
+                    continue;
+                }
+
+                // Check if virus reached cells
+                if (viruses[i].y > height - 100) {
+                    cellInfection(viruses[i]);
+                    viruses.splice(i, 1);
+                }
+            }
+
+            // Update antibody shots
+            for (let i = antibodyShots.length - 1; i >= 0; i--) {
+                antibodyShots[i].update();
+                antibodyShots[i].display();
+
+                if (antibodyShots[i].offScreen()) {
+                    antibodyShots.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with viruses
+                for (let j = viruses.length - 1; j >= 0; j--) {
+                    if (antibodyShots[i].hits(viruses[j])) {
+                        if (antibodyShots[i].shape === viruses[j].shape) {
+                            // Match! Destroy virus
+                            score += 100;
+                            virusesDestroyed++;
+                            createExplosion(viruses[j].x, viruses[j].y, color(0, 255, 150));
+                            viruses.splice(j, 1);
+                            antibodyShots.splice(i, 1);
+
+                            // Spawn memory B-cell occasionally
+                            if (random() < 0.3) {
+                                memoryBCells.push(new MemoryBCell(viruses[j] ? viruses[j].x : antibodyShots[i].x,
+                                                                  viruses[j] ? viruses[j].y : antibodyShots[i].y));
+                            }
+                            break;
+                        } else {
+                            // Wrong shape - no effect, just remove shot
+                            antibodyShots.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Update cells
+            for (let cell of cells) {
+                cell.display();
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].display();
+                if (particles[i].isDead()) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Update memory B-cells
+            for (let i = memoryBCells.length - 1; i >= 0; i--) {
+                memoryBCells[i].update();
+                memoryBCells[i].display();
+                if (memoryBCells[i].isDead()) {
+                    memoryBCells.splice(i, 1);
+                }
+            }
+
+            // Check game over
+            if (health <= 0) {
+                gameState = GAME_STATE.GAME_OVER;
+            }
+        }
+
+        function drawGameplay() {
+            // Draw UI
+            drawUI();
+        }
+
+        function drawUI() {
+            push();
+
+            // Health bar
+            fill(255);
+            textAlign(LEFT, TOP);
+            textSize(14);
+            text("HEALTH", 20, 20);
+
+            stroke(255);
+            strokeWeight(2);
+            noFill();
+            rect(20, 40, 200, 20, 5);
+
+            fill(health > 50 ? color(0, 255, 100) : color(255, 100, 100));
+            noStroke();
+            rect(22, 42, (health / 100) * 196, 16, 4);
+
+            // Score
+            fill(255);
+            text("SCORE: " + score, 20, 80);
+            text("DESTROYED: " + virusesDestroyed, 20, 100);
+
+            // Vaccine status
+            if (hasVaccine) {
+                fill(0, 255, 150);
+                text("💉 VACCINATED", width - 150, 20);
+
+                // Show current antibody shape
+                fill(255);
+                text("ANTIBODY SHAPE:", width - 180, 50);
+                push();
+                translate(width - 50, 80);
+                drawAntigenShape(0, 0, 15, player.currentShape);
+                pop();
+
+                // Show shape key
+                fill(200);
+                textSize(11);
+                text("Keys 1-6 to change", width - 180, 110);
+            } else {
+                fill(255, 100, 100);
+                text("⚠️ NO VACCINE", width - 150, 20);
+                fill(200);
+                textSize(12);
+                text("Dodge viruses!", width - 150, 40);
+            }
+
+            // Wave counter
+            if (mutationPhase) {
+                fill(255, 150, 0);
+                textSize(16);
+                textAlign(CENTER);
+                text("⚠️ MUTATION PHASE", width/2, 20);
+            }
+
+            pop();
+        }
+
+        function spawnVirus() {
+            let x = random(50, width - 50);
+            let availableShapes = mutationPhase ?
+                [SHAPES.STAR, SHAPES.PENTAGON, SHAPES.HEXAGON] :
+                [SHAPES.TRIANGLE, SHAPES.SQUARE, SHAPES.CIRCLE];
+            let shape = random(availableShapes);
+            viruses.push(new Virus(x, -30, shape));
+        }
+
+        function cellInfection(virus) {
+            cellsInfected++;
+            health -= 15;
+
+            // Find nearest cell and infect it
+            let nearest = null;
+            let minDist = Infinity;
+            for (let cell of cells) {
+                let d = dist(virus.x, virus.y, cell.x, cell.y);
+                if (d < minDist && !cell.infected) {
+                    minDist = d;
+                    nearest = cell;
+                }
+            }
+
+            if (nearest) {
+                nearest.infect();
+            }
+
+            createExplosion(virus.x, virus.y, color(255, 50, 50));
+        }
+
+        function createExplosion(x, y, col) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, col));
+            }
+        }
+
+        function checkVaccineUnlock() {
+            if (!hasVaccine && virusesDestroyed >= 3) {
+                hasVaccine = true;
+                gameState = GAME_STATE.VACCINE_UNLOCK;
+            }
+        }
+
+        function checkMutationTrigger() {
+            if (!mutationPhase && virusesDestroyed >= 15) {
+                mutationPhase = true;
+                gameState = GAME_STATE.MUTATION_WARNING;
+            }
+        }
+
+        function drawGameOver() {
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            fill(255, 100, 100);
+            textAlign(CENTER, CENTER);
+            textSize(48);
+            text("GAME OVER", width/2, 250);
+
+            fill(255);
+            textSize(20);
+            text("Cells Infected: " + cellsInfected, width/2, 350);
+            text("Viruses Destroyed: " + virusesDestroyed, width/2, 380);
+            text("Final Score: " + score, width/2, 410);
+
+            fill(200);
+            textSize(16);
+            text("Learning Point:", width/2, 480);
+            text("Without vaccines, infections can overwhelm the immune system", width/2, 510);
+            text("before it learns to fight back effectively.", width/2, 540);
+
+            fill(255, 255, 0);
+            textSize(14);
+            text("Click to restart", width/2, 650);
+
+            pop();
+        }
+
+        function drawVictory() {
+            push();
+            fill(0, 0, 0, 200);
+            rect(0, 0, width, height);
+
+            fill(0, 255, 150);
+            textAlign(CENTER, CENTER);
+            textSize(48);
+            text("VICTORY!", width/2, 250);
+
+            fill(255);
+            textSize(20);
+            text("You survived the pandemic!", width/2, 350);
+            text("Viruses Destroyed: " + virusesDestroyed, width/2, 380);
+            text("Final Score: " + score, width/2, 410);
+
+            fill(200);
+            textSize(16);
+            text("What you learned:", width/2, 480);
+            text("✓ Vaccines train your immune system BEFORE infection", width/2, 515);
+            text("✓ Memory cells provide lasting protection", width/2, 545);
+            text("✓ Viruses mutate, requiring vaccine updates", width/2, 575);
+
+            fill(255, 255, 0);
+            textSize(14);
+            text("Click to play again", width/2, 650);
+
+            pop();
+        }
+
+        // Player class
+        class Player {
+            constructor() {
+                this.x = width / 2;
+                this.y = height - 150;
+                this.size = 30;
+                this.speed = 5;
+                this.currentShape = SHAPES.TRIANGLE;
+            }
+
+            update() {
+                if (keyIsDown(LEFT_ARROW)) {
+                    this.x -= this.speed;
+                }
+                if (keyIsDown(RIGHT_ARROW)) {
+                    this.x += this.speed;
+                }
+
+                this.x = constrain(this.x, this.size, width - this.size);
+            }
+
+            display() {
+                push();
+                translate(this.x, this.y);
+
+                if (hasVaccine) {
+                    // Vaccinated - show colored antibody
+                    fill(...SHAPE_COLORS[this.currentShape]);
+                    stroke(255);
+                } else {
+                    // Unvaccinated - gray
+                    fill(150);
+                    stroke(100);
+                }
+
+                strokeWeight(2);
+
+                // Draw Y-shaped antibody (pixel art style)
+                // Stem
+                rect(-4, 0, 8, 20);
+                // Arms
+                rect(-12, -10, 8, 12);
+                rect(4, -10, 8, 12);
+                // Binding sites
+                if (hasVaccine) {
+                    push();
+                    translate(-8, -15);
+                    scale(0.6);
+                    drawAntigenShape(0, 0, 8, this.currentShape);
+                    pop();
+
+                    push();
+                    translate(8, -15);
+                    scale(0.6);
+                    drawAntigenShape(0, 0, 8, this.currentShape);
+                    pop();
+                }
+
+                pop();
+            }
+
+            shoot() {
+                if (hasVaccine) {
+                    antibodyShots.push(new AntibodyShot(this.x, this.y - 20, this.currentShape));
+                }
+            }
+
+            changeShape(shape) {
+                if (hasVaccine) {
+                    this.currentShape = shape;
+                }
+            }
+        }
+
+        // Virus class
+        class Virus {
+            constructor(x, y, shape) {
+                this.x = x;
+                this.y = y;
+                this.shape = shape;
+                this.size = 25;
+                this.speed = mutationPhase ? 1.5 : 1;
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+
+            display() {
+                drawPixelVirus(this.x, this.y, 1, [this.shape]);
+            }
+
+            collidesWith(player) {
+                return dist(this.x, this.y, player.x, player.y) < this.size + player.size;
+            }
+        }
+
+        // Antibody shot class
+        class AntibodyShot {
+            constructor(x, y, shape) {
+                this.x = x;
+                this.y = y;
+                this.shape = shape;
+                this.speed = 8;
+                this.size = 15;
+            }
+
+            update() {
+                this.y -= this.speed;
+            }
+
+            display() {
+                push();
+                translate(this.x, this.y);
+                fill(...SHAPE_COLORS[this.shape]);
+                stroke(255);
+                strokeWeight(2);
+                drawAntigenShape(0, 0, this.size, this.shape);
+                pop();
+            }
+
+            offScreen() {
+                return this.y < -20;
+            }
+
+            hits(virus) {
+                return dist(this.x, this.y, virus.x, virus.y) < this.size + virus.size;
+            }
+        }
+
+        // Cell class
+        class Cell {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 40;
+                this.infected = false;
+                this.infectionTimer = 0;
+            }
+
+            display() {
+                push();
+                translate(this.x, this.y);
+
+                if (this.infected) {
+                    fill(255, 100, 100, 150);
+                    stroke(255, 0, 0);
+                    this.infectionTimer++;
+                } else {
+                    fill(100, 150, 200, 100);
+                    stroke(150, 200, 255);
+                }
+
+                strokeWeight(2);
+
+                // Cell membrane
+                ellipse(0, 0, this.size, this.size);
+
+                // Nucleus
+                fill(this.infected ? 200 : 150, 100, this.infected ? 100 : 200);
+                ellipse(0, 0, this.size * 0.5, this.size * 0.5);
+
+                pop();
+            }
+
+            infect() {
+                this.infected = true;
+            }
+        }
+
+        // Particle class for explosions
+        class Particle {
+            constructor(x, y, col) {
+                this.x = x;
+                this.y = y;
+                this.vx = random(-3, 3);
+                this.vy = random(-3, 3);
+                this.life = 255;
+                this.col = col;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 8;
+            }
+
+            display() {
+                push();
+                fill(red(this.col), green(this.col), blue(this.col), this.life);
+                noStroke();
+                square(this.x, this.y, 4);
+                pop();
+            }
+
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+
+        // Memory B-Cell floating effect
+        class MemoryBCell {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = random(-1, 1);
+                this.vy = -2;
+                this.life = 100;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 2;
+            }
+
+            display() {
+                push();
+                fill(150, 100, 255, this.life);
+                textAlign(CENTER, CENTER);
+                textSize(20);
+                text("💾", this.x, this.y);
+                pop();
+            }
+
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+
+        // Drawing functions
+        function drawPixelVirus(x, y, scale, shapes) {
+            push();
+            translate(x, y);
+
+            // Virus body (pixelated circle)
+            fill(220, 80, 80);
+            stroke(150, 50, 50);
+            strokeWeight(2);
+
+            let s = 20 * scale;
+            ellipse(0, 0, s, s);
+
+            // Draw spike proteins around it
+            for (let i = 0; i < shapes.length; i++) {
+                let angle = (TWO_PI / shapes.length) * i;
+                let distance = s * 0.6;
+                let px = cos(angle) * distance;
+                let py = sin(angle) * distance;
+
+                push();
+                translate(px, py);
+                rotate(angle + PI/2);
+                drawAntigenShape(0, 0, 8 * scale, shapes[i]);
+                pop();
+            }
+
+            pop();
+        }
+
+        function drawAntigenShape(x, y, size, shapeType) {
+            push();
+            translate(x, y);
+
+            fill(...SHAPE_COLORS[shapeType]);
+            stroke(0);
+            strokeWeight(1);
+
+            switch(shapeType) {
+                case SHAPES.TRIANGLE:
+                    triangle(-size, size, size, size, 0, -size);
+                    break;
+                case SHAPES.SQUARE:
+                    rectMode(CENTER);
+                    square(0, 0, size * 1.5);
+                    break;
+                case SHAPES.CIRCLE:
+                    circle(0, 0, size * 1.8);
+                    break;
+                case SHAPES.STAR:
+                    drawStar(0, 0, size * 0.5, size, 5);
+                    break;
+                case SHAPES.PENTAGON:
+                    drawPolygon(0, 0, size, 5);
+                    break;
+                case SHAPES.HEXAGON:
+                    drawPolygon(0, 0, size, 6);
+                    break;
+            }
+
+            pop();
+        }
+
+        function drawStar(x, y, radius1, radius2, npoints) {
+            let angle = TWO_PI / npoints;
+            let halfAngle = angle / 2.0;
+            beginShape();
+            for (let a = -PI/2; a < TWO_PI - PI/2; a += angle) {
+                let sx = x + cos(a) * radius2;
+                let sy = y + sin(a) * radius2;
+                vertex(sx, sy);
+                sx = x + cos(a + halfAngle) * radius1;
+                sy = y + sin(a + halfAngle) * radius1;
+                vertex(sx, sy);
+            }
+            endShape(CLOSE);
+        }
+
+        function drawPolygon(x, y, radius, npoints) {
+            let angle = TWO_PI / npoints;
+            beginShape();
+            for (let a = -PI/2; a < TWO_PI - PI/2; a += angle) {
+                let sx = x + cos(a) * radius;
+                let sy = y + sin(a) * radius;
+                vertex(sx, sy);
+            }
+            endShape(CLOSE);
+        }
+
+        // Input handling
+        function mousePressed() {
+            if (gameState === GAME_STATE.INTRO) {
+                let buttonY = 780;
+                if (mouseX > width/2 - 150 && mouseX < width/2 + 150 &&
+                    mouseY > buttonY - 25 && mouseY < buttonY + 25) {
+                    gameState = GAME_STATE.TUTORIAL_1;
+                }
+            } else if (gameState === GAME_STATE.GAME_OVER || gameState === GAME_STATE.VICTORY) {
+                resetGame();
+            }
+        }
+
+        function keyPressed() {
+            if (key === ' ') {
+                if (gameState === GAME_STATE.TUTORIAL_1) {
+                    gameState = GAME_STATE.GAMEPLAY_UNVACCINATED;
+                } else if (gameState === GAME_STATE.VACCINE_UNLOCK) {
+                    gameState = GAME_STATE.TUTORIAL_2;
+                } else if (gameState === GAME_STATE.TUTORIAL_2) {
+                    gameState = GAME_STATE.GAMEPLAY_VACCINATED;
+                } else if (gameState === GAME_STATE.MUTATION_WARNING) {
+                    gameState = GAME_STATE.GAMEPLAY_MUTATION;
+                } else if (hasVaccine && (gameState === GAME_STATE.GAMEPLAY_VACCINATED ||
+                           gameState === GAME_STATE.GAMEPLAY_MUTATION)) {
+                    player.shoot();
+                }
+            }
+
+            // Shape change keys
+            if (hasVaccine) {
+                if (key === '1') player.changeShape(SHAPES.TRIANGLE);
+                if (key === '2') player.changeShape(SHAPES.SQUARE);
+                if (key === '3') player.changeShape(SHAPES.CIRCLE);
+                if (key === '4') player.changeShape(SHAPES.STAR);
+                if (key === '5') player.changeShape(SHAPES.PENTAGON);
+                if (key === '6') player.changeShape(SHAPES.HEXAGON);
+            }
+        }
+
+        function resetGame() {
+            gameState = GAME_STATE.INTRO;
+            player = new Player();
+            viruses = [];
+            antibodyShots = [];
+            particles = [];
+            memoryBCells = [];
+            score = 0;
+            health = 100;
+            virusesDestroyed = 0;
+            cellsInfected = 0;
+            hasVaccine = false;
+            mutationPhase = false;
+            waveTimer = 0;
+
+            // Reset cells
+            cells = [];
+            for (let i = 0; i < 8; i++) {
+                cells.push(new Cell(100 + i * 75, height - 60));
+            }
+        }
+    </script>
+</body>
+</html>
