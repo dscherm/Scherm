@@ -19,7 +19,8 @@ if sys.platform == 'win32':
 
 from config import (
     API_SERVER_HOST, API_SERVER_PORT, COMFYUI_URL, OLLAMA_URL,
-    COMFYUI_PATH, OUTPUT_3D_PATH, WORKFLOWS
+    COMFYUI_PATH, OUTPUT_3D_PATH, WORKFLOWS,
+    DEFAULT_TEXT_TO_IMAGE_WORKFLOW, DEFAULT_3D_WORKFLOW
 )
 from comfyui_api import ComfyUIAPI
 from workflow_manager import WorkflowManager
@@ -141,16 +142,27 @@ def generate():
         workflow_data = workflow_manager.modify_image_input(workflow_data, input_image_name)
 
     elif mode == 'text_to_3d':
-        # For text-to-3D, we need a two-step process
-        # Step 1: Generate image from text using Flux
-        # Step 2: Feed image to 3D workflow
-        # For now, require a prompt
+        # Two-step pipeline: text-to-image, then image-to-3D
         if not text_prompt:
             return jsonify({"error": "text_to_3d mode requires 'prompt'"}), 400
 
-        # TODO: Implement text-to-image-to-3D pipeline
-        # For now, modify prompt if the workflow supports it
-        workflow_data = workflow_manager.modify_prompt(workflow_data, text_prompt)
+        # Step 1: Generate image from text
+        t2i_workflow = data.get('text_to_image_workflow')  # Optional override
+        t2i_result = _run_text_to_image(text_prompt, t2i_workflow)
+
+        if not t2i_result["success"]:
+            return jsonify({"error": f"Text-to-image failed: {t2i_result['error']}"}), 500
+
+        # Step 2: Copy generated image to input folder for 3D workflow
+        generated_image_path = t2i_result["image_path"]
+        input_image_name = _copy_image_to_input(generated_image_path)
+
+        if not input_image_name:
+            return jsonify({"error": "Failed to copy generated image for 3D processing"}), 500
+
+        # Modify 3D workflow to use the generated image
+        workflow_data = workflow_manager.modify_image_input(workflow_data, input_image_name)
+        print(f"[Text-to-3D] Using generated image: {input_image_name}")
 
     # Fetch object_info from ComfyUI for accurate widget mapping
     object_info = comfyui.get_object_info()
@@ -184,6 +196,7 @@ def generate():
         "status": "queued",
         "created_at": datetime.now().isoformat(),
         "input_image": input_image_name,
+        "text_prompt": text_prompt if mode == 'text_to_3d' else None,
         "output_path": None
     }
 
@@ -287,6 +300,91 @@ def upload_image():
             })
         else:
             return jsonify({"error": "Failed to save image"}), 500
+
+
+def _run_text_to_image(prompt: str, t2i_workflow: str = None) -> dict:
+    """
+    Run text-to-image workflow and wait for completion.
+
+    Args:
+        prompt: Text prompt for image generation
+        t2i_workflow: Optional workflow name, defaults to DEFAULT_TEXT_TO_IMAGE_WORKFLOW
+
+    Returns:
+        dict with 'success', 'image_path' or 'error'
+    """
+    workflow_name = t2i_workflow or DEFAULT_TEXT_TO_IMAGE_WORKFLOW
+
+    print(f"[Text-to-Image] Starting with workflow: {workflow_name}")
+    print(f"[Text-to-Image] Prompt: {prompt[:100]}...")
+
+    # Load the text-to-image workflow
+    t2i_workflow_data = workflow_manager.load_workflow(workflow_name)
+    if not t2i_workflow_data:
+        return {"success": False, "error": f"Failed to load text-to-image workflow: {workflow_name}"}
+
+    # Modify the prompt in the workflow
+    t2i_workflow_data = workflow_manager.modify_prompt(t2i_workflow_data, prompt)
+
+    # Get object_info for accurate conversion
+    object_info = comfyui.get_object_info()
+    if object_info:
+        workflow_manager.set_object_info(object_info)
+
+    # Convert to API format
+    api_workflow = workflow_manager.convert_to_api_format(t2i_workflow_data)
+    if not api_workflow:
+        return {"success": False, "error": "Failed to convert text-to-image workflow to API format"}
+
+    # Queue the workflow
+    result = comfyui.queue_prompt(api_workflow)
+    if not result:
+        return {"success": False, "error": "Failed to queue text-to-image workflow"}
+
+    prompt_id = result.get('prompt_id')
+    print(f"[Text-to-Image] Queued with prompt_id: {prompt_id}")
+
+    # Wait for completion (5 minute timeout for image generation)
+    if not comfyui.wait_for_completion(prompt_id, timeout=300):
+        return {"success": False, "error": "Text-to-image generation timed out"}
+
+    print(f"[Text-to-Image] Generation completed")
+
+    # Get the output image path
+    status = comfyui.get_job_status(prompt_id)
+    if status["status"] != "completed":
+        return {"success": False, "error": f"Text-to-image job failed: {status.get('error')}"}
+
+    # Find the output image
+    output_images = [p for p in status.get("outputs", []) if p.endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+
+    if not output_images:
+        # Try to find the most recent image in ComfyUI output folder
+        output_folder = COMFYUI_PATH / "output"
+        if output_folder.exists():
+            # Find recent PNG files
+            import glob
+            recent_images = sorted(
+                output_folder.glob("ComfyUI_*.png"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True
+            )
+            if recent_images:
+                output_images = [str(recent_images[0])]
+
+    if not output_images:
+        return {"success": False, "error": "No output image found from text-to-image generation"}
+
+    # Get the first/primary output image
+    image_path = output_images[0]
+
+    # If it's a relative path, make it absolute
+    if not Path(image_path).is_absolute():
+        image_path = str(COMFYUI_PATH / "output" / image_path)
+
+    print(f"[Text-to-Image] Output image: {image_path}")
+
+    return {"success": True, "image_path": image_path}
 
 
 def _save_base64_image(base64_data: str) -> str:

@@ -14,6 +14,10 @@ API_SERVER_PORT = 5050
 # Output paths
 OUTPUT_3D_PATH = Path("C:/ComfyUI/output/3D")
 
+# Default workflows for pipelines
+DEFAULT_TEXT_TO_IMAGE_WORKFLOW = "NSFW Flux 1 Dev GGUF TXT2IMG with UltraRealistic Lora.json"
+DEFAULT_3D_WORKFLOW = "triposg_image_to_3d.json"
+
 # Ollama Configuration
 OLLAMA_MODEL = "llama3.2"
 OLLAMA_URL = "http://localhost:11434"
@@ -99,6 +103,12 @@ WORKFLOWS = {
         "checkpoint": "hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors",
         "type": "video_generation",
         "use_case": "high resolution 720p video generation from text"
+    },
+    "NSFW Flux 1 Dev GGUF TXT2IMG with UltraRealistic Lora.json": {
+        "description": "Text to Image - FLUX text-to-image generation",
+        "checkpoint": "flux1-dev-Q6_K.gguf",
+        "type": "text_to_image",
+        "use_case": "generating images from text prompts"
     }
 }
 

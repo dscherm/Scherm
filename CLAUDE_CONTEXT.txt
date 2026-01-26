@@ -330,6 +330,16 @@ SESSION HISTORY (2025-01-25)
    - Wan2.1_14B_VACE-Q4_K_M.gguf (downloading)
 
 =============================================================================
+COMPLETED FEATURES
+=============================================================================
+
+- Text-to-Image-to-3D pipeline implemented in api_server.py
+  - _run_text_to_image() helper function handles step 1
+  - text_to_3d mode in /api/generate uses two-step pipeline
+  - Default workflow: NSFW Flux 1 Dev GGUF TXT2IMG with UltraRealistic Lora.json
+  - Optional override via 'text_to_image_workflow' parameter
+
+=============================================================================
 NEXT STEPS / TODO
 =============================================================================
 
@@ -337,7 +347,8 @@ NEXT STEPS / TODO
 2. Enable MCP server in Claude Code settings
 3. Test MCP tools for direct generation from Claude
 4. Consider adding more video workflows (Hunyuan video, etc.)
-5. HuggingFace authentication setup for faster downloads:
+5. Test text-to-3D pipeline end-to-end
+6. HuggingFace authentication setup for faster downloads:
    - Get token from https://huggingface.co/settings/tokens
    - Run: setx HF_TOKEN "your_token"
    - Or: python -c "from credentials_manager import set_huggingface_token; set_huggingface_token('token')"
