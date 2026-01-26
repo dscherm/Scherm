@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import useUnitStore from '../../../hooks/useUnitStore';
 import {
   Plus,
@@ -21,6 +21,7 @@ const PHASES = [
 ];
 
 function Step4Lessons() {
+  const { unitId } = useParams();
   const { currentUnit, addLesson, updateLesson } = useUnitStore();
   const [expandedPhases, setExpandedPhases] = useState(['engage']);
   const [showAddLesson, setShowAddLesson] = useState(null); // phase id
@@ -64,8 +65,7 @@ function Step4Lessons() {
           Build Your Lessons
         </h2>
         <p className="text-text-muted">
-          Create lessons for each phase. Each lesson follows the structure:
-          Minds On → Work Time → Share Out
+          Create lessons for each phase, then <strong className="text-text-primary">click on a lesson</strong> to add activities and generate slides.
         </p>
       </div>
 
@@ -76,6 +76,17 @@ function Step4Lessons() {
         <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">💻 Work Time</span>
         <span className="text-text-muted">→</span>
         <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded">🎤 Share Out</span>
+      </div>
+
+      {/* Workflow tip */}
+      <div className="p-4 bg-accent-purple/10 border border-accent-purple/30 rounded-lg">
+        <h4 className="font-medium text-accent-purple mb-1">How it works</h4>
+        <ol className="text-sm text-text-muted space-y-1 list-decimal list-inside">
+          <li>Create lessons below for each 5E phase</li>
+          <li>Click on a lesson to open the <strong className="text-text-primary">Lesson Editor</strong></li>
+          <li>Add activities (quizzes, code playgrounds, discussions, etc.)</li>
+          <li>Click <strong className="text-text-primary">Generate Slides</strong> to create a Google Slides deck</li>
+        </ol>
       </div>
 
       {/* Phases accordion */}
@@ -125,9 +136,10 @@ function Step4Lessons() {
                 <div className="p-4 bg-dark-surface space-y-3">
                   {/* Existing lessons */}
                   {lessons.map((lesson, index) => (
-                    <div
+                    <Link
                       key={lesson.id}
-                      className="flex items-center justify-between p-3 bg-dark-bg border border-dark-border rounded-lg group"
+                      to={`/unit/${unitId || 'new'}/lesson/${lesson.id}`}
+                      className="flex items-center justify-between p-3 bg-dark-bg border border-dark-border rounded-lg group hover:border-accent-purple/50 hover:bg-dark-hover transition-all cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <span className={`w-8 h-8 rounded-full bg-${phase.color}-400/20 flex items-center justify-center text-sm font-medium text-${phase.color}-400`}>
@@ -138,24 +150,27 @@ function Step4Lessons() {
                           <p className="text-xs text-text-muted flex items-center gap-2">
                             <Clock className="w-3 h-3" />
                             Day {lesson.dayNumber}
-                            {lesson.activities?.length > 0 && (
-                              <span>• {lesson.activities.length} activities</span>
+                            {lesson.activities?.length > 0 ? (
+                              <span className="text-green-400">• {lesson.activities.length} activities</span>
+                            ) : (
+                              <span className="text-yellow-400">• Click to add activities</span>
                             )}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link
-                          to={`/unit/new/lesson/${lesson.id}`}
-                          className="p-2 text-text-muted hover:text-text-primary hover:bg-dark-hover rounded"
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-muted group-hover:text-accent-purple transition-colors flex items-center gap-1">
+                          <Edit2 className="w-3 h-3" />
+                          Edit lesson
+                        </span>
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          className="p-2 text-text-muted hover:text-red-400 hover:bg-dark-hover rounded opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <Edit2 className="w-4 h-4" />
-                        </Link>
-                        <button className="p-2 text-text-muted hover:text-red-400 hover:bg-dark-hover rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
+                    </Link>
                   ))}
 
                   {/* Add lesson button/form */}

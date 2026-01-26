@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import useUnitStore from '../../../hooks/useUnitStore';
 import {
   BookOpen,
@@ -9,7 +10,9 @@ import {
   AlertCircle,
   Download,
   Share2,
-  Presentation
+  Presentation,
+  ExternalLink,
+  Edit2
 } from 'lucide-react';
 
 const PHASES = [
@@ -21,6 +24,7 @@ const PHASES = [
 ];
 
 function Step5Review() {
+  const { unitId } = useParams();
   const { currentUnit } = useUnitStore();
   const [generateSlides, setGenerateSlides] = useState(true);
   const [generatePrintables, setGeneratePrintables] = useState(true);
@@ -167,43 +171,96 @@ function Step5Review() {
         </div>
       </div>
 
-      {/* Export Options */}
-      <div className="card">
-        <h3 className="font-semibold text-text-primary mb-4">Export Options</h3>
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 p-4 bg-dark-bg rounded-lg cursor-pointer hover:bg-dark-hover transition-colors">
-            <input
-              type="checkbox"
-              checked={generateSlides}
-              onChange={(e) => setGenerateSlides(e.target.checked)}
-              className="w-5 h-5 rounded border-dark-border text-accent-purple focus:ring-accent-purple"
-            />
-            <Presentation className="w-5 h-5 text-text-muted" />
-            <div>
-              <p className="font-medium text-text-primary">Generate Google Slides</p>
-              <p className="text-sm text-text-muted">
-                Create slide decks for each lesson automatically
-              </p>
-            </div>
-          </label>
+      {/* Lessons Overview */}
+      {currentUnit.lessons.length > 0 && (
+        <div className="card">
+          <h3 className="font-semibold text-text-primary mb-4">
+            Lessons & Slides ({currentUnit.lessons.length} lessons, {activitiesCount} activities)
+          </h3>
+          <p className="text-sm text-text-muted mb-4">
+            Click on a lesson to add activities or generate Google Slides
+          </p>
+          <div className="space-y-3">
+            {PHASES.map((phase) => {
+              const phaseLessons = currentUnit.lessons.filter((l) => l.phase === phase.id);
+              if (phaseLessons.length === 0) return null;
 
-          <label className="flex items-center gap-3 p-4 bg-dark-bg rounded-lg cursor-pointer hover:bg-dark-hover transition-colors">
-            <input
-              type="checkbox"
-              checked={generatePrintables}
-              onChange={(e) => setGeneratePrintables(e.target.checked)}
-              className="w-5 h-5 rounded border-dark-border text-accent-purple focus:ring-accent-purple"
-            />
-            <Download className="w-5 h-5 text-text-muted" />
-            <div>
-              <p className="font-medium text-text-primary">Generate Printable Materials</p>
-              <p className="text-sm text-text-muted">
-                Create PDF packet with worksheets and handouts
-              </p>
-            </div>
-          </label>
+              return (
+                <div key={phase.id}>
+                  <h4 className={`text-sm font-medium text-${phase.color}-400 mb-2 flex items-center gap-2`}>
+                    <span>{phase.icon}</span> {phase.name}
+                  </h4>
+                  <div className="space-y-2 ml-6">
+                    {phaseLessons.map((lesson) => (
+                      <Link
+                        key={lesson.id}
+                        to={`/unit/${unitId || 'new'}/lesson/${lesson.id}`}
+                        className="flex items-center justify-between p-3 bg-dark-bg rounded-lg hover:bg-dark-hover transition-colors group"
+                      >
+                        <div>
+                          <h5 className="font-medium text-text-primary">{lesson.title}</h5>
+                          <p className="text-xs text-text-muted">
+                            Day {lesson.dayNumber}
+                            {lesson.activities?.length > 0 ? (
+                              <span className="text-green-400"> • {lesson.activities.length} activities</span>
+                            ) : (
+                              <span className="text-yellow-400"> • No activities yet</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 text-text-muted group-hover:text-accent-purple">
+                          <Presentation className="w-4 h-4" />
+                          <span className="text-xs">Edit & Generate Slides</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Export Options - for future use */}
+      {false && (
+        <div className="card">
+          <h3 className="font-semibold text-text-primary mb-4">Export Options</h3>
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 p-4 bg-dark-bg rounded-lg cursor-pointer hover:bg-dark-hover transition-colors">
+              <input
+                type="checkbox"
+                checked={generateSlides}
+                onChange={(e) => setGenerateSlides(e.target.checked)}
+                className="w-5 h-5 rounded border-dark-border text-accent-purple focus:ring-accent-purple"
+              />
+              <Presentation className="w-5 h-5 text-text-muted" />
+              <div>
+                <p className="font-medium text-text-primary">Generate Google Slides</p>
+                <p className="text-sm text-text-muted">
+                  Create slide decks for each lesson automatically
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 p-4 bg-dark-bg rounded-lg cursor-pointer hover:bg-dark-hover transition-colors">
+              <input
+                type="checkbox"
+                checked={generatePrintables}
+                onChange={(e) => setGeneratePrintables(e.target.checked)}
+                className="w-5 h-5 rounded border-dark-border text-accent-purple focus:ring-accent-purple"
+              />
+              <Download className="w-5 h-5 text-text-muted" />
+              <div>
+                <p className="font-medium text-text-primary">Generate Printable Materials</p>
+                <p className="text-sm text-text-muted">
+                  Create PDF packet with worksheets and handouts
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Objectives List */}
       {currentUnit.objectives.length > 0 && (
