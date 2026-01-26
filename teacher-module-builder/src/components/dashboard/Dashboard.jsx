@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserUnits } from '../../hooks/useUnits';
+import CreateModal from '../create/CreateModal';
 import {
   PlusCircle,
   BookOpen,
@@ -12,7 +13,8 @@ import {
   Copy,
   Edit,
   CheckCircle,
-  FileText
+  FileText,
+  Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,6 +22,7 @@ function Dashboard() {
   const { user } = useAuth();
   const { units, loading, error, remove, duplicate } = useUserUnits();
   const [menuOpen, setMenuOpen] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleDelete = async (unitId, e) => {
     e.preventDefault();
@@ -53,20 +56,20 @@ function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Link
-          to="/unit/new"
-          className="card hover:border-accent-purple transition-colors group cursor-pointer"
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="card hover:border-accent-purple transition-colors group cursor-pointer text-left"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-accent-purple/20 rounded-lg flex items-center justify-center group-hover:bg-accent-purple/30 transition-colors">
-              <PlusCircle className="w-6 h-6 text-accent-purple" />
+              <Sparkles className="w-6 h-6 text-accent-purple" />
             </div>
             <div>
-              <h3 className="font-semibold text-text-primary">Create New Unit</h3>
-              <p className="text-sm text-text-muted">Start building a 5E unit</p>
+              <h3 className="font-semibold text-text-primary">Create New</h3>
+              <p className="text-sm text-text-muted">Unit, lesson, or activity</p>
             </div>
           </div>
-        </Link>
+        </button>
 
         <div className="card">
           <div className="flex items-center gap-4">
@@ -128,12 +131,15 @@ function Dashboard() {
               No units yet
             </h3>
             <p className="text-text-muted mb-6">
-              Create your first 5E unit to get started
+              Get started by uploading curriculum, entering a topic, or building from scratch
             </p>
-            <Link to="/unit/new" className="btn btn-primary inline-flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" />
-              Create Unit
-            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="btn btn-primary inline-flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create New
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -232,6 +238,12 @@ function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Create Modal */}
+      <CreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
     </div>
   );
 }
