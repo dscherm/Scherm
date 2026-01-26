@@ -18,6 +18,23 @@ const UNITS_COLLECTION = 'units';
 const LESSONS_COLLECTION = 'lessons';
 
 /**
+ * Remove undefined values from an object (Firestore doesn't accept undefined)
+ */
+function cleanData(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map(cleanData);
+  if (typeof obj !== 'object') return obj;
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = cleanData(value);
+    }
+  }
+  return cleaned;
+}
+
+/**
  * Create a new unit
  */
 export async function createUnit(userId, unitData) {
@@ -177,18 +194,22 @@ export async function deleteLesson(lessonId) {
 export async function saveUnitWithLessons(userId, unitData, lessons) {
   const batch = writeBatch(db);
 
+  // Clean unit data - remove undefined values and temp id
+  const { id: unitId, ...unitDataWithoutId } = unitData;
+  const cleanedUnitData = cleanData(unitDataWithoutId);
+
   // Create or update unit
   let unitRef;
-  if (unitData.id) {
-    unitRef = doc(db, UNITS_COLLECTION, unitData.id);
+  if (unitId && !unitId.startsWith('unit-')) {
+    unitRef = doc(db, UNITS_COLLECTION, unitId);
     batch.update(unitRef, {
-      ...unitData,
+      ...cleanedUnitData,
       updatedAt: serverTimestamp()
     });
   } else {
     unitRef = doc(collection(db, UNITS_COLLECTION));
     batch.set(unitRef, {
-      ...unitData,
+      ...cleanedUnitData,
       createdBy: userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -199,11 +220,15 @@ export async function saveUnitWithLessons(userId, unitData, lessons) {
 
   // Handle lessons
   for (const lesson of lessons) {
-    if (lesson.id && !lesson.id.startsWith('lesson-')) {
+    // Remove temp id from lesson data
+    const { id: lessonId, ...lessonDataWithoutId } = lesson;
+    const cleanedLessonData = cleanData(lessonDataWithoutId);
+
+    if (lessonId && !lessonId.startsWith('lesson-')) {
       // Existing lesson - update
-      const lessonRef = doc(db, LESSONS_COLLECTION, lesson.id);
+      const lessonRef = doc(db, LESSONS_COLLECTION, lessonId);
       batch.update(lessonRef, {
-        ...lesson,
+        ...cleanedLessonData,
         unitId: unitRef.id,
         updatedAt: serverTimestamp()
       });
@@ -211,8 +236,7 @@ export async function saveUnitWithLessons(userId, unitData, lessons) {
       // New lesson - create
       const lessonRef = doc(collection(db, LESSONS_COLLECTION));
       batch.set(lessonRef, {
-        ...lesson,
-        id: undefined, // Remove temp id
+        ...cleanedLessonData,
         unitId: unitRef.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -235,10 +259,12 @@ export async function duplicateUnit(unitId, userId) {
   // Get original lessons
   const originalLessons = await getUnitLessons(unitId);
 
+  // Remove id from original unit data
+  const { id: _, createdAt, updatedAt, publishedAt, ...unitDataToCopy } = originalUnit;
+
   // Create new unit
   const newUnit = await createUnit(userId, {
-    ...originalUnit,
-    id: undefined,
+    ...unitDataToCopy,
     title: `${originalUnit.title} (Copy)`,
     status: 'draft',
     createdBy: userId
@@ -246,10 +272,8 @@ export async function duplicateUnit(unitId, userId) {
 
   // Create copies of lessons
   for (const lesson of originalLessons) {
-    await createLesson(newUnit.id, {
-      ...lesson,
-      id: undefined
-    });
+    const { id: __, createdAt: _ca, updatedAt: _ua, ...lessonDataToCopy } = lesson;
+    await createLesson(newUnit.id, lessonDataToCopy);
   }
 
   return newUnit;
