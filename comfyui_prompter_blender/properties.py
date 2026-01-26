@@ -3,18 +3,67 @@
 import bpy
 from bpy.props import (
     StringProperty, EnumProperty, BoolProperty,
-    FloatProperty, IntProperty, PointerProperty
+    FloatProperty, IntProperty, PointerProperty,
+    CollectionProperty
 )
 from bpy.types import PropertyGroup
 
 
+# Global cache for workflows fetched from API
+_workflow_cache = []
+_workflow_cache_valid = False
+
+
+def get_workflow_cache():
+    """Get the cached workflows"""
+    global _workflow_cache
+    return _workflow_cache
+
+
+def set_workflow_cache(workflows):
+    """Set the workflow cache from API response"""
+    global _workflow_cache, _workflow_cache_valid
+    _workflow_cache = workflows
+    _workflow_cache_valid = True
+
+
+def is_workflow_cache_valid():
+    """Check if workflow cache is valid"""
+    global _workflow_cache_valid
+    return _workflow_cache_valid
+
+
+def invalidate_workflow_cache():
+    """Invalidate the workflow cache"""
+    global _workflow_cache_valid
+    _workflow_cache_valid = False
+
+
 def get_workflow_items(self, context):
-    """Get available workflows as enum items"""
-    items = [
+    """Get available workflows as enum items - uses cache or defaults"""
+    global _workflow_cache
+
+    if _workflow_cache:
+        items = []
+        for i, (filename, info) in enumerate(_workflow_cache):
+            # Format: (identifier, name, description)
+            workflow_type = info.get('type', 'unknown')
+            desc = info.get('description', filename)
+
+            # Filter to show mainly 3D workflows for this addon
+            if '3d' in workflow_type.lower() or '3d' in filename.lower():
+                name = desc if len(desc) < 40 else desc[:37] + '...'
+                items.append((filename, name, desc))
+
+        # If we have 3D workflows, return them
+        if items:
+            return items
+
+    # Default fallback workflows
+    return [
         ('triposg_image_to_3d.json', 'TripoSG (Fast)', 'Fast 3D generation (~2 min)'),
         ('hy3d_example_01 (1) - Copy.json', 'Hunyuan3D (Quality)', 'High quality with textures'),
     ]
-    return items
 
 
 def get_input_mode_items(self, context):
@@ -23,7 +72,7 @@ def get_input_mode_items(self, context):
         ('VIEWPORT', 'Viewport Capture', 'Capture current 3D viewport'),
         ('RENDER', 'Render Result', 'Use last render result'),
         ('FILE', 'Image File', 'Load external image file'),
-        ('TEXT', 'Text Prompt', 'Generate from text description'),
+        ('TEXT', 'Text Prompt', 'Generate from text description (text-to-image-to-3D)'),
     ]
 
 
@@ -59,6 +108,13 @@ class ComfyUIPrompterProperties(PropertyGroup):
         description="3D generation workflow to use",
         items=get_workflow_items,
         default=0
+    )
+
+    # Recommended workflow from AI
+    recommended_workflow: StringProperty(
+        name="Recommended Workflow",
+        description="AI-recommended workflow",
+        default=""
     )
 
     # Job status
@@ -113,6 +169,13 @@ class ComfyUIPrompterProperties(PropertyGroup):
     comfyui_connected: BoolProperty(
         name="ComfyUI Connected",
         description="Whether ComfyUI is connected",
+        default=False
+    )
+
+    # Workflows loaded flag
+    workflows_loaded: BoolProperty(
+        name="Workflows Loaded",
+        description="Whether workflows have been loaded from server",
         default=False
     )
 

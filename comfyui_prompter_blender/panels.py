@@ -62,12 +62,21 @@ class COMFYUI_PT_input_panel(Panel):
 
         elif props.input_mode == 'TEXT':
             layout.prop(props, "text_prompt", text="")
-            row = layout.row()
-            row.operator("comfyui.analyze_prompt", icon='INFO')
+            row = layout.row(align=True)
+            row.operator("comfyui.analyze_prompt", text="Analyze", icon='INFO')
+
+            # Show AI recommendation
             if props.ai_reasoning:
                 box = layout.box()
                 box.label(text="AI Suggestion:", icon='LIGHT')
-                box.label(text=props.ai_reasoning)
+                # Wrap long text
+                for line in _wrap_text(props.ai_reasoning, 35):
+                    box.label(text=line)
+
+                # Show recommended workflow if different from selected
+                if props.recommended_workflow and props.recommended_workflow != props.workflow:
+                    row = box.row()
+                    row.operator("comfyui.use_recommended", text="Use Recommended", icon='FORWARD')
 
 
 class COMFYUI_PT_workflow_panel(Panel):
@@ -83,8 +92,16 @@ class COMFYUI_PT_workflow_panel(Panel):
         layout = self.layout
         props = context.scene.comfyui_prompter
 
-        # Workflow selection
-        layout.prop(props, "workflow", text="")
+        # Workflow selection with refresh button
+        row = layout.row(align=True)
+        row.prop(props, "workflow", text="")
+        row.operator("comfyui.refresh_workflows", text="", icon='FILE_REFRESH')
+
+        # Show workflow status
+        if props.workflows_loaded:
+            layout.label(text="Workflows loaded from server", icon='CHECKMARK')
+        else:
+            layout.label(text="Using default workflows", icon='INFO')
 
         # Auto-import toggle
         layout.prop(props, "auto_import")
@@ -113,7 +130,12 @@ class COMFYUI_PT_generate_panel(Panel):
         if is_running:
             row.operator("comfyui.cancel_job", text="Cancel", icon='CANCEL')
         else:
-            row.operator("comfyui.generate", text="Generate 3D", icon='MESH_MONKEY')
+            # Show appropriate button text based on mode
+            if props.input_mode == 'TEXT':
+                btn_text = "Generate 3D from Text"
+            else:
+                btn_text = "Generate 3D"
+            row.operator("comfyui.generate", text=btn_text, icon='MESH_MONKEY')
 
         # Job status
         if props.job_id:
@@ -151,6 +173,29 @@ class COMFYUI_PT_output_panel(Panel):
         else:
             layout.label(text="No output yet", icon='INFO')
             layout.operator("comfyui.open_output_folder", text="Open Output Folder", icon='FILE_FOLDER')
+
+
+def _wrap_text(text, max_width):
+    """Wrap text to multiple lines"""
+    words = text.split()
+    lines = []
+    current_line = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) + 1 <= max_width:
+            current_line.append(word)
+            current_length += len(word) + 1
+        else:
+            if current_line:
+                lines.append(' '.join(current_line))
+            current_line = [word]
+            current_length = len(word)
+
+    if current_line:
+        lines.append(' '.join(current_line))
+
+    return lines if lines else ['']
 
 
 def register():

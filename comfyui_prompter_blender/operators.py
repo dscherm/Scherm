@@ -7,6 +7,7 @@ from bpy.types import Operator
 from bpy.props import StringProperty
 from . import api_client
 from .preferences import get_preferences
+from .properties import set_workflow_cache, get_workflow_cache, invalidate_workflow_cache
 
 
 class COMFYUI_OT_check_connection(Operator):
@@ -30,6 +31,10 @@ class COMFYUI_OT_check_connection(Operator):
 
             if props.comfyui_connected:
                 self.report({'INFO'}, "Connected to API and ComfyUI")
+
+                # Auto-refresh workflows if enabled
+                if prefs and prefs.auto_refresh_workflows and not props.workflows_loaded:
+                    bpy.ops.comfyui.refresh_workflows()
             else:
                 self.report({'WARNING'}, "API connected, but ComfyUI not running")
         else:
@@ -37,6 +42,39 @@ class COMFYUI_OT_check_connection(Operator):
             props.comfyui_connected = False
             error = result.get('error', 'Unknown error')
             self.report({'ERROR'}, f"Connection failed: {error}")
+
+        return {'FINISHED'}
+
+
+class COMFYUI_OT_refresh_workflows(Operator):
+    """Refresh available workflows from API server"""
+    bl_idname = "comfyui.refresh_workflows"
+    bl_label = "Refresh Workflows"
+    bl_description = "Fetch available workflows from the API server"
+
+    def execute(self, context):
+        prefs = get_preferences()
+        client = api_client.get_client(prefs.api_url if prefs else None)
+
+        success, result = client.get_workflows()
+
+        if success:
+            workflows = result.get('workflows', {})
+            # Convert to list of tuples for cache
+            workflow_list = [(filename, info) for filename, info in workflows.items()]
+            set_workflow_cache(workflow_list)
+
+            props = context.scene.comfyui_prompter
+            props.workflows_loaded = True
+
+            # Count 3D workflows
+            count_3d = sum(1 for f, i in workflow_list
+                          if '3d' in i.get('type', '').lower() or '3d' in f.lower())
+
+            self.report({'INFO'}, f"Loaded {len(workflow_list)} workflows ({count_3d} 3D)")
+        else:
+            error = result.get('error', 'Failed to fetch workflows')
+            self.report({'ERROR'}, error)
 
         return {'FINISHED'}
 
@@ -65,10 +103,31 @@ class COMFYUI_OT_analyze_prompt(Operator):
             reasoning = recommendation.get('reasoning', '')
 
             props.ai_reasoning = reasoning
+            props.recommended_workflow = workflow
 
-            # Try to set the workflow
-            # Note: This may not work if the workflow isn't in the enum
-            self.report({'INFO'}, f"Recommended: {workflow} - {reasoning}")
+            # Try to set the workflow if it exists in enum
+            if workflow:
+                # Check if workflow is in our cache
+                workflow_cache = get_workflow_cache()
+                workflow_names = [f for f, _ in workflow_cache] if workflow_cache else []
+
+                # Also check default workflows
+                default_workflows = [
+                    'triposg_image_to_3d.json',
+                    'hy3d_example_01 (1) - Copy.json'
+                ]
+
+                available = workflow_names + default_workflows
+
+                if workflow in available:
+                    try:
+                        props.workflow = workflow
+                        self.report({'INFO'}, f"Set workflow to: {workflow}")
+                    except TypeError:
+                        # Workflow not in current enum items
+                        self.report({'INFO'}, f"Recommended: {workflow} (select manually)")
+                else:
+                    self.report({'INFO'}, f"Recommended: {workflow} - {reasoning}")
         else:
             error = result.get('error', 'Analysis failed')
             self.report({'ERROR'}, error)
@@ -283,36 +342,75 @@ class COMFYUI_OT_open_output_folder(Operator):
         import subprocess
         import platform
 
-        output_path = "C:/ComfyUI/output/3D"
+        prefs = get_preferences()
+        output_path = prefs.output_folder if prefs else "C:/ComfyUI/output/3D"
+
+        # Normalize path for the OS
+        output_path = os.path.normpath(output_path)
 
         if not os.path.exists(output_path):
-            os.makedirs(output_path, exist_ok=True)
+            try:
+                os.makedirs(output_path, exist_ok=True)
+            except Exception as e:
+                self.report({'ERROR'}, f"Could not create folder: {e}")
+                return {'CANCELLED'}
 
-        if platform.system() == "Windows":
-            os.startfile(output_path)
-        elif platform.system() == "Darwin":
-            subprocess.call(["open", output_path])
-        else:
-            subprocess.call(["xdg-open", output_path])
+        try:
+            if platform.system() == "Windows":
+                os.startfile(output_path)
+            elif platform.system() == "Darwin":
+                subprocess.call(["open", output_path])
+            else:
+                subprocess.call(["xdg-open", output_path])
+        except Exception as e:
+            self.report({'ERROR'}, f"Could not open folder: {e}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
+
+class COMFYUI_OT_use_recommended(Operator):
+    """Apply the AI-recommended workflow"""
+    bl_idname = "comfyui.use_recommended"
+    bl_label = "Use Recommended"
+    bl_description = "Apply the AI-recommended workflow"
+
+    def execute(self, context):
+        props = context.scene.comfyui_prompter
+
+        if not props.recommended_workflow:
+            self.report({'WARNING'}, "No recommendation available. Analyze a prompt first.")
+            return {'CANCELLED'}
+
+        try:
+            props.workflow = props.recommended_workflow
+            self.report({'INFO'}, f"Set workflow to: {props.recommended_workflow}")
+        except TypeError:
+            self.report({'ERROR'}, f"Workflow not available: {props.recommended_workflow}")
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
 
 def register():
     bpy.utils.register_class(COMFYUI_OT_check_connection)
+    bpy.utils.register_class(COMFYUI_OT_refresh_workflows)
     bpy.utils.register_class(COMFYUI_OT_analyze_prompt)
     bpy.utils.register_class(COMFYUI_OT_capture_viewport)
     bpy.utils.register_class(COMFYUI_OT_use_render_result)
     bpy.utils.register_class(COMFYUI_OT_generate)
     bpy.utils.register_class(COMFYUI_OT_import_glb)
     bpy.utils.register_class(COMFYUI_OT_open_output_folder)
+    bpy.utils.register_class(COMFYUI_OT_use_recommended)
 
 
 def unregister():
+    bpy.utils.unregister_class(COMFYUI_OT_use_recommended)
     bpy.utils.unregister_class(COMFYUI_OT_open_output_folder)
     bpy.utils.unregister_class(COMFYUI_OT_import_glb)
     bpy.utils.unregister_class(COMFYUI_OT_generate)
     bpy.utils.unregister_class(COMFYUI_OT_use_render_result)
     bpy.utils.unregister_class(COMFYUI_OT_capture_viewport)
     bpy.utils.unregister_class(COMFYUI_OT_analyze_prompt)
+    bpy.utils.unregister_class(COMFYUI_OT_refresh_workflows)
     bpy.utils.unregister_class(COMFYUI_OT_check_connection)

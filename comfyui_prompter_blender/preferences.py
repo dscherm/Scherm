@@ -17,10 +17,25 @@ class ComfyUIPrompterPreferences(AddonPreferences):
         default="http://127.0.0.1:5050"
     )
 
+    # Output folder path
+    output_folder: StringProperty(
+        name="Output Folder",
+        description="Path to ComfyUI 3D output folder",
+        default="C:/ComfyUI/output/3D",
+        subtype='DIR_PATH'
+    )
+
     # Auto-import settings
     auto_import: BoolProperty(
         name="Auto Import GLB",
         description="Automatically import generated GLB files",
+        default=True
+    )
+
+    # Auto-refresh workflows on connect
+    auto_refresh_workflows: BoolProperty(
+        name="Auto Refresh Workflows",
+        description="Automatically fetch workflows when connecting",
         default=True
     )
 
@@ -58,10 +73,16 @@ class ComfyUIPrompterPreferences(AddonPreferences):
         box.label(text="API Server", icon='URL')
         box.prop(self, "api_url")
 
+        # Output settings
+        box = layout.box()
+        box.label(text="Output Settings", icon='FILE_FOLDER')
+        box.prop(self, "output_folder")
+
         # Import settings
         box = layout.box()
         box.label(text="Import Settings", icon='IMPORT')
         box.prop(self, "auto_import")
+        box.prop(self, "auto_refresh_workflows")
 
         # Capture settings
         box = layout.box()
