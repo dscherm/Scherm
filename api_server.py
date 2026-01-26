@@ -323,13 +323,17 @@ def _run_text_to_image(prompt: str, t2i_workflow: str = None) -> dict:
     if not t2i_workflow_data:
         return {"success": False, "error": f"Failed to load text-to-image workflow: {workflow_name}"}
 
+    # Set default generation parameters (handles placeholder workflows like %model%, %sampler%)
+    t2i_workflow_data = workflow_manager.set_generation_defaults(t2i_workflow_data)
+
     # Modify the prompt in the workflow
     t2i_workflow_data = workflow_manager.modify_prompt(t2i_workflow_data, prompt)
 
-    # Get object_info for accurate conversion
-    object_info = comfyui.get_object_info()
-    if object_info:
-        workflow_manager.set_object_info(object_info)
+    # Note: Don't use object_info for widget mapping - the order doesn't match workflow JSON
+    # The fallback mapping in _get_widget_inputs is correct for template workflows
+    # object_info = comfyui.get_object_info()
+    # if object_info:
+    #     workflow_manager.set_object_info(object_info)
 
     # Convert to API format
     api_workflow = workflow_manager.convert_to_api_format(t2i_workflow_data)

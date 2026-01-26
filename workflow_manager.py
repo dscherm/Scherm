@@ -72,35 +72,166 @@ class WorkflowManager:
     def modify_prompt(self, workflow_data: Dict, positive_prompt: str, negative_prompt: str = "") -> Dict:
         """
         Modify the positive and negative prompts in the workflow
+
+        Handles multiple workflow formats:
+        1. Nodes with 'positive'/'negative' in title
+        2. Nodes with placeholder strings like %prompt%, %negative_prompt%
+        3. First CLIPTextEncode as positive, second as negative (fallback)
         """
         if workflow_data is None:
             return None
-        
+
         import copy
         modified_workflow = copy.deepcopy(workflow_data)
-        
+
         nodes = modified_workflow.get('nodes', [])
-        
+
+        # Track which nodes we've updated
+        positive_updated = False
+        negative_updated = False
+        clip_encode_nodes = []
+
         for node in nodes:
             node_type = node.get('type', '')
-            
+
             # Look for CLIP text encode nodes
             if node_type == 'CLIPTextEncode':
-                # Check the title to determine if it's positive or negative
+                clip_encode_nodes.append(node)
                 title = node.get('title', '').lower()
-                
+
+                # Method 1: Check title for positive/negative
                 if 'positive' in title:
                     if 'widgets_values' in node and len(node['widgets_values']) > 0:
-                        print(f"Updating positive prompt")
+                        print(f"Updating positive prompt (by title)")
                         node['widgets_values'][0] = positive_prompt
-                
+                        positive_updated = True
+
                 elif 'negative' in title:
                     if 'widgets_values' in node and len(node['widgets_values']) > 0:
-                        print(f"Updating negative prompt")
+                        print(f"Updating negative prompt (by title)")
                         node['widgets_values'][0] = negative_prompt if negative_prompt else "ugly, blurry, low quality"
-        
+                        negative_updated = True
+
+                # Method 2: Check for placeholder strings
+                elif 'widgets_values' in node and len(node['widgets_values']) > 0:
+                    current_value = str(node['widgets_values'][0])
+
+                    if '%prompt%' in current_value or current_value == '%prompt%':
+                        print(f"Updating positive prompt (placeholder)")
+                        node['widgets_values'][0] = positive_prompt
+                        positive_updated = True
+
+                    elif '%negative_prompt%' in current_value or '%negative%' in current_value:
+                        print(f"Updating negative prompt (placeholder)")
+                        node['widgets_values'][0] = negative_prompt if negative_prompt else "ugly, blurry, low quality"
+                        negative_updated = True
+
+        # Method 3: Fallback - use node order (first = positive, second = negative)
+        if not positive_updated and len(clip_encode_nodes) >= 1:
+            node = clip_encode_nodes[0]
+            if 'widgets_values' in node and len(node['widgets_values']) > 0:
+                print(f"Updating positive prompt (by order - first CLIPTextEncode)")
+                node['widgets_values'][0] = positive_prompt
+                positive_updated = True
+
+        if not negative_updated and len(clip_encode_nodes) >= 2:
+            node = clip_encode_nodes[1]
+            if 'widgets_values' in node and len(node['widgets_values']) > 0:
+                print(f"Updating negative prompt (by order - second CLIPTextEncode)")
+                node['widgets_values'][0] = negative_prompt if negative_prompt else "ugly, blurry, low quality"
+                negative_updated = True
+
         return modified_workflow
     
+    def set_generation_defaults(self, workflow_data: Dict,
+                                  checkpoint: str = "flux1-dev-fp8.safetensors",
+                                  width: int = 1024,
+                                  height: int = 1024,
+                                  steps: int = 20,
+                                  cfg: float = 7.0,
+                                  seed: int = None,
+                                  sampler: str = "euler",
+                                  scheduler: str = "normal",
+                                  denoise: float = 1.0) -> Dict:
+        """
+        Set default generation parameters for placeholder-based workflows.
+
+        Handles workflows that use placeholders like %model%, %sampler%, etc.
+        and fills in null values with sensible defaults.
+        """
+        if workflow_data is None:
+            return None
+
+        import copy
+        import random
+        modified_workflow = copy.deepcopy(workflow_data)
+
+        # Generate random seed if not provided
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
+
+        nodes = modified_workflow.get('nodes', [])
+
+        for node in nodes:
+            node_type = node.get('type', '')
+            widgets = node.get('widgets_values', [])
+
+            # CheckpointLoaderSimple - set checkpoint name
+            if node_type in ['CheckpointLoaderSimple', 'CheckpointLoader']:
+                if widgets and len(widgets) > 0:
+                    if widgets[0] == '%model%' or widgets[0] is None:
+                        print(f"Setting checkpoint to {checkpoint}")
+                        node['widgets_values'][0] = checkpoint
+
+            # EmptyLatentImage - set width, height, batch_size
+            elif node_type == 'EmptyLatentImage':
+                if widgets:
+                    # widgets_values: [width, height, batch_size]
+                    if len(widgets) >= 1 and (widgets[0] is None or widgets[0] == '%width%'):
+                        node['widgets_values'][0] = width
+                    if len(widgets) >= 2 and (widgets[1] is None or widgets[1] == '%height%'):
+                        node['widgets_values'][1] = height
+                    if len(widgets) >= 3 and widgets[2] is None:
+                        node['widgets_values'][2] = 1  # batch_size
+                    print(f"Setting image size to {width}x{height}")
+
+            # KSampler - set seed, steps, cfg, sampler, scheduler, denoise
+            elif node_type == 'KSampler':
+                if widgets and len(widgets) >= 7:
+                    # widgets_values: [seed, control_after_generate, steps, cfg, sampler_name, scheduler, denoise]
+                    new_widgets = list(widgets)
+
+                    # Position 0: seed
+                    if new_widgets[0] is None or new_widgets[0] == '%seed%':
+                        new_widgets[0] = seed
+
+                    # Position 1: control_after_generate - keep as is ("randomize" or "fixed")
+
+                    # Position 2: steps
+                    if new_widgets[2] is None or new_widgets[2] == '%steps%':
+                        new_widgets[2] = steps
+
+                    # Position 3: cfg
+                    if new_widgets[3] is None or new_widgets[3] == '%cfg%':
+                        new_widgets[3] = cfg
+
+                    # Position 4: sampler_name
+                    if new_widgets[4] is None or (isinstance(new_widgets[4], str) and '%' in new_widgets[4]):
+                        new_widgets[4] = sampler
+
+                    # Position 5: scheduler
+                    if new_widgets[5] is None or (isinstance(new_widgets[5], str) and '%' in new_widgets[5]):
+                        new_widgets[5] = scheduler
+
+                    # Position 6: denoise (usually 1.0 for text-to-image)
+                    if new_widgets[6] is None or new_widgets[6] == '%denoise%':
+                        new_widgets[6] = denoise
+
+                    node['widgets_values'] = new_widgets
+                    print(f"Setting KSampler: seed={seed}, steps={steps}, cfg={cfg}, sampler={sampler}, scheduler={scheduler}")
+
+        return modified_workflow
+
     def modify_image_input(self, workflow_data: Dict, image_filename: str) -> Dict:
         """
         Modify the workflow to use a specific input image
@@ -288,7 +419,7 @@ class WorkflowManager:
             'LoadImage': ['image', 'upload'],
             'CheckpointLoaderSimple': ['ckpt_name'],
             'CLIPTextEncode': ['text'],
-            'KSampler': ['seed', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
+            'KSampler': ['seed', 'control_after_generate', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
             'EmptyLatentImage': ['width', 'height', 'batch_size'],
             'VAEDecode': [],
             'SaveImage': ['filename_prefix'],
