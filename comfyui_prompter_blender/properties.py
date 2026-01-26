@@ -62,7 +62,9 @@ def get_workflow_items(self, context):
     # Default fallback workflows
     return [
         ('triposg_image_to_3d.json', 'TripoSG (Fast)', 'Fast 3D generation (~2 min)'),
-        ('hy3d_example_01 (1) - Copy.json', 'Hunyuan3D (Quality)', 'High quality with textures'),
+        ('triposg_simple.json', 'TripoSG Simple', 'Simplified fast 3D generation'),
+        ('hy3d_example_01 (1) - Copy.json', 'Hunyuan3D (Quality)', 'High quality 3D with textures'),
+        ('TripoSG.json', 'TripoSG Full', 'Full-featured TripoSG workflow'),
     ]
 
 
