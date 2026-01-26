@@ -101,6 +101,214 @@ class WorkflowManager:
         
         return modified_workflow
     
+    def modify_image_input(self, workflow_data: Dict, image_filename: str) -> Dict:
+        """
+        Modify the workflow to use a specific input image
+
+        Args:
+            workflow_data: The workflow dictionary
+            image_filename: The filename of the image to use (must be in ComfyUI input folder)
+
+        Returns:
+            Modified workflow dictionary
+        """
+        if workflow_data is None:
+            return None
+
+        import copy
+        modified_workflow = copy.deepcopy(workflow_data)
+
+        nodes = modified_workflow.get('nodes', [])
+
+        for node in nodes:
+            node_type = node.get('type', '')
+
+            # Look for LoadImage nodes
+            if node_type == 'LoadImage':
+                if 'widgets_values' in node and len(node['widgets_values']) > 0:
+                    print(f"Found LoadImage node, updating image to {image_filename}")
+                    node['widgets_values'][0] = image_filename
+                    # Keep the second value as "image" if it exists
+                    if len(node['widgets_values']) < 2:
+                        node['widgets_values'].append("image")
+
+        return modified_workflow
+
+    def get_3d_workflows(self) -> Dict:
+        """
+        Get all 3D generation workflows
+
+        Returns:
+            Dictionary of workflow_filename -> workflow_info for 3D workflows
+        """
+        return {
+            name: info for name, info in WORKFLOWS.items()
+            if info.get('type') == '3d_generation'
+        }
+
+    def get_image_generation_workflows(self) -> Dict:
+        """
+        Get all 2D image generation workflows
+
+        Returns:
+            Dictionary of workflow_filename -> workflow_info for 2D workflows
+        """
+        return {
+            name: info for name, info in WORKFLOWS.items()
+            if info.get('type') == '2d_image'
+        }
+
+    def convert_to_api_format(self, workflow_data: Dict) -> Dict:
+        """
+        Convert workflow from UI format (nodes array) to API format (dict with class_type/inputs)
+
+        ComfyUI UI saves workflows with a 'nodes' array, but the API expects:
+        {
+            "node_id": {
+                "class_type": "NodeType",
+                "inputs": {...}
+            }
+        }
+        """
+        if workflow_data is None:
+            return None
+
+        # If already in API format (no 'nodes' key, has string keys with 'class_type')
+        if 'nodes' not in workflow_data:
+            # Check if it's already API format
+            for key, value in workflow_data.items():
+                if isinstance(value, dict) and 'class_type' in value:
+                    return workflow_data
+            return workflow_data
+
+        nodes = workflow_data.get('nodes', [])
+        links = workflow_data.get('links', [])
+
+        # Build a link lookup: link_id -> (source_node_id, source_slot)
+        link_lookup = {}
+        for link in links:
+            # link format: [link_id, source_node_id, source_slot, target_node_id, target_slot, type]
+            if len(link) >= 5:
+                link_id = link[0]
+                source_node_id = link[1]
+                source_slot = link[2]
+                link_lookup[link_id] = (source_node_id, source_slot)
+
+        api_workflow = {}
+
+        for node in nodes:
+            node_id = str(node.get('id'))
+            class_type = node.get('type', '')
+
+            # Skip certain UI-only nodes
+            if class_type in ['Note', 'Reroute', 'PrimitiveNode', 'MarkdownNote', 'SetNode', 'GetNode']:
+                # Handle Reroute nodes - they pass through connections
+                continue
+
+            inputs = {}
+
+            # Get widget values and map them to input names
+            widgets_values = node.get('widgets_values', [])
+
+            # Get the node's input definitions
+            node_inputs = node.get('inputs', [])
+
+            # Process connected inputs
+            for inp in node_inputs:
+                inp_name = inp.get('name')
+                link_id = inp.get('link')
+
+                if link_id is not None and link_id in link_lookup:
+                    source_node_id, source_slot = link_lookup[link_id]
+                    # Reference format: [node_id_string, slot_index]
+                    inputs[inp_name] = [str(source_node_id), source_slot]
+
+            # Process widget values - this is tricky as we need to know the widget names
+            # For common node types, map widget_values to input names
+            widget_inputs = self._get_widget_inputs(class_type, widgets_values, node)
+
+            # Merge widget inputs (don't overwrite connected inputs)
+            for key, value in widget_inputs.items():
+                if key not in inputs:
+                    inputs[key] = value
+
+            api_workflow[node_id] = {
+                "class_type": class_type,
+                "inputs": inputs
+            }
+
+        return api_workflow
+
+    def _get_widget_inputs(self, class_type: str, widgets_values: list, node: dict) -> Dict:
+        """
+        Map widget_values to input names based on node type
+
+        This is node-type specific since ComfyUI doesn't store widget names in the workflow
+        """
+        inputs = {}
+
+        if not widgets_values:
+            return inputs
+
+        # Try to get widget names from cached object_info
+        if hasattr(self, '_object_info') and self._object_info:
+            node_info = self._object_info.get(class_type, {})
+            if node_info:
+                required = node_info.get('input', {}).get('required', {})
+                optional = node_info.get('input', {}).get('optional', {})
+
+                # Get all input names in order (required first, then optional)
+                # Filter to only widget inputs (not connection inputs)
+                widget_names = []
+                for name, spec in required.items():
+                    # Skip inputs that are connections (have a type like "IMAGE", "MODEL", etc.)
+                    if isinstance(spec, list) and len(spec) > 0:
+                        if isinstance(spec[0], list):
+                            # This is an enum/dropdown widget
+                            widget_names.append(name)
+                        elif spec[0] in ['INT', 'FLOAT', 'STRING', 'BOOLEAN']:
+                            widget_names.append(name)
+                        # Skip connection types like "IMAGE", "MODEL", etc.
+
+                for name, spec in optional.items():
+                    if isinstance(spec, list) and len(spec) > 0:
+                        if isinstance(spec[0], list):
+                            widget_names.append(name)
+                        elif spec[0] in ['INT', 'FLOAT', 'STRING', 'BOOLEAN']:
+                            widget_names.append(name)
+
+                for i, value in enumerate(widgets_values):
+                    if i < len(widget_names):
+                        inputs[widget_names[i]] = value
+
+                return inputs
+
+        # Fallback: Common node type mappings (may be outdated)
+        widget_mappings = {
+            'LoadImage': ['image', 'upload'],
+            'CheckpointLoaderSimple': ['ckpt_name'],
+            'CLIPTextEncode': ['text'],
+            'KSampler': ['seed', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
+            'EmptyLatentImage': ['width', 'height', 'batch_size'],
+            'VAEDecode': [],
+            'SaveImage': ['filename_prefix'],
+            'PreviewImage': [],
+        }
+
+        widget_names = widget_mappings.get(class_type, [])
+
+        for i, value in enumerate(widgets_values):
+            if i < len(widget_names):
+                name = widget_names[i]
+                if name:
+                    inputs[name] = value
+
+        return inputs
+
+    def set_object_info(self, object_info: Dict):
+        """Set the object_info cache from ComfyUI"""
+        self._object_info = object_info
+
     def save_workflow(self, workflow_data: Dict, output_filename: str) -> bool:
         """Save modified workflow to a new file"""
         output_path = self.workflows_path / output_filename

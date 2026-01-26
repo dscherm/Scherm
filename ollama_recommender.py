@@ -150,11 +150,31 @@ Do not include any text before or after the JSON."""
                 "reasoning": "Detected inpainting keywords (fallback mode)",
                 "task_type": "2d_image"
             }
-        elif any(word in prompt_lower for word in ['3d', 'model', 'mesh', 'glb', 'stl']):
+        elif any(word in prompt_lower for word in ['3d', 'model', 'mesh', 'glb', 'stl', 'object', 'sculpt']):
+            # Determine which 3D model variant to use based on keywords
+            if any(word in prompt_lower for word in ['fast', 'quick', 'speed', 'turbo']):
+                checkpoint = "hunyuan3d-dit-v2-turbo-fp16.safetensors"
+                reasoning = "Detected 3D + speed keywords - using Turbo model (fallback mode)"
+            elif any(word in prompt_lower for word in ['low vram', 'lightweight', 'small', 'mini']):
+                checkpoint = "hunyuan3d-dit-v2-mini-fp16.safetensors"
+                reasoning = "Detected 3D + low resource keywords - using Mini model (fallback mode)"
+            elif any(word in prompt_lower for word in ['high quality', 'detailed', 'best', 'pbr', 'texture']):
+                checkpoint = "hunyuan3d-dit-v2-5-fp16.safetensors"
+                reasoning = "Detected 3D + quality keywords - using v2.5 model (fallback mode)"
+            elif any(word in prompt_lower for word in ['tripo', 'triposg', 'stability']):
+                return {
+                    "recommended_workflow": "triposg_image_to_3d.json",
+                    "recommended_checkpoint": "VAST-AI/TripoSG",
+                    "reasoning": "Detected TripoSG keywords - using TripoSG model (fallback mode)",
+                    "task_type": "3d_generation"
+                }
+            else:
+                checkpoint = "hunyuan3d-dit-v2-0-fp16.safetensors"
+                reasoning = "Detected 3D generation keywords - using Hunyuan3D v2.0 (fallback mode)"
             return {
-                "recommended_workflow": "3d_hunyuan3d_image_to_model.json",
-                "recommended_checkpoint": "hunyuan3d-dit-v2_fp16.safetensors",
-                "reasoning": "Detected 3D generation keywords (fallback mode)",
+                "recommended_workflow": "hy3d_example_01 (1) - Copy.json",
+                "recommended_checkpoint": checkpoint,
+                "reasoning": reasoning,
                 "task_type": "3d_generation"
             }
         elif any(word in prompt_lower for word in ['video', 'animation', 'moving']):

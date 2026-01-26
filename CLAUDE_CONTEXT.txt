@@ -1,0 +1,345 @@
+=============================================================================
+COMFYUI-PROMPTER - CODEBASE SUMMARY FOR CLAUDE
+=============================================================================
+Last Updated: 2025-01-25
+Purpose: Quick reference for Claude to understand this codebase without
+         needing to explore all files each session.
+=============================================================================
+
+OVERVIEW
+--------
+ComfyUI Prompter is an AI-powered workflow recommendation and management
+system for ComfyUI. It uses a local Ollama LLM to analyze user prompts and
+recommend the best workflow and checkpoint for generation tasks.
+
+Main capabilities:
+- Text-to-Image (FLUX, SDXL)
+- Text-to-Video (Wan 2.1)
+- Image-to-Video (Wan 2.1 VACE)
+- Image-to-3D (Hunyuan3D, TripoSG)
+- Image-to-SVG conversion
+
+=============================================================================
+FILE STRUCTURE & RESPONSIBILITIES
+=============================================================================
+
+MAIN APPLICATION FILES
+----------------------
+
+main.py (GUI Application)
+  - Tkinter-based desktop GUI
+  - Class: ComfyUIPrompterGUI - main window with prompt input, workflow
+    selection, model status, generate button
+  - Class: VideoModelsDialog - popup for downloading video generation models
+  - VIDEO_MODELS dict - tracks required models for video generation
+  - Features: system status checks, prompt analysis, model validation,
+    download progress UI, generation queueing
+  - Entry point: python main.py
+
+api_server.py (REST API Server)
+  - Flask server for Blender addon integration
+  - Runs on http://127.0.0.1:5050
+  - Endpoints:
+    /api/status - connectivity check
+    /api/analyze - AI prompt analysis
+    /api/generate - queue generation job
+    /api/job/<id> - job status polling
+    /api/upload - image upload for img2img/img2video
+
+mcp_server.py (MCP Server for Claude Code)
+  - Enables Claude to directly generate images/videos
+  - Uses stdio transport (JSON-RPC over stdin/stdout)
+  - Tools exposed:
+    * analyze_prompt - get AI workflow recommendations
+    * generate - queue generation to ComfyUI
+    * check_job - check job status and get outputs
+    * list_workflows - list available workflows
+    * check_status - verify Ollama/ComfyUI running
+  - To enable: claude mcp add comfyui-prompter "python C:\comfyui-prompter\mcp_server.py"
+
+config.py (Configuration)
+  - COMFYUI_URL = "http://127.0.0.1:8188"
+  - OLLAMA_URL = "http://localhost:11434"
+  - OLLAMA_MODEL = "llama3.2"
+  - COMFYUI_WORKFLOWS_PATH = Path("D:/workflows")
+  - COMFYUI_CHECKPOINTS_PATH = Path("C:/ComfyUI/models/checkpoints")
+  - MODEL_FOLDERS = dict mapping model types to paths (includes text_encoders)
+  - WORKFLOWS = dict of available workflows with metadata
+  - CHECKPOINTS = dict of available checkpoints with metadata
+  - DIFFUSION_MODELS = dict for 3D/video diffusion models
+
+ollama_recommender.py (AI Analysis)
+  - Class: OllamaRecommender
+  - analyze_prompt() - sends prompt to Ollama, gets workflow recommendation
+  - Fallback keyword matching if Ollama unavailable:
+    - "video/animation/moving" → text_to_video_wan.json
+    - "3d/model/mesh/glb" → Hunyuan3D workflows
+    - "svg/vector" → Image_To_Vector_SVG.json
+    - Default → FLUX image generation
+
+workflow_manager.py (Workflow Handling)
+  - Class: WorkflowManager
+  - load_workflow() - loads JSON from D:/workflows
+  - modify_checkpoint() - updates checkpoint in workflow
+  - modify_prompt() - updates positive/negative prompts
+  - check_required_models() - validates models exist
+  - Handles UI format ↔ API format conversion
+
+comfyui_api.py (ComfyUI Communication)
+  - Class: ComfyUIAPI
+  - check_connection() - verify ComfyUI is running
+  - queue_prompt() - POST workflow to ComfyUI /prompt endpoint
+  - get_queue() - check generation queue status
+  - get_history() - retrieve completed job results
+  - get_job_status() - combined queue/history check
+
+model_downloader.py (Model Downloads)
+  - Class: DownloadProgress - tracks download with callbacks
+  - Class: ModelDownloader
+  - download_from_huggingface() - uses huggingface_hub library
+    * Handles nested paths (e.g., split_files/diffusion_models/model.safetensors)
+    * Extracts local filename from full path
+  - download_from_civitai() - uses CivitAI API with auth
+  - download_model() - generic download using registry info
+  - check_model_exists() - searches model folders and subfolders
+
+model_registry.py (Model Database)
+  - MODEL_REGISTRY = dict of all known models with:
+    - type (checkpoints, diffusion_models, vae, clip, text_encoders, etc.)
+    - source (huggingface, civitai)
+    - repo_id, filename, size_gb, requires_auth
+  - Includes video models (Wan 2.1), 3D models (Hunyuan3D, TripoSG)
+  - get_model_info() - lookup by filename
+  - search_models() - search by name/description
+  - get_models_by_type() - filter by type
+
+credentials_manager.py (Auth Tokens)
+  - Uses keyring for secure storage
+  - get_huggingface_token() / set_huggingface_token()
+  - get_civitai_api_key() / set_civitai_api_key()
+
+BLENDER ADDON (comfyui_prompter_blender/)
+-----------------------------------------
+__init__.py - addon registration, bl_info
+operators.py - Blender operators (generate, import GLB, capture viewport)
+panels.py - UI panels in Blender sidebar
+properties.py - scene properties for addon state
+preferences.py - addon preferences (server URL, etc.)
+modal_monitor.py - background job monitoring modal
+api_client.py - HTTP client for Flask API
+
+=============================================================================
+KEY WORKFLOWS (D:/workflows)
+=============================================================================
+
+VIDEO GENERATION:
+  text_to_video_wan.json - Text-to-video using Wan 2.1 T2V 1.3B model
+    * Created 2025-01-25, simple workflow with UNETLoader, CLIP, VAE, KSampler
+    * Default: 512x512, 49 frames (3 sec @ 16fps)
+  Wan+2.1+Image+to+Video+14B+480p+Q4_K_S+GGUF.json - Image-to-video VACE
+
+3D GENERATION:
+  triposg_image_to_3d.json - TripoSG fast 3D (<2 min)
+  3d_hunyuan3d_image_to_model.json - Hunyuan3D v2.0
+  hy3d_example_01 (1) - Copy.json - Hunyuan3D with textures
+
+2D IMAGE:
+  EP20 Flux Dev Q8 Sketch 2 Image.json - Sketch to image
+  EP19 SDXL INPAINT.json - Inpainting
+
+CONVERSION:
+  Image To Vector SVG.json - Raster to SVG
+
+=============================================================================
+VIDEO MODELS (for Wan 2.1)
+=============================================================================
+
+Required for text-to-video (total ~7.7 GB):
+  - wan2.1_t2v_1.3B_fp16.safetensors (2.6 GB) → diffusion_models
+    Source: Comfy-Org/Wan_2.1_ComfyUI_repackaged
+  - umt5_xxl_fp8_e4m3fn_scaled.safetensors (4.9 GB) → text_encoders
+    Source: Comfy-Org/Wan_2.1_ComfyUI_repackaged
+  - wan_2.1_vae.safetensors (0.2 GB) → vae
+    Source: Comfy-Org/Wan_2.1_ComfyUI_repackaged
+
+Optional for image-to-video:
+  - Wan2.1_14B_VACE-Q4_K_M.gguf (8.5 GB) → diffusion_models
+    Source: QuantStack/Wan2.1_14B_VACE-GGUF
+    NOTE: Filename uses UNDERSCORES not hyphens!
+
+VIDEO_MODELS dict in main.py tracks these for the download dialog.
+
+=============================================================================
+3D MODELS (Hunyuan3D / TripoSG)
+=============================================================================
+
+Hunyuan3D v2.0:
+  - hunyuan3d-dit-v2-0-fp16.safetensors (4.59 GB) → diffusion_models
+  - hunyuan3d-vae-v2-1.ckpt (0.61 GB) → vae
+  - hunyuan3d-paint-v2-0/ → diffusers (for texturing)
+  - hunyuan3d-delight-v2-0/ → diffusers (for delighting)
+
+TripoSG:
+  - TripoSG/ folder → diffusers (7.4 GB total)
+
+=============================================================================
+COMFYUI MODEL FOLDERS (C:/ComfyUI/models/)
+=============================================================================
+
+Current sizes after cleanup (2025-01-25):
+  checkpoints/      17.62 GB - Main checkpoint models (FLUX, tripoSR)
+  diffusion_models/  7.23 GB - DiT models (Hunyuan3D, Wan video)
+  vae/               1.16 GB - VAE decoders
+  clip/             11.87 GB - CLIP text encoders
+  text_encoders/    13.27 GB - Text encoders (T5, UMT5 for Wan)
+  loras/             6.38 GB - LoRA adapters (including Hyper-FLUX)
+  controlnet/        6.15 GB - ControlNet models (FLUX union)
+  upscale_models/    0.06 GB - Upscalers (Real-ESRGAN)
+  diffusers/        18.77 GB - HuggingFace diffusers (TripoSG, Hunyuan paint)
+  unet/              0.00 GB - Empty after cleanup
+
+  TOTAL: ~82.5 GB (down from ~130+ GB after cleanup)
+
+=============================================================================
+DEPENDENCIES (requirements.txt)
+=============================================================================
+
+requests>=2.31.0
+huggingface_hub>=0.20.0
+keyring>=24.0.0
+tqdm>=4.42.1
+flask>=2.0.0
+flask-cors>=3.0.0
+
+=============================================================================
+MCP SERVER (Claude Code Integration)
+=============================================================================
+
+mcp_server.py - MCP server for direct Claude integration
+  - Runs via stdio (launched by Claude Code)
+  - Config: .mcp.json
+
+To enable:
+  claude mcp add comfyui-prompter "python C:\comfyui-prompter\mcp_server.py"
+
+Available Tools:
+  - analyze_prompt: Get AI workflow recommendations for a prompt
+  - generate: Queue image/video/3D generation to ComfyUI
+  - check_job: Check status of a generation job
+  - list_workflows: List all available workflows
+  - check_status: Verify Ollama and ComfyUI are running
+
+Usage from Claude Code:
+  1. Ensure ComfyUI is running (http://127.0.0.1:8188)
+  2. Ensure Ollama is running (http://localhost:11434)
+  3. Use the MCP tools directly in conversation
+
+Example flow:
+  1. analyze_prompt("a cat walking through a garden")
+     → Returns recommended workflow + checkpoint
+  2. generate(prompt="...", workflow="text_to_video_wan.json")
+     → Returns job_id
+  3. check_job(job_id="xxx")
+     → Returns status and output file paths when complete
+
+=============================================================================
+COMMON TASKS
+=============================================================================
+
+Add new workflow:
+  1. Add JSON file to D:/workflows
+  2. Add entry to WORKFLOWS dict in config.py
+  3. Add checkpoint to CHECKPOINTS if new
+  4. Add models to model_registry.py if downloadable
+
+Add new model for download:
+  1. Add entry to MODEL_REGISTRY in model_registry.py with:
+     type, source, repo_id, filename, size_gb, requires_auth
+  2. For video models, also add to VIDEO_MODELS in main.py
+
+Test video generation:
+  1. Ensure Ollama running (ollama serve)
+  2. Ensure ComfyUI running (auto-starts from app or run manually)
+  3. Enter video prompt (e.g., "a cat walking, cinematic")
+  4. Click Analyze → should recommend text_to_video_wan.json
+  5. Click Generate → queues to ComfyUI
+
+Run the GUI app:
+  cd C:\comfyui-prompter
+  python main.py
+
+Run the API server (for Blender):
+  cd C:\comfyui-prompter
+  python api_server.py
+
+=============================================================================
+SESSION HISTORY (2025-01-25)
+=============================================================================
+
+1. Explored codebase, found video generation capability exists but needed setup
+
+2. Added video generation support:
+   - Created text_to_video_wan.json workflow in D:/workflows
+   - Added Wan 2.1 models to model_registry.py
+   - Added VIDEO_MODELS dict to main.py
+   - Created VideoModelsDialog class for downloading video models
+   - Added "Video Models Setup" button to GUI
+
+3. Enhanced model_downloader.py:
+   - Better handling of nested HuggingFace paths
+   - Improved check_model_exists() to search subfolders
+   - Handles file path extraction from repo paths
+
+4. Updated config.py:
+   - Added text_encoders to MODEL_FOLDERS
+   - Added video workflows to WORKFLOWS dict
+   - Added image-to-video workflow entry
+
+5. Installed missing dependencies:
+   - huggingface_hub
+   - keyring
+   (Added to requirements.txt)
+
+6. Model cleanup performed (~50GB freed):
+   - Deleted flux1-dev-Q8_0.gguf (11.84 GB) - redundant with safetensors
+   - Deleted OpenPoseXL2.safetensors (4.66 GB) - SDXL not needed for FLUX
+   - Deleted TripoSG/.git folder (~5 GB) - LFS duplicates
+   - Deleted Hunyuan3D-2/.git folder (~25 GB) - LFS duplicates
+   - Deleted diffusers/.cache folder - incomplete downloads
+   - Deleted Hunyuan DiT duplicates (12 GB) - same model in two locations
+   - Deleted .bin duplicates (~5 GB) - kept .safetensors versions
+   - Deleted duplicate LoRAs (rogue, susan-10)
+   - Moved Hyper-FLUX LoRA from checkpoints to loras folder
+
+7. Fixed Wan2.1 VACE model registry entry:
+   - Wrong: Wan2.1-VACE-14B-Q4_K_M.gguf (hyphens)
+   - Correct: Wan2.1_14B_VACE-Q4_K_M.gguf (underscores)
+   - Fixed repo_id: QuantStack/Wan2.1_14B_VACE-GGUF
+   - Updated in model_registry.py, main.py, config.py
+
+8. Created MCP server (mcp_server.py):
+   - Enables Claude to generate images/videos directly
+   - Tools: analyze_prompt, generate, check_job, list_workflows, check_status
+   - Config in .mcp.json
+   - To enable: claude mcp add comfyui-prompter "python C:\comfyui-prompter\mcp_server.py"
+
+9. User downloading video models via Video Models Setup dialog:
+   - wan2.1_t2v_1.3B_fp16.safetensors ✓
+   - umt5_xxl_fp8_e4m3fn_scaled.safetensors ✓
+   - wan_2.1_vae.safetensors ✓
+   - Wan2.1_14B_VACE-Q4_K_M.gguf (downloading)
+
+=============================================================================
+NEXT STEPS / TODO
+=============================================================================
+
+1. Test video generation end-to-end once VACE download completes
+2. Enable MCP server in Claude Code settings
+3. Test MCP tools for direct generation from Claude
+4. Consider adding more video workflows (Hunyuan video, etc.)
+5. HuggingFace authentication setup for faster downloads:
+   - Get token from https://huggingface.co/settings/tokens
+   - Run: setx HF_TOKEN "your_token"
+   - Or: python -c "from credentials_manager import set_huggingface_token; set_huggingface_token('token')"
+
+=============================================================================

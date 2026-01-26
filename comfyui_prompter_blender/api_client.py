@@ -1,0 +1,162 @@
+# api_client.py - HTTP client for communicating with ComfyUI Prompter API
+# Uses urllib instead of requests for Blender compatibility
+
+import urllib.request
+import urllib.error
+import urllib.parse
+import json
+import base64
+from typing import Dict, Optional, Tuple
+
+
+class APIClient:
+    """HTTP client for ComfyUI Prompter API server"""
+
+    def __init__(self, base_url: str = "http://127.0.0.1:5050"):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = 30
+
+    def _make_request(self, method: str, endpoint: str,
+                      data: Optional[Dict] = None) -> Tuple[bool, Dict]:
+        """
+        Make an HTTP request to the API
+
+        Returns:
+            (success: bool, response_data: dict)
+        """
+        url = f"{self.base_url}{endpoint}"
+
+        try:
+            if data:
+                json_data = json.dumps(data).encode('utf-8')
+                req = urllib.request.Request(
+                    url,
+                    data=json_data,
+                    headers={'Content-Type': 'application/json'},
+                    method=method
+                )
+            else:
+                req = urllib.request.Request(url, method=method)
+
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                response_data = json.loads(response.read().decode('utf-8'))
+                return True, response_data
+
+        except urllib.error.HTTPError as e:
+            try:
+                error_data = json.loads(e.read().decode('utf-8'))
+                return False, {"error": error_data.get("error", str(e))}
+            except:
+                return False, {"error": f"HTTP {e.code}: {e.reason}"}
+
+        except urllib.error.URLError as e:
+            return False, {"error": f"Connection failed: {e.reason}"}
+
+        except Exception as e:
+            return False, {"error": str(e)}
+
+    def check_status(self) -> Tuple[bool, Dict]:
+        """Check API and ComfyUI status"""
+        return self._make_request('GET', '/api/status')
+
+    def analyze_prompt(self, prompt: str) -> Tuple[bool, Dict]:
+        """Get AI workflow recommendation for a prompt"""
+        return self._make_request('POST', '/api/analyze', {"prompt": prompt})
+
+    def get_workflows(self, workflow_type: Optional[str] = None) -> Tuple[bool, Dict]:
+        """Get available workflows"""
+        endpoint = '/api/workflows'
+        if workflow_type:
+            endpoint += f'?type={workflow_type}'
+        return self._make_request('GET', endpoint)
+
+    def generate_from_image(self, workflow: str, image_path: str) -> Tuple[bool, Dict]:
+        """
+        Start a 3D generation job from an image file
+
+        Args:
+            workflow: Workflow filename
+            image_path: Path to the input image
+
+        Returns:
+            (success, response with job_id)
+        """
+        return self._make_request('POST', '/api/generate', {
+            "workflow": workflow,
+            "image_path": image_path,
+            "mode": "image_to_3d"
+        })
+
+    def generate_from_image_data(self, workflow: str, image_data: bytes) -> Tuple[bool, Dict]:
+        """
+        Start a 3D generation job from image bytes
+
+        Args:
+            workflow: Workflow filename
+            image_data: PNG image bytes
+
+        Returns:
+            (success, response with job_id)
+        """
+        base64_data = base64.b64encode(image_data).decode('utf-8')
+        return self._make_request('POST', '/api/generate', {
+            "workflow": workflow,
+            "image_data": f"data:image/png;base64,{base64_data}",
+            "mode": "image_to_3d"
+        })
+
+    def generate_from_text(self, workflow: str, prompt: str) -> Tuple[bool, Dict]:
+        """
+        Start a text-to-3D generation job
+
+        Args:
+            workflow: Workflow filename
+            prompt: Text description
+
+        Returns:
+            (success, response with job_id)
+        """
+        return self._make_request('POST', '/api/generate', {
+            "workflow": workflow,
+            "prompt": prompt,
+            "mode": "text_to_3d"
+        })
+
+    def get_job_status(self, job_id: str) -> Tuple[bool, Dict]:
+        """
+        Get status of a generation job
+
+        Returns:
+            (success, response with status, progress, output_path)
+        """
+        return self._make_request('GET', f'/api/job/{job_id}')
+
+    def upload_image(self, image_path: str) -> Tuple[bool, Dict]:
+        """
+        Upload an image to the server
+
+        Returns:
+            (success, response with filename)
+        """
+        try:
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
+
+            base64_data = base64.b64encode(image_data).decode('utf-8')
+            return self._make_request('POST', '/api/upload', {
+                "image_data": base64_data
+            })
+        except Exception as e:
+            return False, {"error": str(e)}
+
+
+# Singleton instance
+_client = None
+
+
+def get_client(base_url: str = None) -> APIClient:
+    """Get or create the API client singleton"""
+    global _client
+    if _client is None or (base_url and _client.base_url != base_url):
+        _client = APIClient(base_url or "http://127.0.0.1:5050")
+    return _client
