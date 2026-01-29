@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/Scherm/story-brainstorming-app-pages/sw.js', { scope: '/Scherm/story-brainstorming-app-pages/' })})}
