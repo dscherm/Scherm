@@ -301,6 +301,68 @@ const useStoryStore = create(
             };
           })
         }));
+      },
+
+      // Voice Sessions
+      voiceSessions: [],
+
+      // Add a new voice session
+      addVoiceSession: (sessionData) => {
+        const newSession = {
+          id: uuidv4(),
+          title: sessionData.title || `Session ${new Date().toLocaleDateString()}`,
+          transcript: sessionData.transcript || '',
+          summary: sessionData.summary || '',
+          linkedStoryId: sessionData.linkedStoryId || null,
+          category: sessionData.category || 'brainstorm', // brainstorm, character, plot, world
+          tags: sessionData.tags || [],
+          duration: sessionData.duration || 0,
+          createdAt: new Date().toISOString()
+        };
+
+        set(state => ({
+          voiceSessions: [...state.voiceSessions, newSession]
+        }));
+
+        return newSession;
+      },
+
+      // Update a voice session
+      updateVoiceSession: (sessionId, updates) => {
+        set(state => ({
+          voiceSessions: state.voiceSessions.map(session =>
+            session.id === sessionId ? { ...session, ...updates } : session
+          )
+        }));
+      },
+
+      // Delete a voice session
+      deleteVoiceSession: (sessionId) => {
+        set(state => ({
+          voiceSessions: state.voiceSessions.filter(session => session.id !== sessionId)
+        }));
+      },
+
+      // Get sessions for current story
+      getSessionsForStory: () => {
+        const { voiceSessions, currentStoryId } = get();
+        return voiceSessions.filter(s => s.linkedStoryId === currentStoryId || !s.linkedStoryId);
+      },
+
+      // Convert voice session to note
+      convertSessionToNote: (sessionId) => {
+        const { voiceSessions, addNote } = get();
+        const session = voiceSessions.find(s => s.id === sessionId);
+        if (!session) return null;
+
+        return addNote({
+          title: session.title,
+          content: session.transcript + (session.summary ? `\n\n---\nSummary: ${session.summary}` : ''),
+          category: session.category === 'character' ? 'character' :
+                    session.category === 'plot' ? 'plot' :
+                    session.category === 'world' ? 'world' : 'general',
+          tags: [...session.tags, 'voice-session']
+        });
       }
     }),
     {

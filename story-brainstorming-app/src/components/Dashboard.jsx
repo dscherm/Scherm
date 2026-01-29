@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, Sparkles, Clock, Trash2, ChevronRight } from 'lucide-react';
+import { Plus, BookOpen, Sparkles, Clock, Trash2, ChevronRight, Mic } from 'lucide-react';
 import useStoryStore from '../hooks/useStoryStore';
 
 const Dashboard = () => {
@@ -39,6 +39,21 @@ const Dashboard = () => {
         <h2 className="text-2xl font-bold mb-2">Welcome to Story Brainstormer</h2>
         <p className="text-slate-400">Craft your narrative with structure and purpose</p>
       </div>
+
+      {/* Voice Mode Banner */}
+      <button
+        onClick={() => navigate('/voice')}
+        className="w-full mb-6 bg-gradient-to-r from-purple-600 to-primary-600 rounded-2xl p-4 flex items-center gap-4 hover:opacity-90 transition-opacity"
+      >
+        <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+          <Mic className="w-7 h-7" />
+        </div>
+        <div className="flex-1 text-left">
+          <h3 className="font-semibold text-lg">Voice Mode</h3>
+          <p className="text-sm text-white/70">Hands-free brainstorming for driving</p>
+        </div>
+        <ChevronRight className="w-6 h-6 text-white/50" />
+      </button>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3 mb-8">

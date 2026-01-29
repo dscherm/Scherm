@@ -9,22 +9,31 @@ import CharacterDetail from './components/CharacterDetail';
 import Notes from './components/Notes';
 import Brainstorm from './components/Brainstorm';
 import ActDetail from './components/ActDetail';
+import VoiceMode from './components/VoiceMode';
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/new" element={<NewStory />} />
-        <Route path="/story/:storyId" element={<StoryView />} />
-        <Route path="/story/:storyId/plot" element={<PlotPlanner />} />
-        <Route path="/story/:storyId/act/:actId" element={<ActDetail />} />
-        <Route path="/story/:storyId/characters" element={<CharacterBuilder />} />
-        <Route path="/story/:storyId/character/:characterId" element={<CharacterDetail />} />
-        <Route path="/story/:storyId/notes" element={<Notes />} />
-        <Route path="/brainstorm" element={<Brainstorm />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      {/* Voice Mode has its own full-screen layout */}
+      <Route path="/voice" element={<VoiceMode />} />
+
+      {/* All other routes use the standard Layout */}
+      <Route path="/*" element={
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/new" element={<NewStory />} />
+            <Route path="/story/:storyId" element={<StoryView />} />
+            <Route path="/story/:storyId/plot" element={<PlotPlanner />} />
+            <Route path="/story/:storyId/act/:actId" element={<ActDetail />} />
+            <Route path="/story/:storyId/characters" element={<CharacterBuilder />} />
+            <Route path="/story/:storyId/character/:characterId" element={<CharacterDetail />} />
+            <Route path="/story/:storyId/notes" element={<Notes />} />
+            <Route path="/brainstorm" element={<Brainstorm />} />
+          </Routes>
+        </Layout>
+      } />
+    </Routes>
   );
 }
 
