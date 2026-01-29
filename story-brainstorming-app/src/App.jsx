@@ -10,6 +10,8 @@ import Notes from './components/Notes';
 import Brainstorm from './components/Brainstorm';
 import ActDetail from './components/ActDetail';
 import VoiceMode from './components/VoiceMode';
+import Sessions from './components/Sessions';
+import Settings from './components/Settings';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/new" element={<NewStory />} />
+            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/story/:storyId" element={<StoryView />} />
             <Route path="/story/:storyId/plot" element={<PlotPlanner />} />
             <Route path="/story/:storyId/act/:actId" element={<ActDetail />} />

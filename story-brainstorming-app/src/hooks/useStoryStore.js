@@ -363,6 +363,45 @@ const useStoryStore = create(
                     session.category === 'world' ? 'world' : 'general',
           tags: [...session.tags, 'voice-session']
         });
+      },
+
+      // Merge cloud data with local data (for sync)
+      mergeCloudData: (cloudStories, cloudSessions) => {
+        set(state => {
+          // Merge stories - cloud wins for conflicts based on updatedAt
+          const mergedStories = [...state.stories];
+          for (const cloudStory of cloudStories) {
+            const localIndex = mergedStories.findIndex(s => s.id === cloudStory.id);
+            if (localIndex === -1) {
+              // New story from cloud
+              mergedStories.push(cloudStory);
+            } else {
+              // Compare timestamps - newer wins
+              const localStory = mergedStories[localIndex];
+              const cloudDate = new Date(cloudStory.updatedAt || cloudStory.syncedAt);
+              const localDate = new Date(localStory.updatedAt);
+              if (cloudDate > localDate) {
+                mergedStories[localIndex] = cloudStory;
+              }
+            }
+          }
+
+          // Merge voice sessions
+          const mergedSessions = [...state.voiceSessions];
+          for (const cloudSession of cloudSessions) {
+            const localIndex = mergedSessions.findIndex(s => s.id === cloudSession.id);
+            if (localIndex === -1) {
+              // New session from cloud
+              mergedSessions.push(cloudSession);
+            }
+            // Sessions are immutable after creation, so we don't update existing ones
+          }
+
+          return {
+            stories: mergedStories,
+            voiceSessions: mergedSessions
+          };
+        });
       }
     }),
     {
