@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, Users, FileText, Sparkles, ChevronLeft } from 'lucide-react';
+import { Home, BookOpen, Users, FileText, Sparkles, ChevronLeft, Mic, Settings } from 'lucide-react';
 import useStoryStore from '../hooks/useStoryStore';
 
 const Layout = ({ children }) => {
@@ -16,6 +16,7 @@ const Layout = ({ children }) => {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
+    { path: '/sessions', icon: Mic, label: 'Sessions' },
     { path: '/brainstorm', icon: Sparkles, label: 'Ideas' },
   ];
 
@@ -51,10 +52,16 @@ const Layout = ({ children }) => {
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
-        <h1 className="text-lg font-semibold flex items-center gap-2">
+        <h1 className="text-lg font-semibold flex items-center gap-2 flex-1">
           <Sparkles className="w-5 h-5 text-primary-400" />
           Story Brainstormer
         </h1>
+        <button
+          onClick={() => navigate('/settings')}
+          className="p-2 -mr-2 rounded-lg hover:bg-slate-700 transition-colors text-slate-400"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
       </header>
 
       {/* Main Content */}

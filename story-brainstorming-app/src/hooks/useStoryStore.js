@@ -301,6 +301,107 @@ const useStoryStore = create(
             };
           })
         }));
+      },
+
+      // Voice Sessions
+      voiceSessions: [],
+
+      // Add a new voice session
+      addVoiceSession: (sessionData) => {
+        const newSession = {
+          id: uuidv4(),
+          title: sessionData.title || `Session ${new Date().toLocaleDateString()}`,
+          transcript: sessionData.transcript || '',
+          summary: sessionData.summary || '',
+          linkedStoryId: sessionData.linkedStoryId || null,
+          category: sessionData.category || 'brainstorm', // brainstorm, character, plot, world
+          tags: sessionData.tags || [],
+          duration: sessionData.duration || 0,
+          createdAt: new Date().toISOString()
+        };
+
+        set(state => ({
+          voiceSessions: [...state.voiceSessions, newSession]
+        }));
+
+        return newSession;
+      },
+
+      // Update a voice session
+      updateVoiceSession: (sessionId, updates) => {
+        set(state => ({
+          voiceSessions: state.voiceSessions.map(session =>
+            session.id === sessionId ? { ...session, ...updates } : session
+          )
+        }));
+      },
+
+      // Delete a voice session
+      deleteVoiceSession: (sessionId) => {
+        set(state => ({
+          voiceSessions: state.voiceSessions.filter(session => session.id !== sessionId)
+        }));
+      },
+
+      // Get sessions for current story
+      getSessionsForStory: () => {
+        const { voiceSessions, currentStoryId } = get();
+        return voiceSessions.filter(s => s.linkedStoryId === currentStoryId || !s.linkedStoryId);
+      },
+
+      // Convert voice session to note
+      convertSessionToNote: (sessionId) => {
+        const { voiceSessions, addNote } = get();
+        const session = voiceSessions.find(s => s.id === sessionId);
+        if (!session) return null;
+
+        return addNote({
+          title: session.title,
+          content: session.transcript + (session.summary ? `\n\n---\nSummary: ${session.summary}` : ''),
+          category: session.category === 'character' ? 'character' :
+                    session.category === 'plot' ? 'plot' :
+                    session.category === 'world' ? 'world' : 'general',
+          tags: [...session.tags, 'voice-session']
+        });
+      },
+
+      // Merge cloud data with local data (for sync)
+      mergeCloudData: (cloudStories, cloudSessions) => {
+        set(state => {
+          // Merge stories - cloud wins for conflicts based on updatedAt
+          const mergedStories = [...state.stories];
+          for (const cloudStory of cloudStories) {
+            const localIndex = mergedStories.findIndex(s => s.id === cloudStory.id);
+            if (localIndex === -1) {
+              // New story from cloud
+              mergedStories.push(cloudStory);
+            } else {
+              // Compare timestamps - newer wins
+              const localStory = mergedStories[localIndex];
+              const cloudDate = new Date(cloudStory.updatedAt || cloudStory.syncedAt);
+              const localDate = new Date(localStory.updatedAt);
+              if (cloudDate > localDate) {
+                mergedStories[localIndex] = cloudStory;
+              }
+            }
+          }
+
+          // Merge voice sessions
+          const mergedSessions = [...state.voiceSessions];
+          for (const cloudSession of cloudSessions) {
+            const localIndex = mergedSessions.findIndex(s => s.id === cloudSession.id);
+            if (localIndex === -1) {
+              // New session from cloud
+              mergedSessions.push(cloudSession);
+            }
+            // Sessions are immutable after creation, so we don't update existing ones
+          }
+
+          return {
+            stories: mergedStories,
+            voiceSessions: mergedSessions
+          };
+        });
       }
     }),
     {
