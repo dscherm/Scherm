@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-dark-bg text-white antialiased;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  input, textarea, select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-blue text-white px-4 py-2 rounded-lg font-medium
+           hover:bg-blue-600 active:bg-blue-700 transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-card text-white px-4 py-2 rounded-lg font-medium
+           border border-dark-border hover:bg-dark-hover active:bg-dark-surface
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply text-gray-400 px-4 py-2 rounded-lg font-medium
+           hover:bg-dark-card hover:text-white active:bg-dark-surface
+           transition-colors;
+  }
+
+  .btn-success {
+    @apply bg-accent-green text-white px-4 py-2 rounded-lg font-medium
+           hover:bg-green-600 active:bg-green-700 transition-colors;
+  }
+
+  .btn-danger {
+    @apply bg-accent-red text-white px-4 py-2 rounded-lg font-medium
+           hover:bg-red-600 active:bg-red-700 transition-colors;
+  }
+
+  .card {
+    @apply bg-dark-card rounded-xl border border-dark-border;
+  }
+
+  .card-hover {
+    @apply card hover:border-dark-hover hover:bg-dark-hover transition-colors cursor-pointer;
+  }
+
+  .input-field {
+    @apply w-full bg-dark-surface border border-dark-border rounded-lg px-4 py-3
+           text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue
+           focus:ring-1 focus:ring-accent-blue transition-colors;
+  }
+
+  .select-field {
+    @apply w-full bg-dark-surface border border-dark-border rounded-lg px-4 py-3
+           text-white focus:outline-none focus:border-accent-blue
+           focus:ring-1 focus:ring-accent-blue transition-colors appearance-none;
+  }
+
+  .score-badge {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm;
+  }
+
+  .score-badge-excellent {
+    @apply score-badge bg-score-excellent/20 text-score-excellent;
+  }
+
+  .score-badge-good {
+    @apply score-badge bg-score-good/20 text-score-good;
+  }
+
+  .score-badge-fair {
+    @apply score-badge bg-score-fair/20 text-score-fair;
+  }
+
+  .score-badge-poor {
+    @apply score-badge bg-score-poor/20 text-score-poor;
+  }
+
+  .price-up {
+    @apply text-accent-green;
+  }
+
+  .price-down {
+    @apply text-accent-red;
+  }
+
+  .tab-active {
+    @apply text-white border-b-2 border-accent-blue;
+  }
+
+  .tab-inactive {
+    @apply text-gray-400 border-b-2 border-transparent hover:text-gray-200;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 py-2 px-4 text-gray-400
+           hover:text-white transition-colors;
+  }
+
+  .nav-item-active {
+    @apply nav-item text-accent-blue;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm
+           bg-dark-surface border border-dark-border;
+  }
+
+  .chip-selected {
+    @apply chip bg-accent-blue/20 border-accent-blue text-accent-blue;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Snowflake chart custom styles */
+.snowflake-segment {
+  transition: opacity 0.2s ease;
+}
+
+.snowflake-segment:hover {
+  opacity: 0.8;
+}
+
+/* Stock card shimmer loading effect */
+.shimmer {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
