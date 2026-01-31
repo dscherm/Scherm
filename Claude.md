@@ -2,20 +2,24 @@
 
 This repository contains projects and code examples built with Claude Code. Below is documentation of key features, techniques, and reusable patterns.
 
+**Homepage:** `index.html` - Retrofuture 60s atomic age landing page with orbital animations
+
 ---
 
 ## Projects
 
-### 🍸 Cocktail Mixologist App
+### 🍸 Advanced Cocktail Mixologist
 **Location:** `docs/`
 **Live Demo:** [GitHub Pages](https://dscherm.github.io/Scherm/docs/)
+**Status:** ✅ Active Development
 
-An interactive cocktail discovery application featuring:
+An advanced interactive cocktail discovery application featuring:
 - **Flavor-Based Recommendations**: Weighted flavor pairing system inspired by The Flavor Bible
 - **Interactive Node Visualizations**: D3.js force-directed graphs with dynamic exploration
 - **Cocktail Codex Taxonomy**: Hierarchical organization based on 6 foundational cocktail templates
 - **Device-Responsive Design**: Adapts interactions for desktop (hover) and mobile (tap-to-select)
-- **Ingredient Normalization**: Intelligent fuzzy matching for flavor profile lookups
+- **Ingredient Normalization**: Intelligent fuzzy matching for flavor profile lookups (60+ aliases)
+- **Synthwave Aesthetic**: Retro-futuristic design with neon gradients and grid backgrounds
 
 **Key Files:**
 - `docs/index.html` - Main application
@@ -23,7 +27,115 @@ An interactive cocktail discovery application featuring:
 - `docs/flavor-engine.js` - Flavor pairing and normalization system
 - `docs/cocktail-graph.js` - Individual cocktail node visualization
 - `docs/codex-graph.js` - Hierarchical Codex visualization
+- `docs/codex-app.js` - Codex initialization and tab handling
+- `docs/cocktail-codex.js` - Root cocktail definitions
 - `docs/styles.css` - Synthwave retro-futuristic theme
+
+**Technologies:**
+- D3.js v7 (force-directed graphs)
+- TheCocktailDB API
+- Vanilla JavaScript (ES6+)
+- CSS3 with custom properties
+- LocalStorage
+
+---
+
+### 🩺 USA Vaccination Policy Tracker
+**Location:** `vaccination-tracker/`
+**Status:** 📋 Planning/Documentation Phase
+
+A comprehensive web application for comparing and visualizing USA vaccination policies, mandates, and outcomes (2015-2025).
+
+**Planned Features:**
+- **Topic Categories**: Childhood vaccines, COVID-19, Influenza, HPV, Adult vaccines, Mandates, Safety monitoring
+- **Timeline Visualization**: Chronological policy changes and outcomes
+- **Topic & Year Filtering**: Focus on specific categories and time periods
+- **Real-time Statistics Dashboard**: Metrics on selected data
+- **Interactive Charts**: Coverage trends with Chart.js/D3.js
+- **Geographic Heat Maps**: State-by-state comparisons
+
+**Data Sources (Planned):**
+- CDC National Immunization Survey (NIS)
+- CDC COVID-19 Vaccination Data (Socrata API)
+- CDC WONDER VAERS (Vaccine Adverse Event Reporting)
+- FluVaxView (Influenza coverage)
+- HealthData.gov
+
+**Key Files:**
+- `vaccination-tracker/index.html` - Main UI
+- `vaccination-tracker/app.js` - Application logic and API integration
+- `vaccination-tracker/README.md` - Comprehensive API documentation
+
+**Technologies:**
+- Vanilla JavaScript (ES6+)
+- Socrata Open Data API (data.cdc.gov)
+- CDC WONDER API (XML-based)
+- Chart.js / D3.js (planned)
+- Responsive design (mobile-first)
+
+**Development Phases:**
+- ✅ Phase 1: Sample data structure and UI
+- 🔲 Phase 2: Live CDC API integration
+- 🔲 Phase 3: Advanced visualizations
+- 🔲 Phase 4: Comparative analysis tools
+- 🔲 Phase 5: International expansion (WHO, OECD)
+
+---
+
+### 🍹 Basic Cocktail Mixologist
+**Location:** `cocktail-app/`
+**Status:** ✅ Complete (v1)
+
+Original cocktail discovery app before advanced features were added.
+
+**Features:**
+- Search by name, ingredient, or base liquor
+- Random cocktail suggestions
+- Detailed cocktail view with ingredients and instructions
+- Click ingredients for brands and alternatives
+- Create and save custom cocktails (LocalStorage)
+- Responsive design with vibrant gradient UI
+
+**Key Files:**
+- `cocktail-app/index.html`
+- `cocktail-app/README.md`
+
+**Technologies:**
+- Vanilla JavaScript
+- TheCocktailDB API
+- LocalStorage
+- CSS3 animations
+
+**Note:** This version was superseded by the advanced version in `docs/` with flavor pairing, node visualizations, and Cocktail Codex taxonomy.
+
+---
+
+### 🧬 Vaccine Defense Game
+**Location:** `vaccine-design-game.html`
+**Status:** ✅ Complete
+
+Educational game teaching how vaccines work through interactive gameplay.
+
+**Features:**
+- **Pre-Vaccine Phase**: Dodge pathogens to understand infection risk
+- **Vaccine Unlock**: Learn how vaccines prepare immune system
+- **Vaccinated Phase**: Match antibodies to pathogens
+- **Mutation Phase**: Adapt to viral mutations
+- **Progressive Difficulty**: Tutorial → Gameplay → Challenge modes
+
+**Game Mechanics:**
+- Visual pathogen/antibody matching
+- Health system
+- Score tracking
+- Multiple game states with transitions
+- Educational tutorials
+
+**Technologies:**
+- p5.js (creative coding library)
+- Vanilla JavaScript
+- Canvas-based rendering
+
+**Educational Goal:** Demonstrate vaccine mechanism of action and importance of keeping vaccines updated for mutations.
 
 ---
 
@@ -262,14 +374,46 @@ const nodes = nodeGroup
 
 ---
 
+## Project Portfolio Summary
+
+| Project | Status | Technologies | Key Features |
+|---------|--------|--------------|--------------|
+| Advanced Cocktail Mixologist | ✅ Active | D3.js, Flavor Engine, TheCocktailDB API | Node graphs, Codex taxonomy, Device-responsive |
+| Vaccination Policy Tracker | 📋 Planning | CDC APIs, Chart.js/D3.js, Socrata | Timeline viz, Policy tracking, Multi-source data |
+| Basic Cocktail App | ✅ Complete | Vanilla JS, TheCocktailDB API | Search, Custom creation, LocalStorage |
+| Vaccine Defense Game | ✅ Complete | p5.js, Canvas | Educational gameplay, Mutation mechanics |
+
+---
+
 ## Future Skills to Document
 
+**Visualization & UX:**
 - [ ] Hierarchical taxonomy systems
-- [ ] Filter and search patterns
+- [ ] Filter and search patterns (topic + year + characteristics)
 - [ ] Modal and detail panel interactions
-- [ ] SVG icon creation
-- [ ] Animation and transition techniques
+- [ ] Timeline visualization techniques
+- [ ] SVG icon creation and animation
 - [ ] Responsive layout strategies
+
+**Data & APIs:**
+- [ ] Multi-source API integration patterns
+- [ ] CORS proxy strategies
+- [ ] API rate limiting and caching
+- [ ] XML to JSON transformation (CDC WONDER)
+- [ ] Socrata API query optimization
+- [ ] Error handling and fallback patterns
+
+**Game Development:**
+- [ ] p5.js game state management
+- [ ] Canvas-based collision detection
+- [ ] Progressive difficulty systems
+- [ ] Educational game design patterns
+
+**Advanced Features:**
+- [ ] LocalStorage vs SessionStorage strategies
+- [ ] Client-side data persistence
+- [ ] Dynamic form generation (add/remove fields)
+- [ ] Browser capability detection patterns
 
 ---
 
