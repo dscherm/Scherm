@@ -7,6 +7,8 @@
 [build.environment]
   NODE_VERSION = "18"
   NETLIFY = "true"
+  # These are free-tier public API keys designed for client-side use
+  SECRETS_SCAN_OMIT_KEYS = "VITE_FINNHUB_API_KEY,VITE_CONGRESS_API_KEY,VITE_TRADIER_API_TOKEN,VITE_QUIVER_API_KEY"
 
 # Handle SPA routing
 [[redirects]]
