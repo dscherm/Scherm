@@ -5,6 +5,7 @@ import StockDetail from './components/StockDetail';
 import Portfolio from './components/Portfolio';
 import Screener from './components/Screener';
 import Watchlist from './components/Watchlist';
+import Politics from './components/Politics';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/screener" element={<Screener />} />
+            <Route path="/politics" element={<Politics />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/watchlist" element={<Watchlist />} />
           </Routes>

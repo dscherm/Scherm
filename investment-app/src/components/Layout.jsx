@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BarChart3, Briefcase, Star } from 'lucide-react';
+import { Home, BarChart3, Briefcase, Star, Landmark } from 'lucide-react';
 
 function Layout({ children }) {
   const navigate = useNavigate();
@@ -8,6 +8,7 @@ function Layout({ children }) {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/screener', icon: BarChart3, label: 'Screener' },
+    { path: '/politics', icon: Landmark, label: 'Politics' },
     { path: '/portfolio', icon: Briefcase, label: 'Portfolio' },
     { path: '/watchlist', icon: Star, label: 'Watchlist' }
   ];

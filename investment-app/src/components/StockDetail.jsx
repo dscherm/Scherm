@@ -13,6 +13,8 @@ import useStockData, {
 } from '../hooks/useStockData';
 import SnowflakeChart from './SnowflakeChart';
 import OptionsAnalysis from './OptionsAnalysis';
+import StockPoliticalIntel from './StockPoliticalIntel';
+import StockOutlook from './StockOutlook';
 
 function StockDetail() {
   const { symbol } = useParams();
@@ -116,8 +118,10 @@ function StockDetail() {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'outlook', label: 'Outlook' },
     { id: 'analysis', label: 'Analysis' },
-    { id: 'options', label: 'Options' }
+    { id: 'options', label: 'Options' },
+    { id: 'politics', label: 'Politics' }
   ];
 
   const analysisCategories = [
@@ -310,6 +314,12 @@ function StockDetail() {
           </div>
         )}
 
+        {activeTab === 'outlook' && (
+          <div className="animate-fade-in">
+            <StockOutlook stock={stock} />
+          </div>
+        )}
+
         {activeTab === 'analysis' && stock.analysis && (
           <div className="space-y-4 animate-fade-in">
             {analysisCategories.map(category => {
@@ -366,6 +376,12 @@ function StockDetail() {
         {activeTab === 'options' && (
           <div className="animate-fade-in">
             <OptionsAnalysis symbol={stock.symbol} stockPrice={stock.price} />
+          </div>
+        )}
+
+        {activeTab === 'politics' && (
+          <div className="animate-fade-in">
+            <StockPoliticalIntel symbol={stock.symbol} />
           </div>
         )}
       </main>

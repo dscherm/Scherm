@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, Search, Star, RefreshCw,
-  ChevronRight, Briefcase, BarChart3, Zap, AlertCircle
+  ChevronRight, Briefcase, BarChart3, Zap, AlertCircle, Landmark
 } from 'lucide-react';
 import useInvestmentStore from '../hooks/useInvestmentStore';
 import useStockData, {
@@ -240,6 +240,25 @@ function Dashboard() {
             </div>
             <p className="text-xl font-bold">{stocks.length}</p>
             <p className="text-sm text-gray-400">available</p>
+          </div>
+        </section>
+
+        {/* Political Intel Card */}
+        <section
+          className="card p-4 cursor-pointer hover:border-dark-hover transition-colors bg-gradient-to-r from-dark-card to-dark-surface border-accent-purple/20"
+          onClick={() => navigate('/politics')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-accent-purple/20">
+                <Landmark className="w-5 h-5 text-accent-purple" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">Political Intel</h3>
+                <p className="text-sm text-gray-400">Congressional trades, contracts & policy alerts</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
           </div>
         </section>
 

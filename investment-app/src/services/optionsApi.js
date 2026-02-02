@@ -1,40 +1,137 @@
-// Options API Service - Fetches and analyzes options data
+// Options API Service - Uses Tradier for options data
+// Get your free sandbox API token at https://developer.tradier.com/
 
-const CORS_PROXY = 'https://corsproxy.io/?';
+const TRADIER_BASE_URL = 'https://sandbox.tradier.com/v1';
+const TRADIER_TOKEN = import.meta.env.VITE_TRADIER_API_TOKEN || '';
+
+// Check if Tradier API is configured
+export function isOptionsApiConfigured() {
+  return TRADIER_TOKEN && TRADIER_TOKEN.length > 0;
+}
+
+// Helper to make Tradier API calls
+async function tradierFetch(endpoint, params = {}) {
+  if (!TRADIER_TOKEN) {
+    throw new Error('Tradier API token not configured. Add VITE_TRADIER_API_TOKEN to your .env file for options data.');
+  }
+
+  const url = new URL(`${TRADIER_BASE_URL}${endpoint}`);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      'Authorization': `Bearer ${TRADIER_TOKEN}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (response.status === 401) {
+    throw new Error('Invalid Tradier API token. Please check your token.');
+  }
+
+  if (response.status === 429) {
+    throw new Error('Rate limit exceeded.');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Tradier API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Fetch options expirations for a stock
+export async function fetchOptionsExpirations(symbol) {
+  const data = await tradierFetch('/markets/options/expirations', {
+    symbol,
+    includeAllRoots: 'true'
+  });
+
+  if (data.expirations && data.expirations.date) {
+    const dates = Array.isArray(data.expirations.date)
+      ? data.expirations.date
+      : [data.expirations.date];
+    return dates;
+  }
+
+  return [];
+}
 
 // Fetch options chain for a stock
-export async function fetchOptionsChain(symbol) {
-  try {
-    const url = `${CORS_PROXY}${encodeURIComponent(
-      `https://query1.finance.yahoo.com/v7/finance/options/${symbol}`
-    )}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+export async function fetchOptionsChain(symbol, expiration = null) {
+  // If no expiration provided, get the nearest one
+  if (!expiration) {
+    const expirations = await fetchOptionsExpirations(symbol);
+    if (expirations.length === 0) {
+      throw new Error('No options available for this symbol');
     }
-
-    const data = await response.json();
-
-    if (data.optionChain && data.optionChain.result && data.optionChain.result[0]) {
-      const result = data.optionChain.result[0];
-      return {
-        symbol: result.underlyingSymbol,
-        currentPrice: result.quote?.regularMarketPrice || 0,
-        expirationDates: result.expirationDates || [],
-        strikes: result.strikes || [],
-        calls: result.options?.[0]?.calls || [],
-        puts: result.options?.[0]?.puts || [],
-        quote: result.quote
-      };
-    }
-
-    throw new Error('No options data available');
-  } catch (error) {
-    console.error(`Error fetching options for ${symbol}:`, error);
-    throw error;
+    expiration = expirations[0];
   }
+
+  const data = await tradierFetch('/markets/options/chains', {
+    symbol,
+    expiration,
+    greeks: 'true'
+  });
+
+  if (data.options && data.options.option) {
+    const options = Array.isArray(data.options.option)
+      ? data.options.option
+      : [data.options.option];
+
+    const calls = options.filter(o => o.option_type === 'call');
+    const puts = options.filter(o => o.option_type === 'put');
+    const strikes = [...new Set(options.map(o => o.strike))].sort((a, b) => a - b);
+
+    // Get current price from the underlying
+    const underlyingPrice = options[0]?.underlying_price || 0;
+
+    // Get all expiration dates for this symbol
+    const expirationDates = await fetchOptionsExpirations(symbol);
+
+    return {
+      symbol,
+      currentPrice: underlyingPrice,
+      expirationDates: expirationDates.map(d => new Date(d).getTime() / 1000),
+      strikes,
+      calls: calls.map(transformOption),
+      puts: puts.map(transformOption),
+      quote: {
+        regularMarketPrice: underlyingPrice
+      }
+    };
+  }
+
+  throw new Error('No options data available');
+}
+
+// Transform Tradier option to our format
+function transformOption(option) {
+  return {
+    contractSymbol: option.symbol,
+    strike: option.strike,
+    lastPrice: option.last || 0,
+    bid: option.bid || 0,
+    ask: option.ask || 0,
+    change: option.change || 0,
+    percentChange: option.change_percentage || 0,
+    volume: option.volume || 0,
+    openInterest: option.open_interest || 0,
+    impliedVolatility: option.greeks?.smv_vol || option.greeks?.mid_iv || 0,
+    inTheMoney: option.strike < option.underlying_price ? option.option_type === 'call' : option.option_type === 'put',
+    expirationDate: option.expiration_date,
+    // Greeks
+    greeks: option.greeks ? {
+      delta: option.greeks.delta,
+      gamma: option.greeks.gamma,
+      theta: option.greeks.theta,
+      vega: option.greeks.vega,
+      rho: option.greeks.rho,
+      iv: option.greeks.smv_vol || option.greeks.mid_iv
+    } : null
+  };
 }
 
 // Analyze options data to provide insights
@@ -180,7 +277,7 @@ function findUnusualActivity(calls, puts) {
   for (const option of allOptions) {
     const volumeToOI = (option.volume || 0) / (option.openInterest || 1);
 
-    if (volumeToOI > 2 && option.volume > 1000) {
+    if (volumeToOI > 2 && option.volume > 100) {
       unusual.push({
         type: option.type,
         strike: option.strike,
