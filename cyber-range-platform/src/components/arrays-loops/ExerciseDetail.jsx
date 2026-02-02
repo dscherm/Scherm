@@ -41,7 +41,7 @@ const loadP5 = () => {
   });
 };
 
-function ExerciseDetail({ exerciseId, onBack, onComplete, isCompleted }) {
+function ExerciseDetail({ exerciseId, onBack, onComplete, isCompleted, onSubmit }) {
   const exercise = getExerciseById(exerciseId);
   const [code, setCode] = useState(exercise?.starterCode || '');
   const [showHints, setShowHints] = useState([]);
@@ -182,6 +182,16 @@ function ExerciseDetail({ exerciseId, onBack, onComplete, isCompleted }) {
 
   const handleComplete = () => {
     if (!isCompleted) {
+      // Save submission for teacher review
+      if (onSubmit) {
+        onSubmit({
+          exerciseId: exercise.id,
+          answer: code,
+          isCorrect: true, // Programming exercises are self-graded
+          exerciseType: 'programming',
+          exerciseTitle: exercise.title
+        });
+      }
       onComplete(exercise.id, exercise.points);
     }
   };
@@ -305,6 +315,25 @@ function ExerciseDetail({ exerciseId, onBack, onComplete, isCompleted }) {
           ))}
         </div>
       </div>
+
+      {exercise.resources && exercise.resources.length > 0 && (
+        <div className="resources-section">
+          <h3>p5.js Reference</h3>
+          <div className="resources-list">
+            {exercise.resources.map((resource, index) => (
+              <a
+                key={index}
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="resource-link"
+              >
+                {resource.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="solution-section">
         {!showSolution ? (

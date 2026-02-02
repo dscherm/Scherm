@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import UnifiedDashboard from './components/UnifiedDashboard';
@@ -24,7 +24,10 @@ import SymbolLesson from './components/flowchart/SymbolLesson';
 import FlowchartViewer from './components/flowchart/FlowchartViewer';
 import FlowchartBuilder from './components/flowchart/FlowchartBuilder';
 import FlowchartExercise from './components/flowchart/FlowchartExercise';
-import { saveStudentProgress, getStudentProgress, subscribeToAssignments, isFirebaseConfigured } from './services/firebaseService';
+import DataApisWeekView from './components/data-apis/DataApisWeekView';
+import DataApisExerciseDetail from './components/data-apis/DataApisExerciseDetail';
+import DataApisVocabularyPage from './components/data-apis/DataApisVocabularyPage';
+import { saveStudentProgress, getStudentProgress, subscribeToAssignments, isFirebaseConfigured, saveStudentSubmission } from './services/firebaseService';
 
 function App() {
   // Initialize theme on load
@@ -46,6 +49,9 @@ function App() {
   const [completedExercises, setCompletedExercises] = useState([]);
   const [totalPoints, setTotalPoints] = useState(0);
 
+  // Store unsubscribe function for assignment subscription cleanup
+  const assignmentUnsubscribeRef = useRef(null);
+
   // Assignments & arrays-loops state
   const [assignments, setAssignments] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState(null);
@@ -58,6 +64,11 @@ function App() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [selectedPseudocodeExercise, setSelectedPseudocodeExercise] = useState(null);
   const [selectedFlowchartExercise, setSelectedFlowchartExercise] = useState(null);
+
+  // Data & APIs state
+  const [completedDataApisExercises, setCompletedDataApisExercises] = useState([]);
+  const [selectedDataApisWeek, setSelectedDataApisWeek] = useState(null);
+  const [selectedDataApisExercise, setSelectedDataApisExercise] = useState(null);
 
   // Check for existing session
   useEffect(() => {
@@ -87,6 +98,14 @@ function App() {
         console.error('Error loading teacher session:', e);
       }
     }
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (assignmentUnsubscribeRef.current) {
+        assignmentUnsubscribeRef.current();
+        assignmentUnsubscribeRef.current = null;
+      }
+    };
   }, []);
 
   // Load user progress
@@ -100,17 +119,20 @@ function App() {
           setCompletedExercises(progress.completedExercises || []);
           setCompletedPseudocode(progress.completedPseudocode || []);
           setCompletedFlowcharts(progress.completedFlowcharts || []);
+          setCompletedDataApisExercises(progress.completedDataApisExercises || []);
           setExitTicketResponses(progress.exitTicketResponses || {});
           setTotalPoints(progress.totalPoints || 0);
         }
 
         // Subscribe to assignments for the user's class
         if (user.classCode) {
+          // Clear any existing assignments first to avoid showing stale data
+          setAssignments([]);
           const unsubscribe = subscribeToAssignments(user.classCode, (assignmentData) => {
             setAssignments(assignmentData);
           });
           // Store unsubscribe function for cleanup
-          return unsubscribe;
+          assignmentUnsubscribeRef.current = unsubscribe;
         }
       } catch (e) {
         console.error('Error loading Firebase progress:', e);
@@ -118,6 +140,14 @@ function App() {
       }
     } else {
       loadLocalProgress();
+      // Also load demo mode assignments
+      if (user.classCode) {
+        setAssignments([]);
+        const unsubscribe = subscribeToAssignments(user.classCode, (assignmentData) => {
+          setAssignments(assignmentData);
+        });
+        assignmentUnsubscribeRef.current = unsubscribe;
+      }
     }
   };
 
@@ -132,6 +162,7 @@ function App() {
         setCompletedExercises(data.completedExercises || []);
         setCompletedPseudocode(data.completedPseudocode || []);
         setCompletedFlowcharts(data.completedFlowcharts || []);
+        setCompletedDataApisExercises(data.completedDataApisExercises || []);
         setExitTicketResponses(data.exitTicketResponses || {});
         setTotalPoints(data.points || 0);
       } catch (e) {
@@ -141,7 +172,7 @@ function App() {
   };
 
   // Save progress (to Firebase and localStorage)
-  const saveProgress = useCallback(async (challenges, scenarios, exercises, pseudocode, flowcharts, exitTickets, points) => {
+  const saveProgress = useCallback(async (challenges, scenarios, exercises, pseudocode, flowcharts, dataApis, exitTickets, points) => {
     // Always save to localStorage as backup
     localStorage.setItem('cyberrange-progress', JSON.stringify({
       completed: challenges,
@@ -149,6 +180,7 @@ function App() {
       completedExercises: exercises,
       completedPseudocode: pseudocode,
       completedFlowcharts: flowcharts,
+      completedDataApisExercises: dataApis,
       exitTicketResponses: exitTickets,
       points: points
     }));
@@ -162,6 +194,7 @@ function App() {
           completedExercises: exercises,
           completedPseudocode: pseudocode,
           completedFlowcharts: flowcharts,
+          completedDataApisExercises: dataApis,
           exitTicketResponses: exitTickets,
           totalPoints: points
         });
@@ -174,14 +207,19 @@ function App() {
   // Save progress when it changes
   useEffect(() => {
     if (currentUser) {
-      saveProgress(completedChallenges, completedScenarios, completedExercises, completedPseudocode, completedFlowcharts, exitTicketResponses, totalPoints);
+      saveProgress(completedChallenges, completedScenarios, completedExercises, completedPseudocode, completedFlowcharts, completedDataApisExercises, exitTicketResponses, totalPoints);
     }
-  }, [completedChallenges, completedScenarios, completedExercises, completedPseudocode, completedFlowcharts, exitTicketResponses, totalPoints, currentUser, saveProgress]);
+  }, [completedChallenges, completedScenarios, completedExercises, completedPseudocode, completedFlowcharts, completedDataApisExercises, exitTicketResponses, totalPoints, currentUser, saveProgress]);
 
   // Handle student login
   const handleLogin = (user) => {
+    // Clean up any existing assignment subscription before logging in new user
+    if (assignmentUnsubscribeRef.current) {
+      assignmentUnsubscribeRef.current();
+      assignmentUnsubscribeRef.current = null;
+    }
+
     setCurrentUser(user);
-    setIsTeacherMode(false);
     localStorage.setItem('cyberrange-session', JSON.stringify({ user }));
 
     // Load their progress
@@ -222,14 +260,20 @@ function App() {
 
   // Handle logout
   const handleLogout = () => {
+    // Clean up assignment subscription to prevent stale data
+    if (assignmentUnsubscribeRef.current) {
+      assignmentUnsubscribeRef.current();
+      assignmentUnsubscribeRef.current = null;
+    }
+
     setCurrentUser(null);
-    setIsTeacherMode(false);
     setTeacherClassCode(null);
     setCompletedChallenges([]);
     setCompletedScenarios([]);
     setCompletedExercises([]);
     setCompletedPseudocode([]);
     setCompletedFlowcharts([]);
+    setCompletedDataApisExercises([]);
     setExitTicketResponses({});
     setAssignments([]);
     setTotalPoints(0);
@@ -239,6 +283,8 @@ function App() {
     setSelectedTopic(null);
     setSelectedPseudocodeExercise(null);
     setSelectedFlowchartExercise(null);
+    setSelectedDataApisWeek(null);
+    setSelectedDataApisExercise(null);
     localStorage.removeItem('cyberrange-session');
   };
 
@@ -284,6 +330,7 @@ function App() {
       setCompletedExercises([]);
       setCompletedPseudocode([]);
       setCompletedFlowcharts([]);
+      setCompletedDataApisExercises([]);
       setExitTicketResponses({});
       setTotalPoints(0);
       localStorage.removeItem('cyberrange-progress');
@@ -364,6 +411,22 @@ function App() {
     }
   };
 
+  // Handle saving student submissions for teacher review
+  const handleSubmission = async (submission) => {
+    if (!currentUser || currentUser.id === 'demo') return;
+
+    try {
+      await saveStudentSubmission(currentUser.id, submission.exerciseId, {
+        answer: submission.answer,
+        isCorrect: submission.isCorrect,
+        exerciseType: submission.exerciseType,
+        exerciseTitle: submission.exerciseTitle
+      });
+    } catch (e) {
+      console.error('Error saving submission:', e);
+    }
+  };
+
   const handleBackFromPseudocodeHub = () => {
     setCurrentView('dashboard');
   };
@@ -385,6 +448,34 @@ function App() {
   const handleBackFromFlowchartExercise = () => {
     setSelectedFlowchartExercise(null);
     setCurrentView('flowchart-hub');
+  };
+
+  // Handlers for Data & APIs
+  const handleSelectDataApisWeek = (weekKey) => {
+    setSelectedDataApisWeek(weekKey);
+    setCurrentView('data-apis-week');
+  };
+
+  const handleSelectDataApisExercise = (exerciseId) => {
+    setSelectedDataApisExercise(exerciseId);
+    setCurrentView('data-apis-exercise');
+  };
+
+  const handleCompleteDataApisExercise = (exerciseId, points) => {
+    if (!completedDataApisExercises.includes(exerciseId)) {
+      setCompletedDataApisExercises([...completedDataApisExercises, exerciseId]);
+      setTotalPoints(totalPoints + points);
+    }
+  };
+
+  const handleBackFromDataApisExercise = () => {
+    setSelectedDataApisExercise(null);
+    setCurrentView('data-apis-week');
+  };
+
+  const handleBackFromDataApisWeek = () => {
+    setSelectedDataApisWeek(null);
+    setCurrentView('dashboard');
   };
 
   // Show teacher login
@@ -493,10 +584,12 @@ function App() {
             completedExercises={completedExercises}
             completedPseudocode={completedPseudocode}
             completedFlowcharts={completedFlowcharts}
+            completedDataApisExercises={completedDataApisExercises}
             onSelectCategory={handleSelectCategory}
             onSelectNetworkMonitor={() => setCurrentView('network-monitor')}
             onSelectWeek={handleSelectWeek}
             onSelectAPCSP={handleSelectAPCSP}
+            onSelectDataApisWeek={handleSelectDataApisWeek}
           />
         )}
 
@@ -521,6 +614,7 @@ function App() {
             onComplete={handleCompleteChallenge}
             onBack={handleBackFromChallenge}
             isCompleted={completedChallenges.includes(selectedChallenge)}
+            onSubmit={handleSubmission}
           />
         )}
 
@@ -541,6 +635,7 @@ function App() {
             onComplete={handleCompleteExercise}
             onBack={handleBackFromExercise}
             isCompleted={completedExercises.includes(selectedExercise)}
+            onSubmit={handleSubmission}
           />
         )}
 
@@ -580,6 +675,7 @@ function App() {
             onBack={handleBackFromPseudocodeExercise}
             isCompleted={completedPseudocode.includes(selectedPseudocodeExercise)}
             onNextExercise={handleSelectPseudocodeExercise}
+            onSubmit={handleSubmission}
           />
         )}
 
@@ -612,11 +708,35 @@ function App() {
             onBack={handleBackFromFlowchartExercise}
             isCompleted={completedFlowcharts.includes(selectedFlowchartExercise)}
             onNextExercise={handleSelectFlowchartExercise}
+            onSubmit={handleSubmission}
           />
         )}
 
         {currentView === 'flowchart-builder' && (
           <FlowchartBuilder onBack={() => setCurrentView('flowchart-hub')} />
+        )}
+
+        {currentView === 'data-apis-week' && selectedDataApisWeek && (
+          <DataApisWeekView
+            weekKey={selectedDataApisWeek}
+            onSelectExercise={handleSelectDataApisExercise}
+            onBack={handleBackFromDataApisWeek}
+            completedExercises={completedDataApisExercises}
+          />
+        )}
+
+        {currentView === 'data-apis-exercise' && selectedDataApisExercise && (
+          <DataApisExerciseDetail
+            exerciseId={selectedDataApisExercise}
+            onComplete={handleCompleteDataApisExercise}
+            onBack={handleBackFromDataApisExercise}
+            isCompleted={completedDataApisExercises.includes(selectedDataApisExercise)}
+            onSubmit={handleSubmission}
+          />
+        )}
+
+        {currentView === 'data-apis-vocabulary' && (
+          <DataApisVocabularyPage onBack={handleBackToDashboard} />
         )}
       </main>
 
