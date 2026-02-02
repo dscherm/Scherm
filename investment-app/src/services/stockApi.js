@@ -1,15 +1,12 @@
 // Stock API Service - Fetches real-time stock data
-// Uses Yahoo Finance API via query endpoints
+// Uses Finnhub API
 
-const YAHOO_QUOTE_URL = 'https://query1.finance.yahoo.com/v7/finance/quote';
-const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
-
-// CORS proxy for development (Yahoo blocks direct browser requests)
-const CORS_PROXY = 'https://corsproxy.io/?';
+const FINNHUB_API_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
+const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 
 // List of supported stock symbols
 export const SUPPORTED_SYMBOLS = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B',
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
   'JPM', 'JNJ', 'V', 'PG', 'UNH', 'HD', 'MA', 'XOM', 'CVX', 'KO',
   'PEP', 'ABBV', 'MRK', 'COST', 'AVGO', 'LLY', 'WMT', 'BAC', 'PFE',
   'TMO', 'CSCO', 'ACN', 'MCD', 'CRM', 'ABT', 'DHR', 'ADBE', 'NFLX',
@@ -20,7 +17,7 @@ export const SUPPORTED_SYMBOLS = [
 const SECTOR_MAP = {
   'AAPL': 'Technology', 'MSFT': 'Technology', 'GOOGL': 'Technology',
   'AMZN': 'Consumer Cyclical', 'NVDA': 'Technology', 'META': 'Technology',
-  'TSLA': 'Consumer Cyclical', 'BRK-B': 'Financials', 'JPM': 'Financials',
+  'TSLA': 'Consumer Cyclical', 'JPM': 'Financials',
   'JNJ': 'Healthcare', 'V': 'Financials', 'PG': 'Consumer Defensive',
   'UNH': 'Healthcare', 'HD': 'Consumer Cyclical', 'MA': 'Financials',
   'XOM': 'Energy', 'CVX': 'Energy', 'KO': 'Consumer Defensive',
@@ -39,7 +36,7 @@ const SECTOR_MAP = {
 const INDUSTRY_MAP = {
   'AAPL': 'Consumer Electronics', 'MSFT': 'Software', 'GOOGL': 'Internet Services',
   'AMZN': 'E-Commerce', 'NVDA': 'Semiconductors', 'META': 'Social Media',
-  'TSLA': 'Auto Manufacturers', 'BRK-B': 'Conglomerate', 'JPM': 'Banks',
+  'TSLA': 'Auto Manufacturers', 'JPM': 'Banks',
   'JNJ': 'Pharmaceuticals', 'V': 'Credit Services', 'PG': 'Household Products',
   'UNH': 'Health Insurance', 'HD': 'Home Improvement', 'MA': 'Credit Services',
   'XOM': 'Oil & Gas', 'CVX': 'Oil & Gas', 'KO': 'Beverages',
@@ -54,8 +51,49 @@ const INDUSTRY_MAP = {
   'ORCL': 'Software', 'IBM': 'IT Services'
 };
 
-// Calculate analysis scores based on real metrics
-function calculateScores(quote) {
+// Cache for profile data to reduce API calls
+const profileCache = new Map();
+
+// Rate limiting - Finnhub free tier is 60 calls/minute
+let lastCallTime = 0;
+const MIN_CALL_INTERVAL = 100; // ms between calls
+
+async function rateLimitedFetch(url) {
+  const now = Date.now();
+  const timeSinceLastCall = now - lastCallTime;
+
+  if (timeSinceLastCall < MIN_CALL_INTERVAL) {
+    await new Promise(resolve => setTimeout(resolve, MIN_CALL_INTERVAL - timeSinceLastCall));
+  }
+
+  lastCallTime = Date.now();
+  return fetch(url);
+}
+
+// Fetch company profile from Finnhub
+async function fetchProfile(symbol) {
+  if (profileCache.has(symbol)) {
+    return profileCache.get(symbol);
+  }
+
+  try {
+    const response = await rateLimitedFetch(
+      `${FINNHUB_BASE_URL}/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+    );
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const profile = await response.json();
+    profileCache.set(symbol, profile);
+    return profile;
+  } catch (error) {
+    console.error(`Error fetching profile for ${symbol}:`, error);
+    return null;
+  }
+}
+
+// Calculate analysis scores based on metrics
+function calculateScores(quote, profile) {
   const scores = {
     value: 50,
     future: 50,
@@ -64,44 +102,27 @@ function calculateScores(quote) {
     dividend: 0
   };
 
-  // Value Score - based on P/E ratio
-  const pe = quote.trailingPE || quote.forwardPE;
-  if (pe) {
-    if (pe < 15) scores.value = 85;
-    else if (pe < 20) scores.value = 70;
-    else if (pe < 30) scores.value = 55;
-    else if (pe < 50) scores.value = 35;
-    else scores.value = 20;
-  }
-
-  // Future Score - based on analyst recommendations and forward PE
-  const forwardPE = quote.forwardPE;
-  const targetPrice = quote.targetMeanPrice;
-  const currentPrice = quote.regularMarketPrice;
-
-  if (targetPrice && currentPrice) {
-    const upside = ((targetPrice - currentPrice) / currentPrice) * 100;
-    if (upside > 30) scores.future = 90;
-    else if (upside > 20) scores.future = 75;
-    else if (upside > 10) scores.future = 60;
-    else if (upside > 0) scores.future = 45;
-    else scores.future = 30;
-  }
+  // Value Score - based on change percentage
+  const changePercent = quote.dp || 0;
+  if (changePercent > 2) scores.value = 75;
+  else if (changePercent > 0) scores.value = 60;
+  else if (changePercent > -2) scores.value = 45;
+  else scores.value = 30;
 
   // Past Score - based on 52 week performance
-  const yearHigh = quote.fiftyTwoWeekHigh;
-  const yearLow = quote.fiftyTwoWeekLow;
-  const price = quote.regularMarketPrice;
+  const yearHigh = quote.h;
+  const yearLow = quote.l;
+  const price = quote.c;
 
-  if (yearHigh && yearLow && price) {
+  if (yearHigh && yearLow && price && yearHigh !== yearLow) {
     const range = yearHigh - yearLow;
     const position = (price - yearLow) / range;
     scores.past = Math.round(40 + (position * 50));
   }
 
-  // Health Score - based on market cap and volume
-  const marketCap = quote.marketCap;
-  if (marketCap) {
+  // Health Score - based on market cap from profile
+  if (profile && profile.marketCapitalization) {
+    const marketCap = profile.marketCapitalization * 1e6; // Finnhub returns in millions
     if (marketCap > 1e12) scores.health = 90;
     else if (marketCap > 200e9) scores.health = 80;
     else if (marketCap > 50e9) scores.health = 70;
@@ -109,84 +130,71 @@ function calculateScores(quote) {
     else scores.health = 50;
   }
 
-  // Dividend Score
-  const divYield = quote.dividendYield;
-  if (divYield && divYield > 0) {
-    const yieldPercent = divYield * 100;
-    if (yieldPercent > 4) scores.dividend = 90;
-    else if (yieldPercent > 3) scores.dividend = 75;
-    else if (yieldPercent > 2) scores.dividend = 60;
-    else if (yieldPercent > 1) scores.dividend = 45;
-    else scores.dividend = 30;
+  // Future Score - based on current momentum
+  if (quote.c > quote.pc) {
+    scores.future = 65;
+  } else {
+    scores.future = 45;
   }
 
   return scores;
 }
 
-// Generate analysis details based on real data
-function generateAnalysis(quote, scores) {
-  const pe = quote.trailingPE || 0;
-  const forwardPE = quote.forwardPE || 0;
-  const divYield = (quote.dividendYield || 0) * 100;
-  const targetPrice = quote.targetMeanPrice || quote.regularMarketPrice;
-  const price = quote.regularMarketPrice;
-
-  const getStatus = (score) => {
-    if (score >= 80) return 'excellent';
-    if (score >= 60) return 'good';
-    if (score >= 40) return 'fair';
-    return 'poor';
-  };
+// Generate analysis details
+function generateAnalysis(quote, profile, scores) {
+  const price = quote.c || 0;
+  const change = quote.d || 0;
+  const changePercent = quote.dp || 0;
+  const high = quote.h || 0;
+  const low = quote.l || 0;
+  const prevClose = quote.pc || 0;
 
   return {
     value: {
       score: scores.value,
-      summary: scores.value >= 60 ? 'Reasonably valued' : 'Trading at a premium',
+      summary: scores.value >= 60 ? 'Positive momentum' : 'Under pressure',
       details: [
-        { label: 'P/E Ratio', value: pe ? pe.toFixed(1) + 'x' : 'N/A', status: pe < 25 ? 'good' : 'fair' },
-        { label: 'Forward P/E', value: forwardPE ? forwardPE.toFixed(1) + 'x' : 'N/A', status: forwardPE < 20 ? 'good' : 'fair' },
-        { label: 'Price to Book', value: quote.priceToBook ? quote.priceToBook.toFixed(2) + 'x' : 'N/A', status: 'fair' },
-        { label: 'EV/EBITDA', value: quote.enterpriseToEbitda ? quote.enterpriseToEbitda.toFixed(1) + 'x' : 'N/A', status: 'fair' }
+        { label: 'Current Price', value: '$' + price.toFixed(2), status: change >= 0 ? 'good' : 'fair' },
+        { label: 'Change', value: (change >= 0 ? '+' : '') + change.toFixed(2), status: change >= 0 ? 'good' : 'poor' },
+        { label: 'Change %', value: (changePercent >= 0 ? '+' : '') + changePercent.toFixed(2) + '%', status: changePercent >= 0 ? 'good' : 'poor' },
+        { label: 'Previous Close', value: '$' + prevClose.toFixed(2), status: 'fair' }
       ]
     },
     future: {
       score: scores.future,
-      summary: scores.future >= 60 ? 'Positive analyst outlook' : 'Mixed analyst sentiment',
+      summary: scores.future >= 60 ? 'Positive outlook' : 'Mixed signals',
       details: [
-        { label: 'Price Target', value: '$' + targetPrice?.toFixed(2), status: targetPrice > price ? 'good' : 'fair' },
-        { label: 'Upside Potential', value: (((targetPrice - price) / price) * 100).toFixed(1) + '%', status: targetPrice > price ? 'good' : 'poor' },
-        { label: 'Analyst Rating', value: quote.recommendationKey?.replace('_', ' ') || 'N/A', status: 'fair' },
-        { label: 'Number of Analysts', value: quote.numberOfAnalystOpinions?.toString() || 'N/A', status: 'fair' }
+        { label: 'Day High', value: '$' + high.toFixed(2), status: 'fair' },
+        { label: 'Day Low', value: '$' + low.toFixed(2), status: 'fair' },
+        { label: 'Open', value: '$' + (quote.o || 0).toFixed(2), status: 'fair' },
+        { label: 'Trend', value: price > prevClose ? 'Bullish' : 'Bearish', status: price > prevClose ? 'good' : 'poor' }
       ]
     },
     past: {
       score: scores.past,
-      summary: scores.past >= 60 ? 'Strong historical performance' : 'Mixed track record',
+      summary: scores.past >= 60 ? 'Strong performance' : 'Mixed results',
       details: [
-        { label: '52 Week High', value: '$' + quote.fiftyTwoWeekHigh?.toFixed(2), status: 'fair' },
-        { label: '52 Week Low', value: '$' + quote.fiftyTwoWeekLow?.toFixed(2), status: 'fair' },
-        { label: '50 Day Avg', value: '$' + quote.fiftyDayAverage?.toFixed(2), status: price > quote.fiftyDayAverage ? 'good' : 'fair' },
-        { label: '200 Day Avg', value: '$' + quote.twoHundredDayAverage?.toFixed(2), status: price > quote.twoHundredDayAverage ? 'good' : 'fair' }
+        { label: 'Day Range', value: `$${low.toFixed(2)} - $${high.toFixed(2)}`, status: 'fair' },
+        { label: 'Previous Close', value: '$' + prevClose.toFixed(2), status: 'fair' },
+        { label: 'Day Change', value: '$' + change.toFixed(2), status: change >= 0 ? 'good' : 'poor' },
+        { label: 'Performance', value: changePercent.toFixed(2) + '%', status: changePercent >= 0 ? 'good' : 'poor' }
       ]
     },
     health: {
       score: scores.health,
-      summary: scores.health >= 60 ? 'Strong financial position' : 'Adequate financial health',
+      summary: profile ? 'Established company' : 'Data pending',
       details: [
-        { label: 'Market Cap', value: formatLargeNumber(quote.marketCap), status: 'good' },
-        { label: 'Avg Volume', value: formatLargeNumber(quote.averageDailyVolume10Day), status: 'fair' },
-        { label: 'Beta', value: quote.beta?.toFixed(2) || 'N/A', status: quote.beta < 1.5 ? 'good' : 'fair' },
-        { label: 'Float', value: formatLargeNumber(quote.floatShares), status: 'fair' }
+        { label: 'Market Cap', value: profile?.marketCapitalization ? formatLargeNumber(profile.marketCapitalization * 1e6) : 'N/A', status: 'good' },
+        { label: 'Industry', value: profile?.finnhubIndustry || INDUSTRY_MAP[quote.symbol] || 'N/A', status: 'fair' },
+        { label: 'Exchange', value: profile?.exchange || 'US', status: 'fair' },
+        { label: 'IPO Date', value: profile?.ipo || 'N/A', status: 'fair' }
       ]
     },
     dividend: {
       score: scores.dividend,
-      summary: scores.dividend > 0 ? `${divYield.toFixed(2)}% dividend yield` : 'No dividend',
+      summary: 'Dividend data via profile',
       details: [
-        { label: 'Dividend Yield', value: divYield.toFixed(2) + '%', status: divYield > 2 ? 'good' : 'fair' },
-        { label: 'Annual Dividend', value: '$' + (quote.dividendRate || 0).toFixed(2), status: 'fair' },
-        { label: 'Ex-Dividend Date', value: quote.exDividendDate ? new Date(quote.exDividendDate * 1000).toLocaleDateString() : 'N/A', status: 'neutral' },
-        { label: 'Payout Ratio', value: quote.payoutRatio ? (quote.payoutRatio * 100).toFixed(0) + '%' : 'N/A', status: 'fair' }
+        { label: 'Status', value: 'See company details', status: 'fair' }
       ]
     }
   };
@@ -197,94 +205,89 @@ function formatLargeNumber(num) {
   if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
   if (num >= 1e9) return '$' + (num / 1e9).toFixed(1) + 'B';
   if (num >= 1e6) return '$' + (num / 1e6).toFixed(1) + 'M';
-  return num.toLocaleString();
+  return '$' + num.toLocaleString();
 }
 
-// Transform Yahoo Finance quote to our stock format
-function transformQuote(quote) {
-  const scores = calculateScores(quote);
+// Transform Finnhub quote to our stock format
+function transformQuote(symbol, quote, profile) {
+  const scores = calculateScores(quote, profile);
 
   return {
-    symbol: quote.symbol,
-    name: quote.shortName || quote.longName || quote.symbol,
-    sector: SECTOR_MAP[quote.symbol] || 'Other',
-    industry: INDUSTRY_MAP[quote.symbol] || 'Other',
-    country: 'US',
-    price: quote.regularMarketPrice || 0,
-    change: quote.regularMarketChange || 0,
-    changePercent: quote.regularMarketChangePercent || 0,
-    marketCap: quote.marketCap || 0,
-    pe: quote.trailingPE || 0,
-    forwardPe: quote.forwardPE || 0,
-    dividend: quote.dividendRate || 0,
-    dividendYield: (quote.dividendYield || 0) * 100,
-    beta: quote.beta || 1,
-    week52High: quote.fiftyTwoWeekHigh || 0,
-    week52Low: quote.fiftyTwoWeekLow || 0,
-    avgVolume: quote.averageDailyVolume10Day || 0,
-    description: quote.longBusinessSummary || `${quote.shortName} is a publicly traded company.`,
+    symbol: symbol,
+    name: profile?.name || symbol,
+    sector: SECTOR_MAP[symbol] || profile?.finnhubIndustry || 'Other',
+    industry: INDUSTRY_MAP[symbol] || profile?.finnhubIndustry || 'Other',
+    country: profile?.country || 'US',
+    price: quote.c || 0,
+    change: quote.d || 0,
+    changePercent: quote.dp || 0,
+    marketCap: profile?.marketCapitalization ? profile.marketCapitalization * 1e6 : 0,
+    pe: 0, // Would need separate metrics API
+    forwardPe: 0,
+    dividend: 0,
+    dividendYield: 0,
+    beta: 1,
+    week52High: quote.h || 0,
+    week52Low: quote.l || 0,
+    avgVolume: 0,
+    description: profile?.name ? `${profile.name} (${symbol}) - ${profile.finnhubIndustry || 'Public Company'}` : `${symbol} stock`,
     scores,
-    analysis: generateAnalysis(quote, scores),
+    analysis: generateAnalysis(quote, profile, scores),
     lastUpdated: new Date().toISOString(),
-    news: [] // News requires separate API call
+    news: []
   };
-}
-
-// Fetch quotes for multiple symbols
-export async function fetchQuotes(symbols = SUPPORTED_SYMBOLS) {
-  try {
-    const symbolsStr = symbols.join(',');
-    const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_QUOTE_URL}?symbols=${symbolsStr}`)}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.quoteResponse && data.quoteResponse.result) {
-      return data.quoteResponse.result.map(transformQuote);
-    }
-
-    throw new Error('Invalid response format');
-  } catch (error) {
-    console.error('Error fetching quotes:', error);
-    throw error;
-  }
 }
 
 // Fetch a single stock quote
 export async function fetchQuote(symbol) {
   try {
-    const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_QUOTE_URL}?symbols=${symbol}`)}`;
-
-    const response = await fetch(url);
+    const response = await rateLimitedFetch(
+      `${FINNHUB_BASE_URL}/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const quote = await response.json();
 
-    if (data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result[0]) {
-      return transformQuote(data.quoteResponse.result[0]);
+    if (!quote || quote.c === 0) {
+      throw new Error('Stock not found or no data');
     }
 
-    throw new Error('Stock not found');
+    // Fetch profile for additional data
+    const profile = await fetchProfile(symbol);
+
+    return transformQuote(symbol, quote, profile);
   } catch (error) {
     console.error(`Error fetching quote for ${symbol}:`, error);
     throw error;
   }
 }
 
+// Fetch quotes for multiple symbols
+export async function fetchQuotes(symbols = SUPPORTED_SYMBOLS) {
+  const results = [];
+
+  // Fetch in batches to respect rate limits
+  for (const symbol of symbols) {
+    try {
+      const stock = await fetchQuote(symbol);
+      results.push(stock);
+    } catch (error) {
+      console.warn(`Skipping ${symbol}:`, error.message);
+    }
+  }
+
+  return results;
+}
+
 // Search for stocks
 export async function searchStocks(query) {
   try {
-    const url = `${CORS_PROXY}${encodeURIComponent(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`)}`;
-
-    const response = await fetch(url);
+    const response = await rateLimitedFetch(
+      `${FINNHUB_BASE_URL}/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -292,13 +295,14 @@ export async function searchStocks(query) {
 
     const data = await response.json();
 
-    if (data.quotes) {
-      return data.quotes
-        .filter(q => q.quoteType === 'EQUITY' && q.exchange && q.exchange.includes('NAS') || q.exchange?.includes('NYQ'))
-        .map(q => ({
-          symbol: q.symbol,
-          name: q.shortname || q.longname || q.symbol,
-          exchange: q.exchange
+    if (data.result) {
+      return data.result
+        .filter(item => item.type === 'Common Stock')
+        .slice(0, 10)
+        .map(item => ({
+          symbol: item.symbol,
+          name: item.description,
+          exchange: item.displaySymbol
         }));
     }
 
@@ -312,9 +316,43 @@ export async function searchStocks(query) {
 // Fetch historical data for charts
 export async function fetchHistoricalData(symbol, range = '1mo', interval = '1d') {
   try {
-    const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`)}`;
+    // Calculate timestamps based on range
+    const now = Math.floor(Date.now() / 1000);
+    let from;
+    let resolution = 'D'; // Daily
 
-    const response = await fetch(url);
+    switch (range) {
+      case '1d':
+        from = now - 86400;
+        resolution = '5'; // 5 minutes
+        break;
+      case '5d':
+        from = now - 5 * 86400;
+        resolution = '15'; // 15 minutes
+        break;
+      case '1mo':
+        from = now - 30 * 86400;
+        resolution = 'D';
+        break;
+      case '3mo':
+        from = now - 90 * 86400;
+        resolution = 'D';
+        break;
+      case '6mo':
+        from = now - 180 * 86400;
+        resolution = 'D';
+        break;
+      case '1y':
+        from = now - 365 * 86400;
+        resolution = 'W'; // Weekly
+        break;
+      default:
+        from = now - 30 * 86400;
+    }
+
+    const response = await rateLimitedFetch(
+      `${FINNHUB_BASE_URL}/stock/candle?symbol=${symbol}&resolution=${resolution}&from=${from}&to=${now}&token=${FINNHUB_API_KEY}`
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -322,19 +360,15 @@ export async function fetchHistoricalData(symbol, range = '1mo', interval = '1d'
 
     const data = await response.json();
 
-    if (data.chart && data.chart.result && data.chart.result[0]) {
-      const result = data.chart.result[0];
-      const timestamps = result.timestamp || [];
-      const quotes = result.indicators.quote[0] || {};
-
-      return timestamps.map((ts, i) => ({
-        date: new Date(ts * 1000).toISOString(),
-        open: quotes.open?.[i],
-        high: quotes.high?.[i],
-        low: quotes.low?.[i],
-        close: quotes.close?.[i],
-        volume: quotes.volume?.[i]
-      })).filter(d => d.close !== null);
+    if (data.s === 'ok' && data.t) {
+      return data.t.map((timestamp, i) => ({
+        date: new Date(timestamp * 1000).toISOString(),
+        open: data.o[i],
+        high: data.h[i],
+        low: data.l[i],
+        close: data.c[i],
+        volume: data.v[i]
+      }));
     }
 
     throw new Error('No chart data available');

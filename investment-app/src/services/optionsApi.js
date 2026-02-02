@@ -1,6 +1,6 @@
 // Options API Service - Fetches and analyzes options data
 
-const CORS_PROXY = 'https://corsproxy.io/?';
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 // Fetch options chain for a stock
 export async function fetchOptionsChain(symbol) {
