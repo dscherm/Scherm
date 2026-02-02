@@ -1,12 +1,14 @@
+# Netlify config for investment-app (in monorepo)
 [build]
+  base = "investment-app"
   command = "npm install && npm run build"
-  publish = "dist"
+  publish = "investment-app/dist"
 
 [build.environment]
   NODE_VERSION = "18"
   NETLIFY = "true"
 
-# Handle SPA routing - redirect all routes to index.html
+# Handle SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
