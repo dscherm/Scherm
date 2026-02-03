@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import AuthProvider from './components/AuthProvider';
 import Dashboard from './components/Dashboard';
 import NewStory from './components/NewStory';
 import StoryView from './components/StoryView';
@@ -15,6 +16,7 @@ import Settings from './components/Settings';
 
 function App() {
   return (
+    <AuthProvider>
     <Routes>
       {/* Voice Mode has its own full-screen layout */}
       <Route path="/voice" element={<VoiceMode />} />
@@ -38,6 +40,7 @@ function App() {
         </Layout>
       } />
     </Routes>
+    </AuthProvider>
   );
 }
 

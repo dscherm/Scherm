@@ -1,38 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
-  Cloud, CloudOff, LogIn, LogOut, RefreshCw, Download, Upload,
-  Check, AlertCircle, User, Trash2, HardDrive
+  Cloud, CloudOff, LogIn, LogOut, RefreshCw,
+  Check, AlertCircle, User, Trash2, HardDrive, Zap
 } from 'lucide-react';
 import useStoryStore from '../hooks/useStoryStore';
-import {
-  isConfigured,
-  signInWithGoogle,
-  logOut,
-  onAuthChange,
-  syncAllToCloud,
-  getAllFromCloud
-} from '../services/firebase';
+import useAuth from '../hooks/useAuth';
+import SyncStatus from './SyncStatus';
 
 const Settings = () => {
-  const navigate = useNavigate();
   const stories = useStoryStore(state => state.stories);
   const voiceSessions = useStoryStore(state => state.voiceSessions);
+  const { syncStatus, lastSyncedAt, initCloudSync } = useStoryStore();
 
-  const [user, setUser] = useState(null);
+  const { user, loading: authLoading, signIn, signOut, isConfigured } = useAuth();
+
   const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState(null);
-  const [lastSync, setLastSync] = useState(localStorage.getItem('lastSyncTime'));
-
-  useEffect(() => {
-    if (isConfigured) {
-      const unsubscribe = onAuthChange((user) => {
-        setUser(user);
-      });
-      return () => unsubscribe();
-    }
-  }, []);
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
@@ -42,8 +25,8 @@ const Settings = () => {
   const handleSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
-      showMessage('Signed in successfully!');
+      await signIn();
+      showMessage('Signed in! Your stories will now sync automatically.');
     } catch (error) {
       showMessage(error.message, 'error');
     }
@@ -53,50 +36,29 @@ const Settings = () => {
   const handleSignOut = async () => {
     setLoading(true);
     try {
-      await logOut();
-      showMessage('Signed out');
+      await signOut();
+      showMessage('Signed out. Stories saved locally only.');
     } catch (error) {
       showMessage(error.message, 'error');
     }
     setLoading(false);
   };
 
-  const handleSyncToCloud = async () => {
-    if (!user) return;
-    setSyncing(true);
+  const handleForceSync = async () => {
+    setLoading(true);
     try {
-      await syncAllToCloud(user.uid, stories, voiceSessions);
-      const now = new Date().toISOString();
-      localStorage.setItem('lastSyncTime', now);
-      setLastSync(now);
-      showMessage(`Synced ${stories.length} stories and ${voiceSessions.length} sessions`);
+      await initCloudSync();
+      showMessage('Sync completed!');
     } catch (error) {
       showMessage(error.message, 'error');
     }
-    setSyncing(false);
-  };
-
-  const handleDownloadFromCloud = async () => {
-    if (!user) return;
-    setSyncing(true);
-    try {
-      const data = await getAllFromCloud(user.uid);
-      // Merge cloud data with local - this is a simple implementation
-      // A more sophisticated approach would handle conflicts
-      const { mergeCloudData } = useStoryStore.getState();
-      if (mergeCloudData) {
-        mergeCloudData(data.stories, data.voiceSessions);
-      }
-      showMessage(`Downloaded ${data.stories.length} stories and ${data.voiceSessions.length} sessions`);
-    } catch (error) {
-      showMessage(error.message, 'error');
-    }
-    setSyncing(false);
+    setLoading(false);
   };
 
   const handleClearLocalData = () => {
-    if (confirm('This will delete all local stories and voice sessions. Are you sure?')) {
+    if (confirm('This will delete all local stories and voice sessions. Cloud data will remain. Are you sure?')) {
       localStorage.removeItem('story-brainstormer-storage');
+      localStorage.removeItem('story-brainstormer-auth');
       window.location.reload();
     }
   };
@@ -138,6 +100,11 @@ const Settings = () => {
         <h3 className="font-semibold mb-4 flex items-center gap-2">
           <Cloud className="w-5 h-5 text-primary-400" />
           Cloud Sync
+          {user && (
+            <span className="ml-auto">
+              <SyncStatus compact />
+            </span>
+          )}
         </h3>
 
         {!isConfigured ? (
@@ -146,20 +113,22 @@ const Settings = () => {
               <CloudOff className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-slate-300 mb-2">
-                  Cloud sync is not configured. To enable it, create a Firebase project and add your config to <code className="bg-slate-800 px-1 rounded">.env</code>:
+                  Cloud sync is not configured. To enable it, add Firebase config to <code className="bg-slate-800 px-1 rounded">.env</code>
                 </p>
-                <pre className="text-xs text-slate-400 bg-slate-800 p-2 rounded overflow-x-auto">
-{`VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abc123`}</pre>
               </div>
             </div>
           </div>
         ) : user ? (
           <div className="space-y-4">
+            {/* Auto-sync indicator */}
+            <div className="flex items-center gap-2 p-3 bg-green-900/30 rounded-xl text-green-400">
+              <Zap className="w-5 h-5" />
+              <div>
+                <p className="font-medium">Auto-sync enabled</p>
+                <p className="text-sm text-green-400/70">Changes sync automatically to the cloud</p>
+              </div>
+            </div>
+
             {/* User Info */}
             <div className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-xl">
               {user.photoURL ? (
@@ -175,7 +144,7 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123`}</pre>
               </div>
               <button
                 onClick={handleSignOut}
-                disabled={loading}
+                disabled={loading || authLoading}
                 className="btn-secondary py-2 px-3 text-sm"
               >
                 <LogOut className="w-4 h-4" />
@@ -183,51 +152,61 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123`}</pre>
             </div>
 
             {/* Sync Status */}
-            <div className="text-sm text-slate-400">
-              Last synced: {formatDate(lastSync)}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">
+                Last synced: {formatDate(lastSyncedAt)}
+              </span>
+              <SyncStatus />
             </div>
 
-            {/* Sync Actions */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleSyncToCloud}
-                disabled={syncing}
-                className="flex-1 btn-primary py-3 flex items-center justify-center gap-2"
-              >
-                {syncing ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
-                Upload to Cloud
-              </button>
-              <button
-                onClick={handleDownloadFromCloud}
-                disabled={syncing}
-                className="flex-1 btn-secondary py-3 flex items-center justify-center gap-2"
-              >
-                {syncing ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                Download
-              </button>
-            </div>
+            {/* Manual Sync Button */}
+            <button
+              onClick={handleForceSync}
+              disabled={loading || syncStatus === 'syncing'}
+              className="w-full btn-secondary py-3 flex items-center justify-center gap-2"
+            >
+              {syncStatus === 'syncing' ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              Force Sync Now
+            </button>
           </div>
         ) : (
-          <button
-            onClick={handleSignIn}
-            disabled={loading}
-            className="w-full btn-primary py-3 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <LogIn className="w-4 h-4" />
-            )}
-            Sign in with Google
-          </button>
+          <div className="space-y-4">
+            <div className="bg-slate-700/50 rounded-xl p-4">
+              <p className="text-sm text-slate-300 mb-3">
+                Sign in to enable automatic cloud sync. Your stories will be saved to the cloud and accessible from any device.
+              </p>
+              <ul className="text-sm text-slate-400 space-y-1">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-400" />
+                  Auto-save to cloud on every change
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-400" />
+                  Real-time sync across devices
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-400" />
+                  Never lose your work
+                </li>
+              </ul>
+            </div>
+            <button
+              onClick={handleSignIn}
+              disabled={loading || authLoading}
+              className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+            >
+              {(loading || authLoading) ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogIn className="w-4 h-4" />
+              )}
+              Sign in with Google
+            </button>
+          </div>
         )}
       </div>
 
@@ -253,12 +232,19 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123`}</pre>
           </div>
         </div>
 
+        <p className="text-xs text-slate-500 mt-3">
+          {user ?
+            'Local storage acts as a cache. Your data is backed up to the cloud.' :
+            'All data is stored locally in your browser. Sign in to back up to the cloud.'
+          }
+        </p>
+
         <button
           onClick={handleClearLocalData}
           className="w-full mt-4 btn-secondary py-2 text-red-400 hover:bg-red-900/30 flex items-center justify-center gap-2"
         >
           <Trash2 className="w-4 h-4" />
-          Clear All Local Data
+          Clear Local Cache
         </button>
       </div>
 
@@ -266,10 +252,10 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abc123`}</pre>
       <div className="card">
         <h3 className="font-semibold mb-3">About</h3>
         <p className="text-sm text-slate-400">
-          Story Brainstormer v1.0
+          Story Brainstormer v2.0
         </p>
         <p className="text-sm text-slate-500 mt-2">
-          A mobile-first app for brainstorming and planning stories with voice support.
+          A mobile-first app for brainstorming and planning stories with voice support and automatic cloud sync.
         </p>
       </div>
     </div>
