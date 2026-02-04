@@ -117,17 +117,19 @@ export function ComponentRenderer({ component }: ComponentRendererProps) {
         {component.pins.map((pin) => (
           <div
             key={pin.id}
-            className={`absolute w-3 h-3 -ml-1.5 -mt-1.5 rounded-full cursor-pointer transition-all ${
+            className={`absolute w-4 h-4 -ml-2 -mt-2 rounded-full cursor-pointer transition-all z-20 ${
               wiringState.isWiring
-                ? 'bg-[#4ecca3] hover:bg-[#6fffb3] hover:scale-150'
-                : 'bg-gray-500 hover:bg-[#4ecca3] hover:scale-125'
+                ? 'bg-[#4ecca3] ring-2 ring-[#4ecca3]/50 hover:bg-[#6fffb3] hover:scale-150 animate-pulse'
+                : pin.connected
+                ? 'bg-[#4ecca3] hover:bg-[#6fffb3] hover:scale-125'
+                : 'bg-gray-400 ring-2 ring-gray-600 hover:bg-[#4ecca3] hover:scale-125'
             }`}
             style={{
               left: pin.position.x,
               top: pin.position.y,
             }}
             onClick={(e) => handlePinClick(e, pin)}
-            title={pin.name}
+            title={`${pin.name} - Click to ${wiringState.isWiring ? 'connect wire' : 'start wiring'}`}
           />
         ))}
 

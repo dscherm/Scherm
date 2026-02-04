@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CircuitCanvas } from './components/CircuitCanvas';
 import { ComponentPalette } from './components/ComponentPalette';
 import { Toolbar } from './components/Toolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { Oscilloscope } from './components/Oscilloscope';
 import { SoundAnalyzer } from './components/SoundAnalyzer';
+import { PedalBrowser } from './components/PedalBrowser';
+import { SynthBrowser } from './components/SynthBrowser';
+import { SignalFlowOverlay } from './components/SignalFlowOverlay';
+import { DesignModeSelector } from './components/DesignModeSelector';
 
 type ViewMode = 'design' | 'analyze';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('design');
   const [showOscilloscope, setShowOscilloscope] = useState(true);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0f]">
@@ -20,7 +25,11 @@ function App() {
           <h1 className="text-xl font-bold text-white">
             <span className="text-[#e94560]">Pedal</span> & <span className="text-[#4ecca3]">Synth</span> Designer
           </h1>
-          <div className="flex gap-1 ml-4">
+
+          {/* Design Mode Selector */}
+          <DesignModeSelector />
+
+          <div className="flex gap-1 ml-2 border-l border-[#2a2a3a] pl-4">
             <button
               onClick={() => setViewMode('design')}
               className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -68,8 +77,9 @@ function App() {
             <ComponentPalette />
 
             {/* Canvas area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col relative" ref={canvasContainerRef}>
               <CircuitCanvas />
+              <SignalFlowOverlay containerRef={canvasContainerRef} />
 
               {/* Oscilloscope */}
               {showOscilloscope && (
@@ -86,6 +96,12 @@ function App() {
           <SoundAnalyzer />
         )}
       </div>
+
+      {/* Pedal Browser Modal */}
+      <PedalBrowser />
+
+      {/* Synth Browser Modal */}
+      <SynthBrowser />
     </div>
   );
 }

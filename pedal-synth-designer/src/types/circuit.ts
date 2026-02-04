@@ -7,6 +7,10 @@ export type ComponentType =
   | 'zener'
   | 'transistor_npn'
   | 'transistor_pnp'
+  | 'mosfet_n'
+  | 'mosfet_p'
+  | 'jfet_n'
+  | 'jfet_p'
   | 'opamp'
   | 'potentiometer'
   | 'switch'
@@ -15,7 +19,17 @@ export type ComponentType =
   | 'ground'
   | 'vcc'
   | 'oscillator'
-  | 'speaker';
+  | 'speaker'
+  | 'timer_555'
+  | 'cd40106'
+  | 'cd4017'
+  | 'cd4040'
+  | 'cd4049'
+  | 'cd4066'
+  | 'pt2399'
+  | 'optocoupler'
+  | 'ldr'
+  | 'regulator';
 
 export interface Pin {
   id: string;

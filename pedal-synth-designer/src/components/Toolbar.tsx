@@ -1,4 +1,5 @@
-import { useCircuitStore, useAudioStore } from '../store';
+import { useRef } from 'react';
+import { useCircuitStore, useAudioStore, usePedalStore, useSynthStore, useDesignModeStore } from '../store';
 import {
   Trash2,
   RotateCw,
@@ -13,6 +14,8 @@ import {
   Redo,
   Copy,
   Clipboard,
+  Package,
+  Cpu,
 } from 'lucide-react';
 
 export function Toolbar() {
@@ -20,14 +23,21 @@ export function Toolbar() {
     zoom,
     showGrid,
     selectionState,
+    components,
+    wires,
     setZoom,
     toggleGrid,
     deleteSelected,
     rotateComponent,
     clearCircuit,
+    loadCircuit,
   } = useCircuitStore();
 
   const { isPlaying, togglePlayback } = useAudioStore();
+  const { openBrowser: openPedalBrowser } = usePedalStore();
+  const { openBrowser: openSynthBrowser } = useSynthStore();
+  const { mode } = useDesignModeStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasSelection = selectionState.selectedComponentIds.length > 0;
 
@@ -37,12 +47,66 @@ export function Toolbar() {
     });
   };
 
+  const handleSave = () => {
+    const circuit = {
+      version: 1,
+      name: 'Untitled Circuit',
+      components,
+      wires,
+      savedAt: new Date().toISOString(),
+    };
+    const json = JSON.stringify(circuit, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'circuit.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoad = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = event.target?.result as string;
+        const circuit = JSON.parse(json);
+        if (circuit.components && circuit.wires) {
+          loadCircuit(circuit.components, circuit.wires);
+        }
+      } catch (err) {
+        alert('Failed to load circuit file');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <div className="flex items-center gap-1 px-4 py-2 bg-[#0f0f17] border-b border-[#2a2a3a]">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".json"
+        className="hidden"
+      />
       {/* File operations */}
       <ToolbarGroup>
-        <ToolbarButton icon={FolderOpen} label="Open" onClick={() => {}} />
-        <ToolbarButton icon={Save} label="Save" onClick={() => {}} />
+        <ToolbarButton icon={FolderOpen} label="Open" onClick={handleLoad} />
+        <ToolbarButton icon={Save} label="Save" onClick={handleSave} />
+        {mode === 'pedal' ? (
+          <ToolbarButton icon={Package} label="Pedal Library" onClick={openPedalBrowser} />
+        ) : (
+          <ToolbarButton icon={Cpu} label="Synth Library" onClick={openSynthBrowser} />
+        )}
       </ToolbarGroup>
 
       <ToolbarDivider />
@@ -144,7 +208,7 @@ function ToolbarDivider() {
 }
 
 interface ToolbarButtonProps {
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ComponentType<{ size?: number | string }>;
   label: string;
   onClick: () => void;
   disabled?: boolean;
