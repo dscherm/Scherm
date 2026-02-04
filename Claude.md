@@ -110,6 +110,33 @@ Original cocktail discovery app before advanced features were added.
 
 ---
 
+### 🖥️ Cyber Range Platform
+**Location:** `cyber-range-platform/`
+**Status:** ✅ Active Development
+
+An educational coding platform with retrofuturistic themes and interactive p5.js exercises.
+
+**Features:**
+- **Multi-Era Theme System**: 5 retrofuturistic themes (20s Metropolis, 60s Space Age, 70s Retro Tech, 80s Neon Grid, 90s Y2K Chrome)
+- **Code Playground**: Interactive p5.js editor with real-time preview
+- **Console Output Panel**: Captures and displays console.log() output from student code
+- **Progressive Hints**: Students can reveal hints one at a time
+- **Curriculum Modules**: Arrays/Loops, Objects/Images, Data/APIs
+- **Teacher Dashboard**: Assignment management and student progress tracking
+
+**Key Files:**
+- `cyber-range-platform/src/components/ThemeSwitcher.jsx` - Theme selector component
+- `cyber-range-platform/src/App.css` - All theme CSS definitions (7800+ lines)
+- `cyber-range-platform/src/components/arrays-loops/ExerciseDetail.jsx` - Code editor with console
+
+**Technologies:**
+- React + Vite
+- p5.js (creative coding)
+- Firebase (auth & data)
+- CSS Custom Properties (theming)
+
+---
+
 ### 🧬 Vaccine Defense Game
 **Location:** `vaccine-design-game.html`
 **Status:** ✅ Complete
@@ -252,6 +279,100 @@ body::before {
 
 ---
 
+### 🎭 Cyber Range Theme System
+**Implementation:** `cyber-range-platform/src/components/ThemeSwitcher.jsx`, `cyber-range-platform/src/App.css`
+
+CSS-based multi-era theme system using CSS custom properties and data attributes.
+
+**How to Add a New Theme:**
+
+1. **Add to ThemeSwitcher.jsx** (themes array):
+```javascript
+{
+  id: 'newtheme',
+  name: 'Theme Name',
+  description: 'Short description',
+  preview: ['#color1', '#color2', '#color3', '#color4']
+}
+```
+
+2. **Add CSS Variables in App.css**:
+```css
+[data-theme="newtheme"] {
+  --neon-cyan: #yourcolor;
+  --neon-magenta: #yourcolor;
+  --bg-dark: #yourcolor;
+  --text-primary: #yourcolor;
+  --glow-cyan: 0 0 10px rgba(...);
+  /* ... other variables */
+}
+```
+
+3. **Add Component Overrides**:
+```css
+[data-theme="newtheme"] .header { /* styles */ }
+[data-theme="newtheme"] .category-card { /* styles */ }
+[data-theme="newtheme"] .action-btn { /* styles */ }
+```
+
+**Available Themes:**
+- `20s` - Metropolis (Art Deco, gold/black/silver, geometric)
+- `60s` - Space Age (Atomic era, light backgrounds, rounded)
+- `70s` - Retro Tech (Earth tones, amber, wood grain)
+- `80s` - Neon Grid (Cyberpunk, default theme)
+- `90s` - Y2K Chrome (Millennium, iMac colors, chrome)
+
+**Theme Storage:** `localStorage.getItem('cyberrange-theme')`
+
+---
+
+### 📟 Code Editor Console Feature
+**Implementation:** `cyber-range-platform/src/components/arrays-loops/ExerciseDetail.jsx`
+
+Captures console.log() output from student code and displays it in a styled panel.
+
+**Key Implementation:**
+```javascript
+// Custom console that captures output
+const customConsole = {
+  log: (...args) => {
+    const message = args.map(arg => {
+      if (typeof arg === 'object') {
+        return JSON.stringify(arg, null, 2);
+      }
+      return String(arg);
+    }).join(' ');
+    setConsoleOutput(prev => [...prev, { type: 'log', message, timestamp: Date.now() }]);
+  },
+  error: (...args) => { /* similar */ },
+  warn: (...args) => { /* similar */ }
+};
+
+// Pass to user code execution
+const userCode = new Function('p', 'console', `
+  with (p) {
+    ${transformedCode}
+  }
+`);
+userCode(p, customConsole);
+```
+
+**Console Panel CSS Classes:**
+- `.console-section` - Container
+- `.console-header` - Title bar with actions
+- `.console-output` - Scrollable output area
+- `.console-entry` - Individual log line
+- `.console-log`, `.console-error`, `.console-warn` - Type-specific styling
+
+**Features:**
+- Clear button to reset output
+- Collapsible panel (show/hide)
+- Color-coded by type (log=green, error=red, warn=yellow)
+- Object serialization with JSON.stringify
+- Themed styles for all 5 eras
+
+---
+
 ### 🧪 Flavor Pairing Algorithm
 **Implementation:** `docs/flavor-engine.js`
 
@@ -378,6 +499,7 @@ const nodes = nodeGroup
 
 | Project | Status | Technologies | Key Features |
 |---------|--------|--------------|--------------|
+| Cyber Range Platform | ✅ Active | React, p5.js, Firebase | Multi-era themes, Code editor, Console output |
 | Advanced Cocktail Mixologist | ✅ Active | D3.js, Flavor Engine, TheCocktailDB API | Node graphs, Codex taxonomy, Device-responsive |
 | Vaccination Policy Tracker | 📋 Planning | CDC APIs, Chart.js/D3.js, Socrata | Timeline viz, Policy tracking, Multi-source data |
 | Basic Cocktail App | ✅ Complete | Vanilla JS, TheCocktailDB API | Search, Custom creation, LocalStorage |
@@ -417,4 +539,4 @@ const nodes = nodeGroup
 
 ---
 
-*Last updated: 2026-01-31*
+*Last updated: 2026-02-04*
