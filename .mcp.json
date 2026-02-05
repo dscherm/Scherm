@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "comfyui-prompter": {
-      "command": "python",
-      "args": ["C:\\comfyui-prompter\\mcp_server.py"],
-      "env": {}
-    }
-  }
-}

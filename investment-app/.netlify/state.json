@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Bristol",
+			"country": {
+				"code": "US",
+				"name": "United States"
+			},
+			"subdivision": {
+				"code": "RI",
+				"name": "Rhode Island"
+			},
+			"timezone": "America/New_York",
+			"latitude": 41.6842,
+			"longitude": -71.2649,
+			"postalCode": "02809"
+		},
+		"timestamp": 1770086827984
+	}
+}
