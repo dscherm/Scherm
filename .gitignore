@@ -45,3 +45,7 @@ config.local.py
 # Temporary files
 *.tmp
 temp/
+
+# Separate repos (not part of Scherm)
+EventDesignedLearning/
+Scherm/
