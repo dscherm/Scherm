@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -6,12 +6,27 @@ import {
   Settings,
   LogOut,
   BookOpen,
-  User
+  User,
+  Compass,
+  Puzzle
 } from 'lucide-react';
 
 function Layout() {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  const navLinkClass = (path) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+      isActive(path)
+        ? 'nav-link-active'
+        : 'text-text-secondary hover:text-text-primary hover:bg-dark-hover'
+    }`;
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,31 +59,32 @@ function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:text-text-primary hover:bg-dark-hover transition-colors"
-          >
+        <nav className="flex-1 p-4 space-y-1">
+          <Link to="/" className={navLinkClass('/')}>
             <LayoutDashboard className="w-5 h-5" />
             Dashboard
           </Link>
 
-          <Link
-            to="/unit/new"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:text-text-primary hover:bg-dark-hover transition-colors"
-          >
+          <Link to="/unit/new" className={navLinkClass('/unit')}>
             <PlusCircle className="w-5 h-5" />
             Create Unit
+          </Link>
+
+          <Link to="/pbl/new" className={navLinkClass('/pbl')}>
+            <Compass className="w-5 h-5" />
+            PBL Builder
+          </Link>
+
+          <Link to="/activities" className={navLinkClass('/activities')}>
+            <Puzzle className="w-5 h-5" />
+            Activities
           </Link>
 
           <div className="pt-4 border-t border-dark-border mt-4">
             <p className="px-4 py-2 text-xs font-medium text-text-muted uppercase tracking-wider">
               Settings
             </p>
-            <Link
-              to="/settings"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:text-text-primary hover:bg-dark-hover transition-colors"
-            >
+            <Link to="/settings" className={navLinkClass('/settings')}>
               <Settings className="w-5 h-5" />
               Preferences
             </Link>
@@ -109,7 +125,7 @@ function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto animate-fade-in">
         <Outlet />
       </main>
     </div>

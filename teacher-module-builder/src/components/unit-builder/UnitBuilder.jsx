@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useUnitStore from '../../hooks/useUnitStore';
 import { useUnit } from '../../hooks/useUnits';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import WizardProgress from './WizardProgress';
 import Step1BasicInfo from './steps/Step1BasicInfo';
 import Step2Objectives from './steps/Step2Objectives';
@@ -15,6 +16,7 @@ function UnitBuilder() {
   const { unitId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState(null); // null, 'saving', 'saved', 'error'
 
   // Track which unit we've loaded to prevent reloading on auto-save
@@ -74,7 +76,7 @@ function UnitBuilder() {
 
   const handleSave = async (isAutoSave = false) => {
     if (!user) {
-      alert('Please sign in to save');
+      toast.error('Please sign in to save');
       return;
     }
 
@@ -83,11 +85,10 @@ function UnitBuilder() {
       const savedId = await save(currentUnit, currentUnit.lessons || []);
 
       setSaveStatus('saved');
+      if (!isAutoSave) toast.success('Unit saved!');
       setTimeout(() => setSaveStatus(null), 2000);
 
-      // If this was a new unit, redirect to the edit URL
       if (unitId === 'new' && savedId) {
-        // Mark that we just created this unit so we don't reload and reset step
         justCreatedUnitId.current = savedId;
         navigate(`/unit/${savedId}`, { replace: true });
       }
@@ -95,29 +96,26 @@ function UnitBuilder() {
       console.error('Save error:', err);
       setSaveStatus('error');
       if (!isAutoSave) {
-        alert('Failed to save: ' + err.message);
+        toast.error('Failed to save: ' + err.message);
       }
     }
   };
 
   const handlePublish = async () => {
     if (!user) {
-      alert('Please sign in to publish');
+      toast.error('Please sign in to publish');
       return;
     }
 
     try {
-      // First save
       const savedId = await save(currentUnit, currentUnit.lessons || []);
-
-      // Then publish with the saved ID
       await publish(savedId);
 
-      alert('Unit published successfully!');
+      toast.success('Unit published successfully!');
       navigate('/');
     } catch (err) {
       console.error('Publish error:', err);
-      alert('Failed to publish: ' + err.message);
+      toast.error('Failed to publish: ' + err.message);
     }
   };
 

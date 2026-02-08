@@ -23,29 +23,33 @@ function Login() {
 
   return (
     <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full animate-fade-in">
         {/* Logo and title */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-accent-purple rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-white" />
+        <div className="text-center mb-8 relative">
+          {/* Gradient glow behind logo */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-accent-purple/20 rounded-full blur-3xl" />
+          <div className="relative">
+            <div className="w-16 h-16 bg-accent-purple rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent-purple/30">
+              <BookOpen className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gradient mb-2">
+              Teacher Module Builder
+            </h1>
+            <p className="text-text-secondary">
+              Create engaging 5E lessons with ease
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
-            Teacher Module Builder
-          </h1>
-          <p className="text-text-secondary">
-            Create engaging 5E lessons with ease
-          </p>
         </div>
 
         {/* Sign in card */}
-        <div className="card">
+        <div className="card-glass">
           <h2 className="text-xl font-semibold text-text-primary mb-6 text-center">
             Sign in to get started
           </h2>
 
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-800 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-dark-hover border border-dark-border text-text-primary rounded-lg font-medium hover:bg-dark-surface hover:border-accent-purple/30 transition-all"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

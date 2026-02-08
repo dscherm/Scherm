@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, X, GripVertical, CheckCircle, Circle } from 'lucide-react';
+import { Plus, X, GripVertical, CheckCircle, Circle, Play } from 'lucide-react';
+import QuizPreview from './QuizPreview';
 
 const QUESTION_TYPES = [
   { id: 'multiple_choice', name: 'Multiple Choice' },
@@ -9,6 +10,7 @@ const QUESTION_TYPES = [
 ];
 
 function QuizEditor({ activity, onChange }) {
+  const [showPreview, setShowPreview] = useState(false);
   const { content = {}, config = {} } = activity;
 
   const updateContent = (key, value) => {
@@ -292,6 +294,19 @@ function QuizEditor({ activity, onChange }) {
           </div>
         </div>
       </div>
+
+      {/* Preview Button */}
+      <button
+        onClick={() => setShowPreview(true)}
+        disabled={!content.questions || content.questions.length === 0}
+        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Play className="w-4 h-4" /> Preview as Student
+      </button>
+
+      {showPreview && (
+        <QuizPreview activity={activity} onClose={() => setShowPreview(false)} />
+      )}
     </div>
   );
 }

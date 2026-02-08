@@ -1,157 +1,100 @@
-// Cognitive Skills for PBL Units
-// These skills form the "connective tissue" of the rubric, assessed across all milestones
-
 export const COGNITIVE_SKILLS = {
   analysis: {
-    id: 'analysis',
     name: 'Analysis',
-    description: 'Breaking down complex information, identifying patterns, and drawing conclusions',
-    color: '#3b82f6', // blue
-    icon: 'Search',
+    description: 'Breaking down complex information into parts, examining relationships and patterns',
+    color: '#3b82f6',
     rubricCriteria: {
-      emerging: 'Identifies basic information but struggles to see patterns or connections',
-      developing: 'Recognizes some patterns and makes basic connections between ideas',
-      proficient: 'Consistently identifies patterns and draws logical conclusions from evidence',
-      advanced: 'Synthesizes complex information, identifies subtle patterns, and generates insights',
+      emerging: 'Identifies basic facts but struggles to break down complex information',
+      developing: 'Can identify parts of a problem and some relationships between them',
+      proficient: 'Breaks down complex problems systematically, identifies patterns and relationships',
+      advanced: 'Synthesizes analysis across multiple sources, identifies subtle patterns and implications',
     },
-    verbs: ['analyze', 'compare', 'contrast', 'examine', 'investigate', 'categorize'],
   },
-
   communication: {
-    id: 'communication',
     name: 'Communication',
     description: 'Expressing ideas clearly through writing, speaking, and visual media',
-    color: '#8b5cf6', // purple
-    icon: 'MessageSquare',
+    color: '#8b5cf6',
     rubricCriteria: {
-      emerging: 'Ideas are unclear or disorganized; limited audience awareness',
-      developing: 'Ideas are generally clear with some organization; basic audience awareness',
-      proficient: 'Ideas are clear, well-organized, and appropriate for the audience',
-      advanced: 'Communication is compelling, precisely organized, and highly effective for the audience',
+      emerging: 'Shares ideas but lacks clarity or organization',
+      developing: 'Communicates main ideas with some supporting details',
+      proficient: 'Presents ideas clearly with evidence, adapts to audience',
+      advanced: 'Compelling communication that persuades and inspires, uses multiple modalities effectively',
     },
-    verbs: ['present', 'explain', 'describe', 'articulate', 'demonstrate', 'illustrate'],
   },
-
   collaboration: {
-    id: 'collaboration',
     name: 'Collaboration',
-    description: 'Working effectively with others, sharing responsibility, and building on ideas',
-    color: '#10b981', // green
-    icon: 'Users',
+    description: 'Working effectively with others, managing conflict, and building on diverse perspectives',
+    color: '#06b6d4',
     rubricCriteria: {
-      emerging: 'Minimal contribution to team; difficulty working with others',
-      developing: 'Contributes to team but may dominate or withdraw at times',
-      proficient: 'Shares responsibility, respects others, and builds on team ideas',
-      advanced: 'Elevates team performance; facilitates inclusion and maximizes group potential',
+      emerging: 'Participates when prompted but relies on others to lead',
+      developing: "Contributes to group work and listens to others' ideas",
+      proficient: "Takes initiative, builds on others' ideas, manages disagreements constructively",
+      advanced: 'Facilitates group productivity, leverages team strengths, mentors peers',
     },
-    verbs: ['cooperate', 'contribute', 'negotiate', 'delegate', 'compromise', 'facilitate'],
   },
-
   creativity: {
-    id: 'creativity',
     name: 'Creativity',
-    description: 'Generating original ideas, making novel connections, and thinking divergently',
-    color: '#f59e0b', // yellow
-    icon: 'Lightbulb',
+    description: 'Generating original ideas, making unexpected connections, and thinking divergently',
+    color: '#f59e0b',
     rubricCriteria: {
-      emerging: 'Relies on obvious solutions; minimal originality',
-      developing: 'Shows some original thinking but may be limited in scope',
-      proficient: 'Generates original ideas and makes novel connections',
-      advanced: 'Produces innovative solutions; thinks beyond conventional boundaries',
+      emerging: 'Reproduces existing ideas with minimal variation',
+      developing: 'Generates some original ideas when prompted',
+      proficient: 'Produces novel solutions and makes unexpected connections between concepts',
+      advanced: "Consistently innovates, takes creative risks, and inspires others' creativity",
     },
-    verbs: ['design', 'create', 'invent', 'imagine', 'innovate', 'compose'],
   },
-
   critical_thinking: {
-    id: 'critical_thinking',
     name: 'Critical Thinking',
-    description: 'Evaluating evidence, questioning assumptions, and making reasoned judgments',
-    color: '#ef4444', // red
-    icon: 'Brain',
+    description: 'Evaluating evidence, reasoning logically, and questioning assumptions',
+    color: '#ef4444',
     rubricCriteria: {
-      emerging: 'Accepts information at face value; limited questioning',
-      developing: 'Questions some assumptions; basic evaluation of evidence',
-      proficient: 'Evaluates evidence systematically; identifies bias and limitations',
-      advanced: 'Sophisticated evaluation; questions underlying assumptions; nuanced judgment',
+      emerging: 'Accepts information at face value without questioning',
+      developing: 'Identifies some biases and evaluates basic claims',
+      proficient: 'Evaluates evidence quality, identifies logical fallacies, questions assumptions',
+      advanced: 'Constructs well-reasoned arguments, anticipates counterarguments, evaluates complex systems',
     },
-    verbs: ['evaluate', 'justify', 'critique', 'assess', 'judge', 'defend'],
   },
-
   problem_solving: {
-    id: 'problem_solving',
     name: 'Problem Solving',
-    description: 'Defining problems, developing strategies, and implementing solutions',
-    color: '#06b6d4', // cyan
-    icon: 'Puzzle',
+    description: 'Defining problems, generating solutions, and iterating based on feedback',
+    color: '#10b981',
     rubricCriteria: {
-      emerging: 'Difficulty identifying problems; relies on given solutions',
-      developing: 'Identifies problems; attempts basic solution strategies',
-      proficient: 'Clearly defines problems and develops effective solution strategies',
-      advanced: 'Anticipates problems; develops multiple innovative solutions; iterates effectively',
+      emerging: 'Identifies that a problem exists but needs guidance to define it',
+      developing: 'Defines problems and proposes one or two solutions',
+      proficient: 'Systematically defines problems, generates multiple solutions, tests and iterates',
+      advanced: 'Tackles ambiguous problems, designs elegant solutions, transfers strategies to new contexts',
     },
-    verbs: ['solve', 'troubleshoot', 'debug', 'optimize', 'strategize', 'implement'],
   },
-
   self_direction: {
-    id: 'self_direction',
     name: 'Self-Direction',
-    description: 'Setting goals, managing time, and taking ownership of learning',
-    color: '#ec4899', // pink
-    icon: 'Compass',
+    description: 'Setting goals, managing time, reflecting on learning, and persisting through challenges',
+    color: '#ec4899',
     rubricCriteria: {
-      emerging: 'Requires constant guidance; difficulty managing time or tasks',
-      developing: 'Works independently with some prompting; basic time management',
-      proficient: 'Sets and pursues goals independently; manages time effectively',
-      advanced: 'Demonstrates exceptional initiative; seeks challenges; models self-direction',
+      emerging: 'Needs frequent reminders to stay on task and meet deadlines',
+      developing: 'Sets basic goals and manages time with some support',
+      proficient: 'Sets meaningful goals, manages time independently, reflects on progress',
+      advanced: 'Drives own learning, seeks feedback proactively, adapts strategies based on reflection',
     },
-    verbs: ['plan', 'organize', 'prioritize', 'reflect', 'adapt', 'persevere'],
   },
-
   research: {
-    id: 'research',
     name: 'Research',
     description: 'Finding, evaluating, and synthesizing information from multiple sources',
-    color: '#14b8a6', // teal
-    icon: 'BookOpen',
+    color: '#6366f1',
     rubricCriteria: {
-      emerging: 'Uses limited sources; difficulty evaluating credibility',
-      developing: 'Finds relevant sources; basic evaluation of credibility',
-      proficient: 'Uses diverse, credible sources; synthesizes information effectively',
-      advanced: 'Expertly navigates information landscape; synthesizes complex sources',
+      emerging: 'Uses limited sources without evaluating credibility',
+      developing: 'Finds relevant sources and identifies basic credibility indicators',
+      proficient: 'Uses diverse, credible sources and synthesizes information across them',
+      advanced: 'Conducts original research, triangulates sources, identifies gaps in existing knowledge',
     },
-    verbs: ['research', 'investigate', 'gather', 'synthesize', 'cite', 'verify'],
   },
 };
 
-// Skill categories for organization
 export const SKILL_CATEGORIES = {
-  thinking: ['analysis', 'critical_thinking', 'problem_solving'],
+  thinking: ['analysis', 'critical_thinking', 'problem_solving', 'creativity'],
   interpersonal: ['communication', 'collaboration'],
-  intrapersonal: ['creativity', 'self_direction'],
-  academic: ['research'],
+  intrapersonal: ['self_direction', 'research'],
 };
 
-// Helper functions
-export const getSkillById = (id) => COGNITIVE_SKILLS[id];
-
-export const getSkillsByCategory = (category) => {
-  return SKILL_CATEGORIES[category]?.map(id => COGNITIVE_SKILLS[id]) || [];
-};
-
-export const getAllSkills = () => Object.values(COGNITIVE_SKILLS);
-
-export const getSkillColor = (skillId) => COGNITIVE_SKILLS[skillId]?.color || '#6b7280';
-
-export const getSkillsForRubric = (skillIds) => {
-  return skillIds.map(id => COGNITIVE_SKILLS[id]).filter(Boolean);
-};
-
-// Recommended skill combinations for different project types
-export const RECOMMENDED_SKILL_COMBINATIONS = {
-  stem: ['analysis', 'problem_solving', 'communication', 'collaboration'],
-  humanities: ['research', 'critical_thinking', 'communication', 'creativity'],
-  arts: ['creativity', 'communication', 'collaboration', 'self_direction'],
-  interdisciplinary: ['analysis', 'collaboration', 'communication', 'problem_solving'],
-};
-
-export default COGNITIVE_SKILLS;
+export function getSkillById(skillId) {
+  return COGNITIVE_SKILLS[skillId] || null;
+}

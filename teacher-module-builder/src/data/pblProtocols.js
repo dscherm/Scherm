@@ -1,356 +1,259 @@
-// PBL Protocols - Best practices embedded throughout the unit
-// These protocols guide teachers through key PBL facilitation moments
-
-export const PBL_PROTOCOLS = {
-  // Launch Phase Protocols
-  entry_event: {
-    id: 'entry_event',
-    name: 'Entry Event Protocol',
-    phase: 'launch',
-    purpose: 'Hook students into the project with an engaging, authentic experience',
-    duration: '30-60 minutes',
-    icon: 'Rocket',
-    color: '#a55eea',
-    steps: [
-      'Set the stage: Create anticipation without revealing the full project',
-      'Present the event: Guest speaker, video, simulation, or hands-on experience',
-      'Allow emotional response: Give students time to react and discuss',
-      'Surface initial questions: What do you wonder? What do you want to know?',
-      'Connect to real-world: How does this affect our community/world?',
-    ],
-    tips: [
-      'The best entry events create emotional engagement, not just intellectual curiosity',
-      'Avoid giving too much information - let students discover through inquiry',
-      'Consider inviting a community member or expert to add authenticity',
-    ],
-    examples: [
-      'Video call with a professional facing the problem students will solve',
-      'Simulation where students experience the problem firsthand',
-      'Field trip or virtual tour to see the real-world context',
-      'Provocative news article or data visualization',
-    ],
-  },
-
-  rubric_unpacking: {
-    id: 'rubric_unpacking',
-    name: 'Rubric Unpacking Protocol',
-    phase: 'launch',
-    purpose: 'Help students understand success criteria and take ownership of learning goals',
-    duration: '45-60 minutes',
-    icon: 'FileSearch',
-    color: '#a55eea',
-    steps: [
-      'Distribute the rubric and allow silent reading time (5 min)',
-      'Pair discussion: What words or phrases are unclear? (5 min)',
-      'Whole class: Clarify vocabulary and expectations (10 min)',
-      'Small groups: Find or create examples for each level (15 min)',
-      'Gallery walk: Share and discuss exemplars (10 min)',
-      'Individual reflection: Which skills will be most challenging for me? (5 min)',
-    ],
-    tips: [
-      'Use student-friendly language in rubrics',
-      'Show exemplars from previous years (with permission)',
-      'Have students rewrite criteria in their own words',
-      'Revisit the rubric at each checkpoint',
-    ],
-    resources: [
-      'Rubric annotation template',
-      'Exemplar collection guide',
-      'Self-assessment tracker',
-    ],
-  },
-
-  know_need_to_know: {
-    id: 'know_need_to_know',
-    name: 'Know/Need-to-Know Board Protocol',
-    phase: 'launch',
-    purpose: 'Activate prior knowledge and identify learning gaps to drive inquiry',
-    duration: '30-45 minutes',
-    icon: 'Columns',
-    color: '#a55eea',
-    steps: [
-      'Present the driving question or project challenge',
-      'Individual brainstorm: What do you already know? (sticky notes)',
-      'Individual brainstorm: What do you need to know? (different color)',
-      'Share and cluster: Group similar ideas together',
-      'Prioritize: Which need-to-knows are most urgent?',
-      'Assign: How will we find answers? Who will investigate what?',
-    ],
-    tips: [
-      'Keep the board visible throughout the project',
-      'Update regularly - move items as they are learned',
-      'Use need-to-knows to drive mini-lessons',
-      'Celebrate when students answer their own questions',
-    ],
-    boardStructure: {
-      columns: ['What We Know', 'What We Need to Know', 'How We\'ll Learn It'],
-      colors: ['green', 'yellow', 'blue'],
-    },
-  },
-
-  // Milestone Protocols
-  peer_critique: {
-    id: 'peer_critique',
-    name: 'Peer Critique Protocol',
-    phase: 'milestone',
-    purpose: 'Provide kind, specific, and helpful feedback to improve work',
-    duration: '20-30 minutes per round',
-    icon: 'Users',
+const PROTOCOLS = [
+  {
+    id: 'backwards-design',
+    name: 'Backwards Design Protocol',
+    purpose: 'Start with the end product and work backwards to plan milestones',
+    duration: '30-45 min',
+    phase: 'destination',
     color: '#00d9ff',
     steps: [
-      'Present work: Creator shares without defending (3-5 min)',
-      'Clarifying questions: Audience asks factual questions only (2 min)',
-      'Warm feedback: What is working well? Be specific. (3 min)',
-      'Cool feedback: What could be improved? Offer suggestions. (5 min)',
-      'Reflect: Creator shares one piece of feedback they\'ll act on (1 min)',
+      'Define the final product and authentic audience',
+      'Identify the cognitive skills students need to demonstrate',
+      'Draft essential questions that drive inquiry',
+      'Map backwards from the final product to identify 3 milestones',
+      'Ensure each milestone builds toward the final product',
+    ],
+    tips: [
+      'The final product should solve a real problem for a real audience',
+      'Limit cognitive skills to 3-4 to keep assessment manageable',
+      'Essential questions should be open-ended and debatable',
+    ],
+  },
+  {
+    id: 'tuning-protocol',
+    name: 'Tuning Protocol',
+    purpose: 'Get structured feedback on your project design from colleagues',
+    duration: '45 min',
+    phase: 'destination',
+    color: '#00d9ff',
+    steps: [
+      'Present your project design (10 min)',
+      'Clarifying questions from reviewers (5 min)',
+      'Warm feedback - what works well (5 min)',
+      'Cool feedback - questions and suggestions (10 min)',
+      'Reflection and revision planning (10 min)',
+    ],
+    tips: [
+      'Presenter should listen during feedback rounds, not defend',
+      'Cool feedback should be phrased as questions, not directives',
+      'Focus on alignment between product, skills, and questions',
+    ],
+  },
+  {
+    id: 'entry-event-design',
+    name: 'Entry Event Design',
+    purpose: 'Create an emotionally engaging launch that sparks the need to know',
+    duration: '1-2 class periods',
+    phase: 'launch',
+    color: '#a55eea',
+    steps: [
+      'Choose an entry event type (guest speaker, video, simulation, etc.)',
+      'Design the experience to create emotional engagement',
+      'Plan facilitation questions to surface student reactions',
+      'Prepare the K/NTK board activity',
+      'Connect the entry event to the driving question',
+    ],
+    tips: [
+      'The best entry events create surprise, empathy, or curiosity',
+      'Allow plenty of time for student reactions and questions',
+      'Have students write individual reflections before group discussion',
+    ],
+    examples: [
+      'Invite a local expert affected by the problem students will solve',
+      'Show a short documentary clip that reveals a surprising injustice',
+      'Run a brief simulation where students experience the problem firsthand',
+      'Present a mysterious artifact and ask students to figure out its significance',
+    ],
+  },
+  {
+    id: 'rubric-unpacking',
+    name: 'Rubric Unpacking Protocol',
+    purpose: 'Help students understand and take ownership of success criteria',
+    duration: '1 class period',
+    phase: 'launch',
+    color: '#a55eea',
+    steps: [
+      'Distribute the rubric and read through together',
+      'Students highlight unfamiliar terms or unclear criteria',
+      'In small groups, create or find exemplars for each level',
+      'Whole-class discussion to clarify expectations',
+      'Students set personal goals based on rubric criteria',
+    ],
+    tips: [
+      'Use student-friendly language in the rubric',
+      'Share exemplars of past work at different quality levels',
+      'Revisit the rubric before each checkpoint assessment',
+    ],
+  },
+  {
+    id: 'kntk-facilitation',
+    name: 'K/NTK Board Facilitation',
+    purpose: 'Capture and organize what students know and need to learn',
+    duration: '20-30 min',
+    phase: 'launch',
+    color: '#a55eea',
+    steps: [
+      'Post the driving question prominently',
+      'Silent brainstorm: students write what they already know (sticky notes)',
+      'Share and cluster Know items on the board',
+      'Silent brainstorm: what do we need to find out?',
+      'Share and prioritize Need to Know items',
+    ],
+    tips: [
+      'Keep the board visible and update it throughout the project',
+      'Move items from NTK to K as students learn',
+      'Use NTK items to drive mini-lesson planning',
+    ],
+  },
+  {
+    id: 'critique-protocol',
+    name: 'Critique Protocol',
+    purpose: 'Structured peer feedback on milestone work products',
+    duration: '30-40 min',
+    phase: 'milestone',
+    color: '#ff6b6b',
+    steps: [
+      'Presenter shares work and identifies feedback focus (3 min)',
+      'Reviewers examine work silently (3 min)',
+      'Warm feedback round - what is working (5 min)',
+      'Cool feedback round - questions and suggestions (7 min)',
+      'Presenter reflects on feedback received (3 min)',
     ],
     norms: [
-      'Be Kind: Frame feedback to help, not hurt',
-      'Be Specific: "The third paragraph..." not "It\'s confusing"',
-      'Be Helpful: Offer actionable suggestions',
-      'Focus on the work, not the person',
+      'Be kind - focus on the work, not the person',
+      'Be specific - point to exact elements',
+      'Be helpful - offer actionable suggestions',
+      'Be honest - respectful honesty serves the work',
     ],
     sentenceStarters: {
       warm: [
-        'I notice that you...',
-        'The strongest part is... because...',
-        'Your work effectively...',
+        'I notice that you effectively...',
+        'This part is strong because...',
+        'I can see evidence of [skill] when you...',
       ],
       cool: [
+        'I wonder what would happen if you...',
         'Have you considered...',
-        'I wonder if...',
-        'One suggestion might be...',
-        'What if you tried...',
+        'I am curious about your choice to...',
+        'This section could be strengthened by...',
       ],
     },
   },
-
-  tuning_protocol: {
-    id: 'tuning_protocol',
-    name: 'Tuning Protocol',
+  {
+    id: 'checkpoint-reflection',
+    name: 'Checkpoint Reflection',
+    purpose: 'Students self-assess against the rubric at each milestone',
+    duration: '20-30 min',
     phase: 'milestone',
-    purpose: 'Fine-tune work in progress with structured peer feedback',
-    duration: '45-60 minutes',
-    icon: 'Sliders',
-    color: '#00d9ff',
+    color: '#ff6b6b',
     steps: [
-      'Presentation (10 min): Share work and focusing question',
-      'Clarifying Questions (5 min): Quick factual questions only',
-      'Examination (10 min): Silent examination of the work',
-      'Pause (3 min): Presenter reflects silently',
-      'Discussion (15 min): Group discusses while presenter listens and takes notes',
-      'Reflection (5 min): Presenter shares key takeaways',
-      'Debrief (5 min): Group reflects on the process',
+      'Review the rubric criteria for this checkpoint',
+      'Gather evidence from your work for each skill',
+      'Rate yourself honestly on each criterion',
+      'Identify one strength and one growth area',
+      'Set a specific goal for the next milestone',
     ],
     tips: [
-      'The presenter must stay silent during the discussion phase',
-      'Appoint a facilitator to keep time and ensure norms',
-      'Focus feedback on the presenter\'s focusing question',
+      'Compare self-assessment with peer and teacher feedback',
+      'Use the same rubric language in reflections',
+      'Track growth by comparing across checkpoints',
     ],
   },
-
-  gallery_walk: {
-    id: 'gallery_walk',
-    name: 'Gallery Walk Protocol',
+  {
+    id: 'stand-up-meeting',
+    name: 'Team Stand-Up',
+    purpose: 'Quick daily check-in for project teams',
+    duration: '5-10 min',
     phase: 'milestone',
-    purpose: 'Share multiple pieces of work efficiently while gathering diverse feedback',
-    duration: '30-45 minutes',
-    icon: 'Image',
-    color: '#00d9ff',
+    color: '#ff6b6b',
     steps: [
-      'Setup: Post work around the room with feedback forms',
-      'Silent viewing (5-10 min): Walk and observe all pieces first',
-      'Feedback round 1 (10 min): Write warm feedback on sticky notes',
-      'Feedback round 2 (10 min): Write cool feedback on sticky notes',
-      'Return to own work: Read feedback received',
-      'Whole class: Share patterns and insights',
+      'Each member shares: What did I accomplish?',
+      'What am I working on next?',
+      'What is blocking me?',
+      'Team identifies how to help each other',
     ],
-    materials: [
-      'Sticky notes (two colors)',
-      'Feedback sentence starters posted',
-      'Timer',
+    tips: [
+      'Keep it standing to maintain energy and brevity',
+      'Use a timer - 1 minute per person max',
+      'Teacher circulates and listens for common blockers',
     ],
   },
-
-  // Reflection Protocols
-  reflection_journal: {
-    id: 'reflection_journal',
-    name: 'Reflection Journal Protocol',
-    phase: 'reflection',
-    purpose: 'Build metacognitive awareness and track growth over time',
-    duration: '10-15 minutes',
-    icon: 'BookOpen',
+  {
+    id: 'presentation-prep',
+    name: 'Presentation Preparation Protocol',
+    purpose: 'Help students prepare compelling final presentations',
+    duration: '1-2 class periods',
+    phase: 'final',
+    color: '#fd79a8',
+    steps: [
+      'Review audience and purpose for the presentation',
+      'Draft key messages (3 max) the audience should remember',
+      'Structure the presentation: hook, problem, solution, call to action',
+      'Practice with peer feedback using the rubric',
+      'Revise based on feedback',
+    ],
+    tips: [
+      'Remind students who their audience is and what they care about',
+      'Practice with a timer to ensure they stay within time limits',
+      'Encourage students to anticipate audience questions',
+    ],
+  },
+  {
+    id: 'final-reflection',
+    name: 'Final Reflection Protocol',
+    purpose: 'Deep reflection on the entire PBL journey',
+    duration: '30-45 min',
+    phase: 'final',
     color: '#26de81',
     prompts: {
       process: [
-        'What strategy worked well for me today?',
-        'What was challenging and how did I handle it?',
-        'What will I do differently next time?',
+        'What was the most challenging part of this project? How did you overcome it?',
+        'How did your understanding of the topic change from start to finish?',
+        'What would you do differently if you started over?',
       ],
-      content: [
-        'What is the most important thing I learned?',
-        'What questions do I still have?',
-        'How does this connect to what I already knew?',
+      skills: [
+        'Which cognitive skill did you grow in the most? What evidence do you have?',
+        'How did working with your team help (or hinder) your learning?',
+        'What skill do you want to continue developing?',
       ],
-      collaboration: [
-        'How did I contribute to my team today?',
-        'What did I learn from a teammate?',
-        'How could our team work more effectively?',
+      impact: [
+        'How might your work make a difference for your audience?',
+        'What surprised you most during this project?',
+        'What advice would you give future students doing this project?',
       ],
     },
     tips: [
-      'Make reflection routine, not an add-on',
-      'Vary prompts to avoid repetition',
-      'Occasionally share reflections (with permission)',
-      'Use reflections to inform mini-lessons',
+      'Give students quiet time to write before sharing',
+      'Use a talking circle for oral reflections',
+      'Celebrate growth, not just final product quality',
     ],
   },
-
-  success_analysis: {
-    id: 'success_analysis',
-    name: 'Success Analysis Protocol',
-    phase: 'reflection',
-    purpose: 'Analyze completed work to identify strategies worth repeating',
-    duration: '20-30 minutes',
-    icon: 'Trophy',
+  {
+    id: 'celebration-protocol',
+    name: 'Celebration & Debrief',
+    purpose: 'Honor student work and celebrate the learning journey',
+    duration: '1 class period',
+    phase: 'final',
     color: '#26de81',
     steps: [
-      'Identify success: What went well in this milestone?',
-      'Analyze process: What specific actions led to that success?',
-      'Extract strategies: What can I do again in future work?',
-      'Share with team: What strategies can we adopt as a group?',
-      'Document: Add successful strategies to team norms or personal toolkit',
-    ],
-  },
-
-  // Checkpoint Protocols
-  checkpoint_conference: {
-    id: 'checkpoint_conference',
-    name: 'Checkpoint Conference Protocol',
-    phase: 'checkpoint',
-    purpose: 'One-on-one feedback conversation to guide next steps',
-    duration: '5-10 minutes per student',
-    icon: 'MessageCircle',
-    color: '#00d9ff',
-    structure: [
-      'Student self-assessment: Share where you think you are on the rubric',
-      'Evidence review: Look at specific work samples together',
-      'Teacher feedback: Confirm, clarify, or redirect assessment',
-      'Goal setting: Identify 1-2 specific next steps',
-      'Support plan: What do you need to reach your goals?',
+      'Set up exhibition space for final products',
+      'Invite authentic audience members',
+      'Students present and field questions',
+      'Audience provides written feedback',
+      'Whole-class celebration and debrief',
     ],
     tips: [
-      'Have students complete self-assessment before the conference',
-      'Focus on growth, not just current performance',
-      'Document goals for follow-up',
-      'Schedule brief check-ins between formal conferences',
+      'Take photos/video to document the event',
+      'Have students write thank-you notes to guest audiences',
+      'Update the K/NTK board one final time to show learning',
     ],
   },
+];
 
-  self_assessment: {
-    id: 'self_assessment',
-    name: 'Self-Assessment Protocol',
-    phase: 'checkpoint',
-    purpose: 'Students evaluate their own progress against the rubric',
-    duration: '15-20 minutes',
-    icon: 'ClipboardCheck',
-    color: '#00d9ff',
-    steps: [
-      'Review the rubric criteria for this checkpoint',
-      'Gather evidence: Which work samples demonstrate each skill?',
-      'Rate yourself: Where are you on each criterion?',
-      'Justify: Write 1-2 sentences explaining your rating with evidence',
-      'Set goals: What will you do to improve before the next checkpoint?',
-    ],
-    template: {
-      skill: '',
-      selfRating: '', // emerging, developing, proficient, advanced
-      evidence: '',
-      nextSteps: '',
-    },
-  },
+export function getProtocolsByPhase(phase) {
+  return PROTOCOLS.filter((p) => p.phase === phase);
+}
 
-  // Final Phase Protocols
-  presentation_prep: {
-    id: 'presentation_prep',
-    name: 'Presentation Preparation Protocol',
-    phase: 'final',
-    purpose: 'Prepare students for authentic audience presentations',
-    duration: '1-2 class periods',
-    icon: 'Presentation',
-    color: '#ff6b6b',
-    steps: [
-      'Audience analysis: Who will be there? What do they care about?',
-      'Key messages: What are the 3-5 things they must understand?',
-      'Structure: Hook, main points, call to action',
-      'Visual aids: Design slides/posters that support, not replace, speaking',
-      'Practice: Rehearse with feedback, practice Q&A',
-      'Logistics: Room setup, technology check, timing',
-    ],
-    tips: [
-      'Invite authentic audience members (community members, experts)',
-      'Help students anticipate questions',
-      'Practice handling technology failures gracefully',
-      'Build in time for Q&A preparation',
-    ],
-  },
-
-  celebration_debrief: {
-    id: 'celebration_debrief',
-    name: 'Celebration & Debrief Protocol',
-    phase: 'final',
-    purpose: 'Honor the journey and harvest learning for future projects',
-    duration: '30-45 minutes',
-    icon: 'PartyPopper',
-    color: '#26de81',
-    steps: [
-      'Celebrate: Acknowledge accomplishments and growth',
-      'Appreciate: Thank team members and supporters',
-      'Reflect: What are you most proud of?',
-      'Learn: What would you do differently?',
-      'Apply: How will you use what you learned?',
-    ],
-    activities: [
-      'Shout-outs: Students recognize each other\'s contributions',
-      'Gallery walk: Display final products',
-      'Letter to future students: Advice for next year\'s class',
-      'Skills inventory: What new skills did you develop?',
-    ],
-  },
-};
-
-// Protocol categories
-export const PROTOCOL_PHASES = {
-  launch: ['entry_event', 'rubric_unpacking', 'know_need_to_know'],
-  milestone: ['peer_critique', 'tuning_protocol', 'gallery_walk'],
-  reflection: ['reflection_journal', 'success_analysis'],
-  checkpoint: ['checkpoint_conference', 'self_assessment'],
-  final: ['presentation_prep', 'celebration_debrief'],
-};
-
-// Helper functions
-export const getProtocolById = (id) => PBL_PROTOCOLS[id];
-
-export const getProtocolsByPhase = (phase) => {
-  return PROTOCOL_PHASES[phase]?.map(id => PBL_PROTOCOLS[id]) || [];
-};
-
-export const getAllProtocols = () => Object.values(PBL_PROTOCOLS);
-
-export const getRecommendedProtocols = (context) => {
-  // Returns protocols recommended for a specific context
-  switch (context) {
-    case 'launch':
-      return getProtocolsByPhase('launch');
-    case 'milestone':
-      return [...getProtocolsByPhase('milestone'), ...getProtocolsByPhase('checkpoint')];
-    case 'reflection':
-      return getProtocolsByPhase('reflection');
-    case 'final':
-      return getProtocolsByPhase('final');
-    default:
-      return getAllProtocols();
-  }
-};
-
-export default PBL_PROTOCOLS;
+export function getRecommendedProtocols(context) {
+  return PROTOCOLS.filter((p) => p.phase === context);
+}

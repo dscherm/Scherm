@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserUnits } from '../../hooks/useUnits';
+import { useToast } from '../../contexts/ToastContext';
 import CreateModal from '../create/CreateModal';
+import ConfirmDialog from '../common/ConfirmDialog';
 import {
   PlusCircle,
   BookOpen,
@@ -21,20 +23,29 @@ import { useState } from 'react';
 function Dashboard() {
   const { user } = useAuth();
   const { units, loading, error, remove, duplicate } = useUserUnits();
+  const { toast } = useToast();
   const [menuOpen, setMenuOpen] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleDelete = async (unitId, e) => {
     e.preventDefault();
-    if (confirm('Are you sure you want to delete this unit?')) {
-      await remove(unitId);
-    }
+    setDeleteTarget(unitId);
     setMenuOpen(null);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget) {
+      await remove(deleteTarget);
+      toast.success('Unit deleted');
+      setDeleteTarget(null);
+    }
   };
 
   const handleDuplicate = async (unitId, e) => {
     e.preventDefault();
     await duplicate(unitId);
+    toast.success('Unit duplicated');
     setMenuOpen(null);
   };
 
@@ -43,22 +54,25 @@ function Dashboard() {
   const publishedUnits = units.filter(u => u.status === 'published').length;
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary mb-2">
-          Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}!
-        </h1>
-        <p className="text-text-secondary">
-          Build engaging 5E lessons for your students
-        </p>
+    <div className="p-8 animate-fade-in">
+      {/* Header with gradient strip */}
+      <div className="mb-8 relative">
+        <div className="absolute inset-0 -mx-8 -mt-8 h-32 bg-gradient-to-r from-accent-purple/10 via-accent-blue/5 to-transparent" />
+        <div className="relative">
+          <h1 className="text-3xl font-bold text-text-primary mb-2">
+            Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}!
+          </h1>
+          <p className="text-text-secondary">
+            Build engaging 5E lessons for your students
+          </p>
+        </div>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <button
           onClick={() => setShowCreateModal(true)}
-          className="card hover:border-accent-purple transition-colors group cursor-pointer text-left"
+          className="card-interactive group cursor-pointer text-left"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-accent-purple/20 rounded-lg flex items-center justify-center group-hover:bg-accent-purple/30 transition-colors">
@@ -71,7 +85,7 @@ function Dashboard() {
           </div>
         </button>
 
-        <div className="card">
+        <div className="card-glass border-l-2 border-l-blue-400">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-blue-400" />
@@ -83,7 +97,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card-glass border-l-2 border-l-green-400">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-green-400" />
@@ -95,7 +109,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card-glass border-l-2 border-l-yellow-400">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-yellow-400" />
@@ -142,11 +156,11 @@ function Dashboard() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-in">
             {units.map((unit) => (
               <div
                 key={unit.id}
-                className="card hover:border-accent-purple transition-colors relative group"
+                className="card-interactive relative group"
               >
                 <Link to={`/unit/${unit.id}`} className="block">
                   <div className="flex items-start justify-between mb-2">
@@ -168,6 +182,11 @@ function Dashboard() {
                       {unit.objectives?.length || 0} objectives
                     </span>
                   </div>
+                  {unit.updatedAt && (
+                    <p className="text-xs text-text-muted mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Last saved {new Date(unit.updatedAt?.seconds ? unit.updatedAt.seconds * 1000 : unit.updatedAt).toLocaleDateString()}
+                    </p>
+                  )}
                 </Link>
 
                 {/* Actions menu */}
@@ -221,18 +240,18 @@ function Dashboard() {
         </h2>
         <div className="grid grid-cols-5 gap-4">
           {[
-            { phase: 'Engage', color: 'yellow', icon: '🧠', desc: 'Hook & Prior Knowledge' },
-            { phase: 'Explore', color: 'blue', icon: '🔍', desc: 'Hands-on Investigation' },
-            { phase: 'Explain', color: 'purple', icon: '📖', desc: 'Formalize Concepts' },
-            { phase: 'Elaborate', color: 'green', icon: '🚀', desc: 'Apply & Extend' },
-            { phase: 'Evaluate', color: 'red', icon: '📊', desc: 'Demonstrate Mastery' },
-          ].map(({ phase, color, icon, desc }) => (
+            { phase: 'Engage', style: 'border-yellow-400/30 bg-yellow-400/10', textStyle: 'text-yellow-400', icon: '🧠', desc: 'Hook & Prior Knowledge' },
+            { phase: 'Explore', style: 'border-blue-400/30 bg-blue-400/10', textStyle: 'text-blue-400', icon: '🔍', desc: 'Hands-on Investigation' },
+            { phase: 'Explain', style: 'border-purple-400/30 bg-purple-400/10', textStyle: 'text-purple-400', icon: '📖', desc: 'Formalize Concepts' },
+            { phase: 'Elaborate', style: 'border-green-400/30 bg-green-400/10', textStyle: 'text-green-400', icon: '🚀', desc: 'Apply & Extend' },
+            { phase: 'Evaluate', style: 'border-red-400/30 bg-red-400/10', textStyle: 'text-red-400', icon: '📊', desc: 'Demonstrate Mastery' },
+          ].map(({ phase, style, textStyle, icon, desc }) => (
             <div
               key={phase}
-              className={`p-4 rounded-lg border border-${color}-400/30 bg-${color}-400/10`}
+              className={`p-4 rounded-lg border ${style}`}
             >
               <div className="text-2xl mb-2">{icon}</div>
-              <h3 className={`font-semibold text-${color}-400 mb-1`}>{phase}</h3>
+              <h3 className={`font-semibold ${textStyle} mb-1`}>{phase}</h3>
               <p className="text-xs text-text-muted">{desc}</p>
             </div>
           ))}
@@ -243,6 +262,17 @@ function Dashboard() {
       <CreateModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Delete Unit"
+        message="Are you sure you want to delete this unit? This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
       />
     </div>
   );

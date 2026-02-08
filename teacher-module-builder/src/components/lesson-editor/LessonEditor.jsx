@@ -23,6 +23,14 @@ import {
   PanelRightClose
 } from 'lucide-react';
 
+const PHASE_BADGE_STYLES = {
+  yellow: 'bg-yellow-400/20 text-yellow-400',
+  blue: 'bg-blue-400/20 text-blue-400',
+  purple: 'bg-purple-400/20 text-purple-400',
+  green: 'bg-green-400/20 text-green-400',
+  red: 'bg-red-400/20 text-red-400',
+};
+
 const PHASES = {
   engage: { name: 'Engage', icon: '🧠', color: 'yellow' },
   explore: { name: 'Explore', icon: '🔍', color: 'blue' },
@@ -173,7 +181,7 @@ function LessonEditor() {
               <div>
                 <div className="flex items-center gap-2">
                   {phase && (
-                    <span className={`px-2 py-0.5 rounded text-xs bg-${phase.color}-400/20 text-${phase.color}-400`}>
+                    <span className={`px-2 py-0.5 rounded text-xs ${PHASE_BADGE_STYLES[phase.color]}`}>
                       {phase.icon} {phase.name}
                     </span>
                   )}
@@ -238,8 +246,8 @@ function LessonEditor() {
       {/* Main Content with Optional Suggestions Panel */}
       <div className={`flex gap-6 ${showSuggestions ? 'max-w-7xl' : 'max-w-5xl'} mx-auto px-6 py-8 transition-all`}>
         {/* Left: Lesson Content */}
-        <div className={`${showSuggestions ? 'flex-1' : 'w-full'} space-y-6`}
-        {/* Lesson Overview */}
+        <div className={`${showSuggestions ? 'flex-1' : 'w-full'} space-y-6`}>
+          {/* Lesson Overview */}
         <div className="p-4 bg-dark-surface border border-dark-border rounded-lg">
           <label className="label">Learning Objective for This Lesson</label>
           <textarea

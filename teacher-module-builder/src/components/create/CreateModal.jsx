@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  X,
   Upload,
   FileText,
   Sparkles,
@@ -12,7 +11,31 @@ import {
   Calendar,
   Lightbulb
 } from 'lucide-react';
+import Modal from '../common/Modal';
 import useUnitStore from '../../hooks/useUnitStore';
+
+const MODE_COLOR_STYLES = {
+  purple: {
+    border: 'hover:border-purple-400/50',
+    bg: 'hover:bg-purple-400/5',
+    icon: 'bg-purple-400/20 text-purple-400',
+  },
+  blue: {
+    border: 'hover:border-blue-400/50',
+    bg: 'hover:bg-blue-400/5',
+    icon: 'bg-blue-400/20 text-blue-400',
+  },
+  green: {
+    border: 'hover:border-green-400/50',
+    bg: 'hover:bg-green-400/5',
+    icon: 'bg-green-400/20 text-green-400',
+  },
+  orange: {
+    border: 'hover:border-orange-400/50',
+    bg: 'hover:bg-orange-400/5',
+    icon: 'bg-orange-400/20 text-orange-400',
+  },
+};
 
 const CREATION_MODES = [
   {
@@ -69,8 +92,6 @@ function CreateModal({ isOpen, onClose }) {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  if (!isOpen) return null;
-
   const handleModeSelect = (mode) => {
     setSelectedMode(mode);
     if (mode.id === 'scratch') {
@@ -119,26 +140,11 @@ function CreateModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-dark-surface border border-dark-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-dark-border">
-          <div>
-            <h2 className="text-lg font-semibold text-text-primary">
-              {step === 'mode' ? 'Create New' : selectedMode?.name}
-            </h2>
-            {step === 'configure' && (
-              <p className="text-sm text-text-muted">{selectedMode?.description}</p>
-            )}
-          </div>
-          <button
-            onClick={handleClose}
-            className="p-2 text-text-muted hover:text-text-primary rounded-lg hover:bg-dark-hover"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={step === 'mode' ? 'Create New' : selectedMode?.name}
+    >
         {/* Content */}
         <div className="p-4 overflow-y-auto max-h-[70vh]">
           {/* Step 1: Select Mode */}
@@ -146,19 +152,19 @@ function CreateModal({ isOpen, onClose }) {
             <div className="grid grid-cols-2 gap-4">
               {CREATION_MODES.map((mode) => {
                 const Icon = mode.icon;
+                const styles = MODE_COLOR_STYLES[mode.color] || MODE_COLOR_STYLES.purple;
                 return (
                   <button
                     key={mode.id}
                     onClick={() => handleModeSelect(mode)}
                     className={`
                       p-4 rounded-lg border text-left transition-all hover:scale-[1.02]
-                      border-dark-border hover:border-${mode.color}-400/50
-                      hover:bg-${mode.color}-400/5
+                      border-dark-border ${styles.border} ${styles.bg}
                     `}
                   >
                     <div className={`
                       w-10 h-10 rounded-lg flex items-center justify-center mb-3
-                      bg-${mode.color}-400/20 text-${mode.color}-400
+                      ${styles.icon}
                     `}>
                       <Icon className="w-5 h-5" />
                     </div>
@@ -365,8 +371,7 @@ function CreateModal({ isOpen, onClose }) {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

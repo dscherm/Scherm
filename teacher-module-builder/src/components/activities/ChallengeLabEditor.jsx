@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, X, Eye, EyeOff, HelpCircle, CheckCircle } from 'lucide-react';
+import { Plus, X, Eye, EyeOff, HelpCircle, CheckCircle, Play } from 'lucide-react';
+import ChallengeLabPreview from './ChallengeLabPreview';
 
 function ChallengeLabEditor({ activity, onChange }) {
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { content = {}, config = {} } = activity;
 
   const updateContent = (key, value) => {
@@ -243,6 +245,18 @@ function ChallengeLabEditor({ activity, onChange }) {
           </label>
         </div>
       </div>
+
+      {/* Preview Button */}
+      <button
+        onClick={() => setShowPreview(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition-colors"
+      >
+        <Play className="w-4 h-4" /> Preview as Student
+      </button>
+
+      {showPreview && (
+        <ChallengeLabPreview activity={activity} onClose={() => setShowPreview(false)} />
+      )}
     </div>
   );
 }

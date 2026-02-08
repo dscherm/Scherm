@@ -21,6 +21,33 @@ import {
   SHARE_OUT_PROTOCOLS,
 } from '../../data/activitySuggestions';
 
+const SECTION_COLOR_STYLES = {
+  yellow: {
+    iconBg: 'bg-yellow-400/20',
+    iconText: 'text-yellow-400',
+    hoverBorder: 'hover:border-yellow-400/50',
+    addBtn: 'text-yellow-400 hover:bg-yellow-400/20',
+  },
+  blue: {
+    iconBg: 'bg-blue-400/20',
+    iconText: 'text-blue-400',
+    hoverBorder: 'hover:border-blue-400/50',
+    addBtn: 'text-blue-400 hover:bg-blue-400/20',
+  },
+  purple: {
+    iconBg: 'bg-purple-400/20',
+    iconText: 'text-purple-400',
+    hoverBorder: 'hover:border-purple-400/50',
+    addBtn: 'text-purple-400 hover:bg-purple-400/20',
+  },
+  green: {
+    iconBg: 'bg-green-400/20',
+    iconText: 'text-green-400',
+    hoverBorder: 'hover:border-green-400/50',
+    addBtn: 'text-green-400 hover:bg-green-400/20',
+  },
+};
+
 const SECTION_CONFIG = {
   mindsOn: {
     label: 'Minds On Hooks',
@@ -179,6 +206,8 @@ function ActivitySuggestions({ phase, onSelectActivity, onClose }) {
                   return true;
                 });
 
+            const colorStyles = SECTION_COLOR_STYLES[config.color] || SECTION_COLOR_STYLES.purple;
+
             return (
               <div key={key} className="border-b border-dark-border last:border-0">
                 <button
@@ -186,8 +215,8 @@ function ActivitySuggestions({ phase, onSelectActivity, onClose }) {
                   className={`w-full flex items-center justify-between p-4 hover:bg-dark-hover transition-colors`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg bg-${config.color}-400/20 flex items-center justify-center`}>
-                      <Icon className={`w-4 h-4 text-${config.color}-400`} />
+                    <div className={`w-8 h-8 rounded-lg ${colorStyles.iconBg} flex items-center justify-center`}>
+                      <Icon className={`w-4 h-4 ${colorStyles.iconText}`} />
                     </div>
                     <div className="text-left">
                       <h4 className="font-medium text-text-primary">{config.label}</h4>
@@ -252,9 +281,10 @@ function ActivityCard({ activity, onSelect, color = 'purple' }) {
   };
 
   const icon = activityIcons[activity.type] || '📋';
+  const colorStyles = SECTION_COLOR_STYLES[color] || SECTION_COLOR_STYLES.purple;
 
   return (
-    <div className={`bg-dark-bg rounded-lg border border-dark-border hover:border-${color}-400/50 transition-colors`}>
+    <div className={`bg-dark-bg rounded-lg border border-dark-border ${colorStyles.hoverBorder} transition-colors`}>
       <div
         className="p-3 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -277,7 +307,7 @@ function ActivityCard({ activity, onSelect, color = 'purple' }) {
               e.stopPropagation();
               onSelect();
             }}
-            className={`p-1.5 text-${color}-400 hover:bg-${color}-400/20 rounded transition-colors`}
+            className={`p-1.5 ${colorStyles.addBtn} rounded transition-colors`}
             title="Add this activity"
           >
             <Plus className="w-4 h-4" />

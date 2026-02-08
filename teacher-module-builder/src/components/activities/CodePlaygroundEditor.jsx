@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Plus, X, Eye, EyeOff, Code, Play } from 'lucide-react';
+import CodePlaygroundPreview from './CodePlaygroundPreview';
 
 function CodePlaygroundEditor({ activity, onChange }) {
   const [showSolution, setShowSolution] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { content = {}, config = {} } = activity;
 
   const updateContent = (key, value) => {
@@ -187,6 +189,18 @@ function CodePlaygroundEditor({ activity, onChange }) {
           </div>
         </div>
       </div>
+
+      {/* Preview Button */}
+      <button
+        onClick={() => setShowPreview(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition-colors"
+      >
+        <Play className="w-4 h-4" /> Preview as Student
+      </button>
+
+      {showPreview && (
+        <CodePlaygroundPreview activity={activity} onClose={() => setShowPreview(false)} />
+      )}
     </div>
   );
 }

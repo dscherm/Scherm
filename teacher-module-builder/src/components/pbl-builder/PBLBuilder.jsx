@@ -10,12 +10,14 @@ import Step3Milestones from './steps/Step3Milestones';
 import Step4DailyPlanning from './steps/Step4DailyPlanning';
 import Step5Review from './steps/Step5Review';
 import ProtocolSidebar from './ProtocolSidebar';
+import { useToast } from '../../contexts/ToastContext';
 import { ArrowLeft, ArrowRight, Save, Loader2, CheckCircle, BookOpen } from 'lucide-react';
 
 function PBLBuilder() {
   const { unitId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState(null);
   const [showProtocols, setShowProtocols] = useState(false);
 
@@ -72,13 +74,12 @@ function PBLBuilder() {
 
   const handleSave = async (isAutoSave = false) => {
     if (!user) {
-      alert('Please sign in to save');
+      toast.error('Please sign in to save');
       return;
     }
 
     try {
       setSaveStatus('saving');
-      // Save the PBL unit with unitType field
       const unitData = {
         ...currentUnit,
         unitType: 'pbl',
@@ -86,6 +87,7 @@ function PBLBuilder() {
       const savedId = await save(unitData, []);
 
       setSaveStatus('saved');
+      if (!isAutoSave) toast.success('PBL unit saved!');
       setTimeout(() => setSaveStatus(null), 2000);
 
       if (unitId === 'new' && savedId) {
@@ -96,14 +98,14 @@ function PBLBuilder() {
       console.error('Save error:', err);
       setSaveStatus('error');
       if (!isAutoSave) {
-        alert('Failed to save: ' + err.message);
+        toast.error('Failed to save: ' + err.message);
       }
     }
   };
 
   const handlePublish = async () => {
     if (!user) {
-      alert('Please sign in to publish');
+      toast.error('Please sign in to publish');
       return;
     }
 
@@ -114,11 +116,11 @@ function PBLBuilder() {
       };
       const savedId = await save(unitData, []);
       await publish(savedId);
-      alert('PBL Unit published successfully!');
+      toast.success('PBL Unit published successfully!');
       navigate('/');
     } catch (err) {
       console.error('Publish error:', err);
-      alert('Failed to publish: ' + err.message);
+      toast.error('Failed to publish: ' + err.message);
     }
   };
 
@@ -289,8 +291,7 @@ function PBLBuilder() {
                 <button
                   onClick={nextStep}
                   disabled={!canProceed()}
-                  className="btn btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#00d9ff' }}
+                  className="btn flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-pbl-cyan hover:bg-pbl-cyan/80 text-dark-bg font-medium"
                 >
                   Continue
                   <ArrowRight className="w-4 h-4" />
@@ -299,8 +300,7 @@ function PBLBuilder() {
                 <button
                   onClick={handlePublish}
                   disabled={saving}
-                  className="btn flex items-center gap-2"
-                  style={{ backgroundColor: '#26de81' }}
+                  className="btn flex items-center gap-2 bg-pbl-green hover:bg-pbl-green/80 text-dark-bg font-medium"
                 >
                   {saving ? (
                     <>
