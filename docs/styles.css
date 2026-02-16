@@ -21,6 +21,11 @@
     --shadow: 0 10px 40px rgba(255, 46, 151, 0.4);
     --hover-shadow: 0 15px 50px rgba(255, 46, 151, 0.6);
     --glow: 0 0 20px rgba(255, 207, 64, 0.6);
+
+    /* Primary palette for UI elements */
+    --primary-color: #FF6B9D;
+    --secondary-color: #667eea;
+    --accent-color: #764ba2;
 }
 
 body {
@@ -160,6 +165,7 @@ header h1 {
     overflow: hidden;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    text-align: center;
 }
 
 .tab-btn::before {
@@ -1602,9 +1608,10 @@ header h1 {
 
 .codex-filters h3 {
     margin: 0 0 15px 0;
-    color: var(--secondary-color);
+    color: #2c3e50;
     font-size: 1.3em;
     text-align: center;
+    font-weight: bold;
 }
 
 .filter-chips {
