@@ -187,6 +187,9 @@ function displayCocktails(cocktails) {
 function createCocktailCard(cocktail) {
     const card = document.createElement('div');
     card.className = 'cocktail-card';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `View details for ${cocktail.strDrink}`);
 
     card.innerHTML = `
         <img src="${cocktail.strDrinkThumb}" alt="${cocktail.strDrink}">
@@ -562,6 +565,51 @@ function showLoading() {
         </div>
     `;
 }
+
+// Keyboard Navigation System
+(function initKeyboardNavigation() {
+    let focusedCardIndex = -1;
+
+    // Close modals on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (ingredientModal.style.display === 'block') {
+                ingredientModal.style.display = 'none';
+                return;
+            }
+            if (cocktailModal.style.display === 'block') {
+                cocktailModal.style.display = 'none';
+                return;
+            }
+        }
+
+        // Arrow key navigation for cocktail cards
+        const cards = Array.from(resultsSection.querySelectorAll('.cocktail-card'));
+        if (cards.length === 0) return;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            focusedCardIndex = Math.min(focusedCardIndex + 1, cards.length - 1);
+            cards[focusedCardIndex].focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            focusedCardIndex = Math.max(focusedCardIndex - 1, 0);
+            cards[focusedCardIndex].focus();
+        } else if (e.key === 'Enter' && document.activeElement.classList.contains('cocktail-card')) {
+            e.preventDefault();
+            document.activeElement.click();
+        }
+    });
+
+    // Track focus on cards
+    resultsSection.addEventListener('focusin', (e) => {
+        const card = e.target.closest('.cocktail-card');
+        if (card) {
+            const cards = Array.from(resultsSection.querySelectorAll('.cocktail-card'));
+            focusedCardIndex = cards.indexOf(card);
+        }
+    });
+})();
 
 // Initialize with a random cocktail on load
 window.addEventListener('load', () => {

@@ -208,9 +208,49 @@ header h1 {
     animation: slideIn 0.5s ease-out;
 }
 
-.cocktail-card:hover {
+.cocktail-card:hover,
+.cocktail-card:focus {
     transform: translateY(-10px);
     box-shadow: var(--hover-shadow);
+}
+
+.cocktail-card:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Focus indicators for all interactive elements */
+.tab-btn:focus,
+.search-type-btn:focus,
+.liquor-btn:focus,
+#search-btn:focus,
+#search-input:focus,
+.ingredient-option-btn:focus,
+.ingredient-item:focus,
+#add-ingredient-btn:focus,
+.primary-btn:focus,
+.close-btn:focus,
+.remove-ingredient-btn:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Skip to main content link (hidden until focused) */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    z-index: 2000;
+    border-radius: 0 0 10px 0;
+    font-weight: bold;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 0;
 }
 
 .cocktail-card img {
