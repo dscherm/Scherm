@@ -253,6 +253,55 @@ header h1 {
     top: 0;
 }
 
+/* PWA Install Banner */
+.install-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    z-index: 3000;
+    font-weight: 600;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.install-banner button {
+    padding: 8px 20px;
+    border: 2px solid white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+#install-btn {
+    background: white;
+    color: var(--secondary-color);
+}
+
+#install-btn:hover {
+    background: transparent;
+    color: white;
+}
+
+#dismiss-install {
+    background: transparent;
+    color: white;
+    border: none;
+    font-size: 1.3em;
+    padding: 4px 8px;
+}
+
+#dismiss-install:hover {
+    opacity: 0.7;
+}
+
 .cocktail-card img {
     width: 100%;
     height: 250px;

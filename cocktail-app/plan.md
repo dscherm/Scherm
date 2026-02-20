@@ -305,7 +305,7 @@ Each task includes steps, verification criteria, and a `passes` boolean.
     "Test offline functionality"
   ],
   "verification": "Go offline, reload app - should still work with cached data",
-  "passes": false
+  "passes": true
 }
 ```
 

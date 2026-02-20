@@ -135,6 +135,28 @@ Each entry follows this format:
 
 ---
 
+## 2026-02-20 - Task: Implement PWA features
+
+**Goal:** Make the app installable and work offline
+
+**Changes Made:**
+- Created `manifest.json` with app name, theme color, SVG icon, standalone display
+- Created `sw.js` service worker with cache-first for static assets, network-first for API calls
+- Added manifest link and theme-color/apple-mobile meta tags to index.html
+- Service worker registration on load
+- `beforeinstallprompt` handler with install banner UI at bottom of screen
+- Install banner with Install/Dismiss buttons, styled to match app theme
+- API responses cached for offline fallback
+
+**Verification:**
+- Code review: service worker correctly caches static assets on install
+- API fetch handler clones responses to cache, falls back to cache on network failure
+- Install prompt captured and re-triggered on button click
+
+**Status:** ✅ Complete
+
+---
+
 ## Future Entries
 
 The autonomous agent will add entries below as it completes tasks from plan.md.

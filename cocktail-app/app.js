@@ -963,6 +963,42 @@ function copyShoppingList() {
     });
 })();
 
+// PWA: Service Worker Registration & Install Prompt
+let deferredInstallPrompt = null;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    const banner = document.createElement('div');
+    banner.className = 'install-banner';
+    banner.innerHTML = `
+        <span>Install Cocktail Mixologist for offline access!</span>
+        <button id="install-btn" aria-label="Install app">Install</button>
+        <button id="dismiss-install" aria-label="Dismiss">&times;</button>
+    `;
+    document.body.prepend(banner);
+
+    document.getElementById('install-btn').addEventListener('click', () => {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(() => {
+            deferredInstallPrompt = null;
+            banner.remove();
+        });
+    });
+
+    document.getElementById('dismiss-install').addEventListener('click', () => banner.remove());
+}
+
 // Initialize with a random cocktail on load
 window.addEventListener('load', () => {
     getRandomCocktail();
