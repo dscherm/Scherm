@@ -255,7 +255,7 @@ Each task includes steps, verification criteria, and a `passes` boolean.
     "Add aria-expanded for collapsible sections"
   ],
   "verification": "Run axe DevTools - should have no critical accessibility violations",
-  "passes": false
+  "passes": true
 }
 ```
 

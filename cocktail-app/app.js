@@ -19,8 +19,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const tabName = btn.dataset.tab;
 
         // Update active tab button
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
 
         // Update active tab content
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -39,8 +43,12 @@ document.querySelectorAll('.search-type-btn').forEach(btn => {
         currentSearchType = btn.dataset.type;
 
         // Update active button
-        document.querySelectorAll('.search-type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.search-type-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
 
         // Update UI based on search type
         if (currentSearchType === 'liquor') {

@@ -66,6 +66,30 @@ Each entry follows this format:
 
 ---
 
+## 2026-02-20 - Task: Implement ARIA labels and semantic HTML
+
+**Goal:** Make the app fully accessible with proper ARIA attributes and semantic structure
+
+**Changes Made:**
+- Replaced `<div>` wrappers with semantic `<main>`, `<section>`, `<nav>`, `<header>`, `<fieldset>`, `<form>` elements
+- Added `role="tablist"`, `role="tab"`, `role="tabpanel"` to tab navigation with `aria-selected`/`aria-controls`
+- Added `role="dialog"` and `aria-modal="true"` to both modals
+- Added `aria-live="polite"` to results section and saved cocktails grid for dynamic content updates
+- Added `aria-label` to all buttons, inputs, search container (`role="search"`), and form groups
+- Added `aria-pressed` to search type toggle buttons with JS to update on click
+- Wrapped ingredients in `<fieldset>` with `<legend>` for form grouping
+- Added `type="button"` to non-submit buttons inside the form
+- Close `<span>` elements changed to `<button>` for proper semantics
+
+**Verification:**
+- Code review: all interactive elements have aria-label or associated labels
+- Semantic HTML structure: header > nav > main/tabpanel > section hierarchy
+- Dynamic content regions use aria-live for screen reader announcements
+
+**Status:** ✅ Complete
+
+---
+
 ## Future Entries
 
 The autonomous agent will add entries below as it completes tasks from plan.md.
