@@ -3,58 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍹 Cocktail Mixologist</title>
+    <title>Cocktail Mixologist</title>
+    <!-- Resource hints for API -->
+    <link rel="dns-prefetch" href="https://www.thecocktaildb.com">
+    <link rel="preconnect" href="https://www.thecocktaildb.com" crossorigin>
+    <!-- Critical CSS inline, full stylesheet deferred -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
+    <a href="#search-tab" class="skip-link">Skip to main content</a>
     <div class="container">
-        <header>
-            <h1>🍹 Cocktail Mixologist</h1>
+        <header role="banner">
+            <h1>Cocktail Mixologist</h1>
             <p class="tagline">Discover, Create, and Mix Amazing Cocktails</p>
         </header>
 
-        <nav class="tab-navigation">
-            <button class="tab-btn active" data-tab="search">Search Cocktails</button>
-            <button class="tab-btn" data-tab="create">Create Your Own</button>
+        <nav class="tab-navigation" role="tablist" aria-label="Main navigation">
+            <button class="tab-btn active" data-tab="search" role="tab" aria-selected="true" aria-controls="search-tab" id="tab-search">Search Cocktails</button>
+            <button class="tab-btn" data-tab="create" role="tab" aria-selected="false" aria-controls="create-tab" id="tab-create">Create Your Own</button>
+            <button class="tab-btn" data-tab="compare" role="tab" aria-selected="false" aria-controls="compare-tab" id="tab-compare">Compare</button>
+            <button class="tab-btn" data-tab="inventory" role="tab" aria-selected="false" aria-controls="inventory-tab" id="tab-inventory">My Bar</button>
         </nav>
 
         <!-- Search Tab -->
-        <div class="tab-content active" id="search-tab">
-            <div class="search-section">
-                <div class="search-options">
-                    <button class="search-type-btn active" data-type="name">By Name</button>
-                    <button class="search-type-btn" data-type="ingredient">By Ingredient</button>
-                    <button class="search-type-btn" data-type="liquor">By Base Liquor</button>
-                    <button class="search-type-btn" data-type="random">Random</button>
+        <main class="tab-content active" id="search-tab" role="tabpanel" aria-labelledby="tab-search">
+            <section class="search-section" aria-label="Search cocktails">
+                <div class="search-options" role="group" aria-label="Search type">
+                    <button class="search-type-btn active" data-type="name" aria-pressed="true">By Name</button>
+                    <button class="search-type-btn" data-type="ingredient" aria-pressed="false">By Ingredient</button>
+                    <button class="search-type-btn" data-type="liquor" aria-pressed="false">By Base Liquor</button>
+                    <button class="search-type-btn" data-type="random" aria-pressed="false">Random</button>
                 </div>
 
-                <div class="search-input-container">
-                    <input type="text" id="search-input" placeholder="Search for a cocktail...">
-                    <button id="search-btn">Search</button>
+                <div class="search-input-container" role="search">
+                    <input type="text" id="search-input" placeholder="Search for a cocktail..." aria-label="Search cocktails">
+                    <button id="search-btn" aria-label="Search">Search</button>
                 </div>
 
                 <!-- Base Liquor Selection (hidden by default) -->
-                <div id="liquor-selection" class="liquor-grid" style="display: none;">
-                    <button class="liquor-btn" data-liquor="Vodka">🥶 Vodka</button>
-                    <button class="liquor-btn" data-liquor="Rum">🏝️ Rum</button>
-                    <button class="liquor-btn" data-liquor="Gin">🌿 Gin</button>
-                    <button class="liquor-btn" data-liquor="Tequila">🌵 Tequila</button>
-                    <button class="liquor-btn" data-liquor="Whiskey">🥃 Whiskey</button>
-                    <button class="liquor-btn" data-liquor="Bourbon">🌾 Bourbon</button>
-                    <button class="liquor-btn" data-liquor="Scotch">🏴 Scotch</button>
-                    <button class="liquor-btn" data-liquor="Brandy">🍇 Brandy</button>
+                <div id="liquor-selection" class="liquor-grid" style="display: none;" role="group" aria-label="Select base liquor">
+                    <button class="liquor-btn" data-liquor="Vodka" aria-label="Filter by Vodka">Vodka</button>
+                    <button class="liquor-btn" data-liquor="Rum" aria-label="Filter by Rum">Rum</button>
+                    <button class="liquor-btn" data-liquor="Gin" aria-label="Filter by Gin">Gin</button>
+                    <button class="liquor-btn" data-liquor="Tequila" aria-label="Filter by Tequila">Tequila</button>
+                    <button class="liquor-btn" data-liquor="Whiskey" aria-label="Filter by Whiskey">Whiskey</button>
+                    <button class="liquor-btn" data-liquor="Bourbon" aria-label="Filter by Bourbon">Bourbon</button>
+                    <button class="liquor-btn" data-liquor="Scotch" aria-label="Filter by Scotch">Scotch</button>
+                    <button class="liquor-btn" data-liquor="Brandy" aria-label="Filter by Brandy">Brandy</button>
                 </div>
-            </div>
+            </section>
+
+            <!-- Seasonal Recommendations -->
+            <section id="seasonal-section" class="seasonal-section" aria-label="Seasonal recommendations">
+                <div class="seasonal-header">
+                    <h2 id="seasonal-title"></h2>
+                    <p id="seasonal-description"></p>
+                </div>
+                <div id="seasonal-cocktails" class="seasonal-cocktails-grid"></div>
+            </section>
 
             <!-- Results Section -->
-            <div id="results-section">
+            <section id="results-section" aria-live="polite" aria-label="Search results">
                 <!-- Cocktail cards will be inserted here -->
-            </div>
+            </section>
 
             <!-- Cocktail Detail Modal -->
-            <div id="cocktail-modal" class="modal">
+            <div id="cocktail-modal" class="modal" role="dialog" aria-modal="true" aria-label="Cocktail details">
                 <div class="modal-content">
-                    <span class="close-btn">&times;</span>
+                    <button class="close-btn" aria-label="Close dialog">&times;</button>
                     <div id="cocktail-detail">
                         <!-- Detailed cocktail info will be inserted here -->
                     </div>
@@ -62,29 +82,29 @@
             </div>
 
             <!-- Ingredient Detail Modal -->
-            <div id="ingredient-modal" class="modal">
+            <div id="ingredient-modal" class="modal" role="dialog" aria-modal="true" aria-label="Ingredient details">
                 <div class="modal-content">
-                    <span class="close-btn">&times;</span>
+                    <button class="close-btn" aria-label="Close dialog">&times;</button>
                     <div id="ingredient-detail">
                         <!-- Ingredient info will be inserted here -->
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
 
         <!-- Create Your Own Tab -->
-        <div class="tab-content" id="create-tab">
-            <div class="create-section">
+        <div class="tab-content" id="create-tab" role="tabpanel" aria-labelledby="tab-create">
+            <section class="create-section" aria-label="Create your own cocktail">
                 <h2>Create Your Own Cocktail</h2>
-                <div class="create-form">
+                <form class="create-form" aria-label="New cocktail form">
                     <div class="form-group">
                         <label for="cocktail-name">Cocktail Name</label>
-                        <input type="text" id="cocktail-name" placeholder="Enter your cocktail name...">
+                        <input type="text" id="cocktail-name" placeholder="Enter your cocktail name..." required>
                     </div>
 
                     <div class="form-group">
                         <label for="cocktail-glass">Glass Type</label>
-                        <select id="cocktail-glass">
+                        <select id="cocktail-glass" aria-label="Select glass type">
                             <option value="Cocktail glass">Cocktail glass</option>
                             <option value="Highball glass">Highball glass</option>
                             <option value="Old-fashioned glass">Old-fashioned glass</option>
@@ -95,17 +115,17 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label>Ingredients</label>
+                    <fieldset class="form-group">
+                        <legend>Ingredients</legend>
                         <div id="ingredients-list">
                             <div class="ingredient-input-row">
-                                <input type="text" placeholder="Ingredient" class="ingredient-name">
-                                <input type="text" placeholder="Measurement" class="ingredient-measure">
-                                <button class="remove-ingredient-btn" style="display: none;">×</button>
+                                <input type="text" placeholder="Ingredient" class="ingredient-name" aria-label="Ingredient name">
+                                <input type="text" placeholder="Measurement" class="ingredient-measure" aria-label="Ingredient measurement">
+                                <button type="button" class="remove-ingredient-btn" style="display: none;" aria-label="Remove ingredient">&times;</button>
                             </div>
                         </div>
-                        <button id="add-ingredient-btn">+ Add Ingredient</button>
-                    </div>
+                        <button type="button" id="add-ingredient-btn" aria-label="Add another ingredient">+ Add Ingredient</button>
+                    </fieldset>
 
                     <div class="form-group">
                         <label for="cocktail-instructions">Instructions</label>
@@ -114,23 +134,69 @@
 
                     <div class="form-group">
                         <label for="cocktail-image">Image URL (optional)</label>
-                        <input type="text" id="cocktail-image" placeholder="https://example.com/image.jpg">
+                        <input type="text" id="cocktail-image" placeholder="https://example.com/image.jpg" aria-label="Cocktail image URL">
                     </div>
 
-                    <button id="save-cocktail-btn" class="primary-btn">Save My Cocktail</button>
-                </div>
+                    <button type="button" id="save-cocktail-btn" class="primary-btn">Save My Cocktail</button>
+                </form>
 
                 <!-- Saved Cocktails -->
-                <div id="saved-cocktails-section">
+                <section id="saved-cocktails-section" aria-label="Your saved cocktails">
                     <h3>Your Saved Cocktails</h3>
-                    <div id="saved-cocktails-grid">
+                    <div id="saved-cocktails-grid" aria-live="polite">
                         <!-- Saved cocktails will appear here -->
                     </div>
-                </div>
-            </div>
+                </section>
+            </section>
         </div>
     </div>
 
-    <script src="app.js"></script>
+        <!-- Compare Tab -->
+        <div class="tab-content" id="compare-tab" role="tabpanel" aria-labelledby="tab-compare">
+            <section class="compare-section" aria-label="Compare cocktails">
+                <h2>Compare Cocktails</h2>
+                <p class="compare-instructions">Select 2-4 cocktails from search results to compare them side by side. Use the "Add to Compare" button on any cocktail card.</p>
+                <div id="compare-slots" class="compare-slots">
+                    <!-- Compare slot placeholders -->
+                </div>
+                <div id="compare-table-container" style="display: none;">
+                    <table id="compare-table" class="compare-table" aria-label="Cocktail comparison">
+                        <thead id="compare-thead"></thead>
+                        <tbody id="compare-tbody"></tbody>
+                    </table>
+                </div>
+                <button id="clear-compare-btn" class="primary-btn" style="display: none; max-width: 300px; margin: 20px auto;">Clear Comparison</button>
+            </section>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div class="tab-content" id="inventory-tab" role="tabpanel" aria-labelledby="tab-inventory">
+            <section class="inventory-section" aria-label="Ingredient inventory">
+                <h2>My Bar Inventory</h2>
+                <p class="inventory-instructions">Check off ingredients you have, then see what cocktails you can make!</p>
+
+                <div class="inventory-controls">
+                    <input type="text" id="inventory-search" placeholder="Search ingredients..." aria-label="Search ingredients">
+                    <button id="what-can-i-make-btn" class="primary-btn" style="max-width: 300px;">What Can I Make?</button>
+                </div>
+
+                <div id="inventory-grid" class="inventory-grid" aria-label="Ingredient checklist">
+                    <!-- Ingredient checkboxes generated by JS -->
+                </div>
+
+                <div id="makeable-results" style="display: none;">
+                    <h3 id="makeable-heading"></h3>
+                    <div id="makeable-cocktails" class="makeable-list" aria-live="polite"></div>
+                </div>
+
+                <div id="shopping-list-section" style="display: none;">
+                    <h3>Shopping List</h3>
+                    <ul id="shopping-list" class="shopping-list" aria-label="Shopping list"></ul>
+                    <button id="copy-shopping-list" class="primary-btn" style="max-width: 300px; margin-top: 10px;">Copy Shopping List</button>
+                </div>
+            </section>
+        </div>
+
+    <script src="app.js" defer></script>
 </body>
 </html>
