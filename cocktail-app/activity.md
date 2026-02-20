@@ -157,6 +157,28 @@ Each entry follows this format:
 
 ---
 
+## 2026-02-20 - Task: Add seasonal cocktail recommendations
+
+**Goal:** Show season-appropriate cocktail recommendations on the homepage
+
+**Changes Made:**
+- Added SEASONAL_DATA with 6 cocktails per season (spring/summer/fall/winter)
+- Each season has title, description, icon, and curated cocktail names
+- `getCurrentSeason()` detects season from current month
+- Seasonal section loads on page init, fetching cocktail details from API
+- Seasonal cards with image + name overlay, clickable to view details
+- Cards are keyboard accessible (tabindex, Enter key handler)
+- Responsive grid layout (auto-fill, min 150px)
+
+**Verification:**
+- Code review: February = winter, so Winter Classics will show
+- Cards fetch real data from TheCocktailDB API
+- Click/Enter on seasonal card opens cocktail detail modal
+
+**Status:** ✅ Complete
+
+---
+
 ## Future Entries
 
 The autonomous agent will add entries below as it completes tasks from plan.md.

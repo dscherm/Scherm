@@ -963,6 +963,85 @@ function copyShoppingList() {
     });
 })();
 
+// Seasonal Cocktail Recommendations
+const SEASONAL_DATA = {
+    spring: {
+        title: 'Spring Sips',
+        description: 'Light, floral, and refreshing cocktails perfect for warming days.',
+        cocktails: ['Mojito', 'French 75', 'Gimlet', 'Aperol Spritz', 'Tom Collins', 'Paloma'],
+        icon: '🌸'
+    },
+    summer: {
+        title: 'Summer Coolers',
+        description: 'Tropical, fruity, and ice-cold drinks to beat the heat.',
+        cocktails: ['Margarita', 'Pina Colada', 'Daiquiri', 'Mai Tai', 'Tequila Sunrise', 'Caipirinha'],
+        icon: '☀️'
+    },
+    fall: {
+        title: 'Autumn Warmers',
+        description: 'Spiced, rich, and warming cocktails for cozy evenings.',
+        cocktails: ['Old Fashioned', 'Manhattan', 'Whiskey Sour', 'Hot Toddy', 'Boulevardier', 'Amaretto Sour'],
+        icon: '🍂'
+    },
+    winter: {
+        title: 'Winter Classics',
+        description: 'Bold, spirited, and warming cocktails for cold nights.',
+        cocktails: ['Espresso Martini', 'Irish Coffee', 'Negroni', 'Rob Roy', 'Brandy Alexander', 'Eggnog'],
+        icon: '❄️'
+    }
+};
+
+function getCurrentSeason() {
+    const month = new Date().getMonth(); // 0-11
+    if (month >= 2 && month <= 4) return 'spring';
+    if (month >= 5 && month <= 7) return 'summer';
+    if (month >= 8 && month <= 10) return 'fall';
+    return 'winter';
+}
+
+async function loadSeasonalRecommendations() {
+    const season = getCurrentSeason();
+    const data = SEASONAL_DATA[season];
+
+    document.getElementById('seasonal-title').textContent = `${data.icon} ${data.title}`;
+    document.getElementById('seasonal-description').textContent = data.description;
+
+    const grid = document.getElementById('seasonal-cocktails');
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+    const cocktails = [];
+    for (const name of data.cocktails) {
+        try {
+            const resp = await fetch(`${API_BASE}/search.php?s=${encodeURIComponent(name)}`);
+            const result = await resp.json();
+            if (result.drinks && result.drinks[0]) {
+                cocktails.push(result.drinks[0]);
+            }
+        } catch (e) { /* skip */ }
+    }
+
+    if (cocktails.length === 0) {
+        grid.innerHTML = '';
+        return;
+    }
+
+    grid.innerHTML = cocktails.map(c => `
+        <div class="seasonal-card" tabindex="0" role="button" aria-label="View ${c.strDrink}" data-id="${c.idDrink}">
+            <img src="${c.strDrinkThumb}" alt="${c.strDrink}">
+            <div class="seasonal-card-overlay">
+                <h4>${c.strDrink}</h4>
+            </div>
+        </div>
+    `).join('');
+
+    grid.querySelectorAll('.seasonal-card').forEach((card, i) => {
+        card.addEventListener('click', () => showCocktailDetail(cocktails[i]));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') showCocktailDetail(cocktails[i]);
+        });
+    });
+}
+
 // PWA: Service Worker Registration & Install Prompt
 let deferredInstallPrompt = null;
 
@@ -999,7 +1078,8 @@ function showInstallBanner() {
     document.getElementById('dismiss-install').addEventListener('click', () => banner.remove());
 }
 
-// Initialize with a random cocktail on load
+// Initialize on load
 window.addEventListener('load', () => {
     getRandomCocktail();
+    loadSeasonalRecommendations();
 });

@@ -321,7 +321,7 @@ Each task includes steps, verification criteria, and a `passes` boolean.
     "Explain why cocktail fits season (flavor profile, temperature, etc.)"
   ],
   "verification": "Check recommendations in summer - should show refreshing, citrus-forward cocktails",
-  "passes": false
+  "passes": true
 }
 ```
 
