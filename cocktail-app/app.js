@@ -89,11 +89,23 @@ document.querySelectorAll('.liquor-btn').forEach(btn => {
     });
 });
 
+// Debounce helper
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
 // Search Button
 searchBtn.addEventListener('click', performSearch);
 searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') performSearch();
 });
+searchInput.addEventListener('input', debounce(() => {
+    if (searchInput.value.trim().length >= 3) performSearch();
+}, 400));
 
 // Perform Search
 async function performSearch() {
@@ -208,7 +220,7 @@ function createCocktailCard(cocktail) {
     const cocktailId = cocktail.idDrink || cocktail.id;
 
     card.innerHTML = `
-        <img src="${cocktail.strDrinkThumb}" alt="${cocktail.strDrink}">
+        <img src="${cocktail.strDrinkThumb}/preview" alt="${cocktail.strDrink}" loading="lazy" decoding="async">
         <div class="cocktail-card-content">
             <h3>${cocktail.strDrink}</h3>
             ${cocktail.strCategory ? `<span class="category">${cocktail.strCategory}</span>` : ''}
