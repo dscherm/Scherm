@@ -113,6 +113,28 @@ Each entry follows this format:
 
 ---
 
+## 2026-02-20 - Task: Create ingredient inventory tracker
+
+**Goal:** Let users track what ingredients they have and discover makeable cocktails
+
+**Changes Made:**
+- Added "My Bar" tab with searchable ingredient checklist (~80 common ingredients)
+- Ingredient inventory persists in LocalStorage
+- "What Can I Make?" button queries TheCocktailDB API by inventory ingredients
+- Results sorted: perfect matches first, then partial (missing 1-2 ingredients)
+- Shopping list auto-generated from partial matches, showing which cocktails each missing ingredient unlocks
+- Copy shopping list to clipboard button
+- Responsive grid layout for ingredient checkboxes
+
+**Verification:**
+- Code review: inventory save/load from LocalStorage, API queries, sorting logic all correct
+- Shopping list prioritizes ingredients that unlock the most cocktails
+- Graceful handling of empty inventory and no-match scenarios
+
+**Status:** ✅ Complete
+
+---
+
 ## Future Entries
 
 The autonomous agent will add entries below as it completes tasks from plan.md.

@@ -289,7 +289,7 @@ Each task includes steps, verification criteria, and a `passes` boolean.
     "Allow exporting shopping list"
   ],
   "verification": "Check 5 ingredients, click 'What can I make?' - should show makeable cocktails",
-  "passes": false
+  "passes": true
 }
 ```
 

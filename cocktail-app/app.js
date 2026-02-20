@@ -36,6 +36,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         if (tabName === 'create') {
             displaySavedCocktails();
         }
+        // Initialize inventory if switching to inventory tab
+        if (tabName === 'inventory') {
+            initInventory();
+        }
     });
 });
 
@@ -721,6 +725,198 @@ document.getElementById('clear-compare-btn').addEventListener('click', () => {
     updateCompareUI();
     updateCompareButtons();
 });
+
+// Ingredient Inventory System
+const COMMON_INGREDIENTS = [
+    // Spirits
+    'Vodka', 'Gin', 'Rum', 'White rum', 'Dark rum', 'Tequila', 'Whiskey', 'Bourbon',
+    'Scotch', 'Brandy', 'Cognac', 'Mezcal', 'Rye whiskey',
+    // Liqueurs
+    'Triple sec', 'Cointreau', 'Grand Marnier', 'Kahlua', 'Amaretto', 'Baileys irish cream',
+    'Blue Curacao', 'Campari', 'Chambord', 'Chartreuse', 'Creme de Cacao', 'Creme de Menthe',
+    'Drambuie', 'Frangelico', 'Galliano', 'Maraschino liqueur', 'Midori melon liqueur',
+    'Sloe gin', 'Southern Comfort', 'St-Germain',
+    // Vermouth & Wine
+    'Dry Vermouth', 'Sweet Vermouth', 'Champagne', 'Prosecco', 'Red Wine', 'White Wine',
+    // Mixers
+    'Club soda', 'Tonic water', 'Ginger ale', 'Ginger beer', 'Cola', 'Lemon-lime soda',
+    'Cranberry juice', 'Orange juice', 'Pineapple juice', 'Tomato juice', 'Grapefruit juice',
+    'Apple juice', 'Coconut cream', 'Coconut milk', 'Milk', 'Cream', 'Half-and-half',
+    // Citrus & Fruit
+    'Lime juice', 'Lemon juice', 'Lime', 'Lemon', 'Orange',
+    // Sweeteners & Syrups
+    'Simple syrup', 'Sugar syrup', 'Grenadine', 'Honey', 'Agave syrup', 'Maple syrup',
+    'Orgeat syrup', 'Sugar',
+    // Bitters & Extras
+    'Angostura bitters', 'Orange bitters', 'Peychaud\'s bitters',
+    'Tabasco sauce', 'Worcestershire sauce',
+    // Garnishes & Others
+    'Mint', 'Basil', 'Salt', 'Pepper', 'Nutmeg', 'Cinnamon',
+    'Maraschino cherry', 'Olive', 'Egg white', 'Egg'
+];
+
+let inventory = JSON.parse(localStorage.getItem('barInventory')) || [];
+
+function initInventory() {
+    const grid = document.getElementById('inventory-grid');
+    renderInventoryGrid(COMMON_INGREDIENTS);
+
+    document.getElementById('inventory-search').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = COMMON_INGREDIENTS.filter(i => i.toLowerCase().includes(query));
+        renderInventoryGrid(filtered);
+    });
+
+    document.getElementById('what-can-i-make-btn').addEventListener('click', findMakeableCocktails);
+    document.getElementById('copy-shopping-list').addEventListener('click', copyShoppingList);
+}
+
+function renderInventoryGrid(ingredients) {
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = ingredients.map(ing => {
+        const checked = inventory.includes(ing) ? 'checked' : '';
+        const id = `inv-${ing.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        return `<label class="inventory-item ${checked ? 'selected' : ''}" for="${id}">
+            <input type="checkbox" id="${id}" value="${ing}" ${checked}>
+            <span>${ing}</span>
+        </label>`;
+    }).join('');
+
+    grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            if (cb.checked) {
+                if (!inventory.includes(cb.value)) inventory.push(cb.value);
+            } else {
+                inventory = inventory.filter(i => i !== cb.value);
+            }
+            localStorage.setItem('barInventory', JSON.stringify(inventory));
+            cb.closest('.inventory-item').classList.toggle('selected', cb.checked);
+        });
+    });
+}
+
+async function findMakeableCocktails() {
+    if (inventory.length === 0) {
+        alert('Check off some ingredients first!');
+        return;
+    }
+
+    const makeableSection = document.getElementById('makeable-results');
+    const cocktailsDiv = document.getElementById('makeable-cocktails');
+    const heading = document.getElementById('makeable-heading');
+    const shoppingSection = document.getElementById('shopping-list-section');
+
+    cocktailsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching cocktails...</p></div>';
+    makeableSection.style.display = 'block';
+    shoppingSection.style.display = 'none';
+
+    // Search by each inventory ingredient (limit to first 5 for performance)
+    const searchIngredients = inventory.slice(0, 5);
+    const allCocktails = new Map();
+
+    for (const ing of searchIngredients) {
+        try {
+            const resp = await fetch(`${API_BASE}/filter.php?i=${encodeURIComponent(ing)}`);
+            const data = await resp.json();
+            if (data.drinks) {
+                for (const drink of data.drinks) {
+                    if (!allCocktails.has(drink.idDrink)) {
+                        allCocktails.set(drink.idDrink, { ...drink, matchedIngredients: [ing] });
+                    } else {
+                        allCocktails.get(drink.idDrink).matchedIngredients.push(ing);
+                    }
+                }
+            }
+        } catch (e) { /* skip failed fetches */ }
+    }
+
+    // Fetch full details for top matches (sorted by most matched ingredients)
+    const sorted = [...allCocktails.values()].sort((a, b) => b.matchedIngredients.length - a.matchedIngredients.length);
+    const top = sorted.slice(0, 12);
+
+    const detailed = [];
+    for (const drink of top) {
+        try {
+            const resp = await fetch(`${API_BASE}/lookup.php?i=${drink.idDrink}`);
+            const data = await resp.json();
+            if (data.drinks) {
+                const full = data.drinks[0];
+                const ings = getIngredients(full);
+                const have = ings.filter(i => inventory.some(inv => inv.toLowerCase() === i.name.toLowerCase()));
+                const missing = ings.filter(i => !inventory.some(inv => inv.toLowerCase() === i.name.toLowerCase()));
+                detailed.push({ ...full, have, missing, totalIngredients: ings.length });
+            }
+        } catch (e) { /* skip */ }
+    }
+
+    // Sort: fully makeable first, then by fewest missing
+    detailed.sort((a, b) => a.missing.length - b.missing.length);
+
+    const perfect = detailed.filter(d => d.missing.length === 0);
+    const partial = detailed.filter(d => d.missing.length > 0 && d.missing.length <= 2);
+
+    heading.textContent = perfect.length > 0
+        ? `You can make ${perfect.length} cocktail${perfect.length > 1 ? 's' : ''}!`
+        : 'No perfect matches, but close ones below:';
+
+    let html = '';
+
+    if (perfect.length > 0) {
+        html += '<h4 class="makeable-subheading">Perfect Matches</h4>';
+        html += perfect.map(c => renderMakeableCard(c, true)).join('');
+    }
+
+    if (partial.length > 0) {
+        html += '<h4 class="makeable-subheading">Almost There (missing 1-2 ingredients)</h4>';
+        html += partial.map(c => renderMakeableCard(c, false)).join('');
+    }
+
+    if (perfect.length === 0 && partial.length === 0) {
+        html = '<div class="empty-state">No matches found. Try adding more ingredients to your bar!</div>';
+    }
+
+    cocktailsDiv.innerHTML = html;
+
+    // Build shopping list from partial matches
+    if (partial.length > 0) {
+        const missingMap = new Map();
+        partial.forEach(c => {
+            c.missing.forEach(m => {
+                if (!missingMap.has(m.name)) missingMap.set(m.name, []);
+                missingMap.get(m.name).push(c.strDrink);
+            });
+        });
+
+        const shoppingList = document.getElementById('shopping-list');
+        shoppingList.innerHTML = [...missingMap.entries()]
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([name, cocktails]) =>
+                `<li><strong>${name}</strong> — unlocks: ${cocktails.join(', ')}</li>`
+            ).join('');
+        shoppingSection.style.display = 'block';
+    }
+}
+
+function renderMakeableCard(cocktail, isPerfect) {
+    return `<div class="makeable-card ${isPerfect ? 'perfect' : 'partial'}">
+        <img src="${cocktail.strDrinkThumb}" alt="${cocktail.strDrink}">
+        <div class="makeable-card-info">
+            <h4>${cocktail.strDrink}</h4>
+            <p>${cocktail.have.length}/${cocktail.totalIngredients} ingredients</p>
+            ${cocktail.missing.length > 0
+                ? `<p class="missing-ingredients">Missing: ${cocktail.missing.map(m => m.name).join(', ')}</p>`
+                : '<p class="all-good">You have everything!</p>'}
+        </div>
+    </div>`;
+}
+
+function copyShoppingList() {
+    const items = document.querySelectorAll('#shopping-list li');
+    const text = [...items].map(li => li.textContent).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Shopping list copied to clipboard!');
+    });
+}
 
 // Keyboard Navigation System
 (function initKeyboardNavigation() {
