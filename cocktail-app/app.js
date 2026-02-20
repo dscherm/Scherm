@@ -4,6 +4,8 @@ const API_BASE = 'https://www.thecocktaildb.com/api/json/v1/1';
 // State Management
 let currentSearchType = 'name';
 let savedCocktails = JSON.parse(localStorage.getItem('savedCocktails')) || [];
+let compareList = []; // up to 4 cocktails for comparison
+const MAX_COMPARE = 4;
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
@@ -199,16 +201,28 @@ function createCocktailCard(cocktail) {
     card.setAttribute('role', 'button');
     card.setAttribute('aria-label', `View details for ${cocktail.strDrink}`);
 
+    const cocktailId = cocktail.idDrink || cocktail.id;
+
     card.innerHTML = `
         <img src="${cocktail.strDrinkThumb}" alt="${cocktail.strDrink}">
         <div class="cocktail-card-content">
             <h3>${cocktail.strDrink}</h3>
             ${cocktail.strCategory ? `<span class="category">${cocktail.strCategory}</span>` : ''}
             ${cocktail.strGlass ? `<p class="glass-type">Served in: ${cocktail.strGlass}</p>` : ''}
+            <button class="compare-add-btn" data-cocktail-id="${cocktailId}" aria-label="Add ${cocktail.strDrink} to comparison">Compare</button>
         </div>
     `;
 
-    card.addEventListener('click', () => showCocktailDetail(cocktail));
+    card.querySelector('.compare-add-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        addToCompare(cocktail);
+    });
+
+    card.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('compare-add-btn')) {
+            showCocktailDetail(cocktail);
+        }
+    });
 
     return card;
 }
@@ -573,6 +587,140 @@ function showLoading() {
         </div>
     `;
 }
+
+// Comparison System
+function addToCompare(cocktail) {
+    if (compareList.length >= MAX_COMPARE) {
+        alert('You can compare up to 4 cocktails. Remove one first.');
+        return;
+    }
+    const id = cocktail.idDrink || cocktail.id;
+    if (compareList.find(c => (c.idDrink || c.id) === id)) {
+        alert('This cocktail is already in your comparison.');
+        return;
+    }
+    compareList.push(cocktail);
+    updateCompareUI();
+    updateCompareButtons();
+}
+
+function removeFromCompare(index) {
+    compareList.splice(index, 1);
+    updateCompareUI();
+    updateCompareButtons();
+}
+
+function updateCompareButtons() {
+    document.querySelectorAll('.compare-add-btn').forEach(btn => {
+        const id = btn.dataset.cocktailId;
+        const inList = compareList.find(c => String(c.idDrink || c.id) === id);
+        btn.textContent = inList ? 'Added' : 'Compare';
+        btn.disabled = !!inList;
+    });
+    // Update tab badge
+    const compareTab = document.getElementById('tab-compare');
+    if (compareTab) {
+        compareTab.textContent = compareList.length > 0
+            ? `Compare (${compareList.length})`
+            : 'Compare';
+    }
+}
+
+function getIngredients(cocktail) {
+    if (cocktail.custom && cocktail.ingredients) {
+        return cocktail.ingredients.map(ing => ({ name: ing.name, measure: ing.measure }));
+    }
+    const ingredients = [];
+    for (let i = 1; i <= 15; i++) {
+        const name = cocktail[`strIngredient${i}`];
+        const measure = cocktail[`strMeasure${i}`];
+        if (name) ingredients.push({ name, measure: measure || 'To taste' });
+    }
+    return ingredients;
+}
+
+function updateCompareUI() {
+    const slotsContainer = document.getElementById('compare-slots');
+    const tableContainer = document.getElementById('compare-table-container');
+    const clearBtn = document.getElementById('clear-compare-btn');
+
+    if (compareList.length === 0) {
+        slotsContainer.innerHTML = '<div class="empty-state">No cocktails selected for comparison. Search for cocktails and click "Compare" to add them.</div>';
+        tableContainer.style.display = 'none';
+        clearBtn.style.display = 'none';
+        return;
+    }
+
+    // Show selected cocktail slots
+    slotsContainer.innerHTML = compareList.map((cocktail, i) => `
+        <div class="compare-slot">
+            <img src="${cocktail.strDrinkThumb}" alt="${cocktail.strDrink}">
+            <span>${cocktail.strDrink}</span>
+            <button class="compare-remove-btn" data-index="${i}" aria-label="Remove ${cocktail.strDrink} from comparison">&times;</button>
+        </div>
+    `).join('');
+
+    slotsContainer.querySelectorAll('.compare-remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => removeFromCompare(parseInt(btn.dataset.index)));
+    });
+
+    if (compareList.length < 2) {
+        tableContainer.style.display = 'none';
+        clearBtn.style.display = 'none';
+        return;
+    }
+
+    // Build comparison table
+    clearBtn.style.display = 'block';
+    tableContainer.style.display = 'block';
+
+    // Collect all unique ingredients
+    const allIngredientSets = compareList.map(c => getIngredients(c));
+    const allIngredientNames = [...new Set(allIngredientSets.flat().map(i => i.name))];
+
+    const thead = document.getElementById('compare-thead');
+    const tbody = document.getElementById('compare-tbody');
+
+    thead.innerHTML = `<tr>
+        <th>Attribute</th>
+        ${compareList.map(c => `<th>${c.strDrink}</th>`).join('')}
+    </tr>`;
+
+    let rows = '';
+
+    // Category row
+    rows += `<tr><td><strong>Category</strong></td>${compareList.map(c =>
+        `<td>${c.strCategory || 'N/A'}</td>`).join('')}</tr>`;
+
+    // Glass row
+    rows += `<tr><td><strong>Glass</strong></td>${compareList.map(c =>
+        `<td>${c.strGlass || 'N/A'}</td>`).join('')}</tr>`;
+
+    // Alcoholic row
+    rows += `<tr><td><strong>Type</strong></td>${compareList.map(c =>
+        `<td>${c.strAlcoholic || 'N/A'}</td>`).join('')}</tr>`;
+
+    // Ingredient rows with highlighting for common ingredients
+    allIngredientNames.forEach(ingName => {
+        const inCount = allIngredientSets.filter(set => set.some(i => i.name === ingName)).length;
+        const isCommon = inCount > 1;
+        rows += `<tr class="${isCommon ? 'common-ingredient' : ''}">
+            <td><strong>${ingName}</strong>${isCommon ? ' <span class="common-badge">Common</span>' : ''}</td>
+            ${allIngredientSets.map(set => {
+                const found = set.find(i => i.name === ingName);
+                return `<td>${found ? found.measure : '—'}</td>`;
+            }).join('')}
+        </tr>`;
+    });
+
+    tbody.innerHTML = rows;
+}
+
+document.getElementById('clear-compare-btn').addEventListener('click', () => {
+    compareList = [];
+    updateCompareUI();
+    updateCompareButtons();
+});
 
 // Keyboard Navigation System
 (function initKeyboardNavigation() {

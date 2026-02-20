@@ -90,6 +90,29 @@ Each entry follows this format:
 
 ---
 
+## 2026-02-20 - Task: Add cocktail comparison view (side-by-side)
+
+**Goal:** Allow users to select 2-4 cocktails and view a side-by-side comparison table
+
+**Changes Made:**
+- Added "Compare" tab to navigation with dynamic count badge
+- Added "Compare" button to every cocktail card (stops propagation so card click still works)
+- Built comparison slot UI showing selected cocktails with remove buttons
+- Built comparison table: category, glass, type rows + all ingredients
+- Common ingredients highlighted with pink background and "Common" badge
+- Compare list state capped at 4 cocktails, prevents duplicates
+- Added responsive styles for mobile compare table
+- `getIngredients()` helper works for both API and custom cocktails
+
+**Verification:**
+- Code review: addToCompare/removeFromCompare/updateCompareUI functions handle all cases
+- Table correctly identifies common ingredients across selected cocktails
+- UI degrades gracefully on mobile with stacked slots and smaller table
+
+**Status:** ✅ Complete
+
+---
+
 ## Future Entries
 
 The autonomous agent will add entries below as it completes tasks from plan.md.

@@ -17,6 +17,7 @@
         <nav class="tab-navigation" role="tablist" aria-label="Main navigation">
             <button class="tab-btn active" data-tab="search" role="tab" aria-selected="true" aria-controls="search-tab" id="tab-search">Search Cocktails</button>
             <button class="tab-btn" data-tab="create" role="tab" aria-selected="false" aria-controls="create-tab" id="tab-create">Create Your Own</button>
+            <button class="tab-btn" data-tab="compare" role="tab" aria-selected="false" aria-controls="compare-tab" id="tab-compare">Compare</button>
         </nav>
 
         <!-- Search Tab -->
@@ -131,6 +132,24 @@
             </section>
         </div>
     </div>
+
+        <!-- Compare Tab -->
+        <div class="tab-content" id="compare-tab" role="tabpanel" aria-labelledby="tab-compare">
+            <section class="compare-section" aria-label="Compare cocktails">
+                <h2>Compare Cocktails</h2>
+                <p class="compare-instructions">Select 2-4 cocktails from search results to compare them side by side. Use the "Add to Compare" button on any cocktail card.</p>
+                <div id="compare-slots" class="compare-slots">
+                    <!-- Compare slot placeholders -->
+                </div>
+                <div id="compare-table-container" style="display: none;">
+                    <table id="compare-table" class="compare-table" aria-label="Cocktail comparison">
+                        <thead id="compare-thead"></thead>
+                        <tbody id="compare-tbody"></tbody>
+                    </table>
+                </div>
+                <button id="clear-compare-btn" class="primary-btn" style="display: none; max-width: 300px; margin: 20px auto;">Clear Comparison</button>
+            </section>
+        </div>
 
     <script src="app.js"></script>
 </body>

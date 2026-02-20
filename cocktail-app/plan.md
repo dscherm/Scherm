@@ -272,7 +272,7 @@ Each task includes steps, verification criteria, and a `passes` boolean.
     "Add export comparison as image/PDF"
   ],
   "verification": "Select 2 cocktails, enable comparison - should show clear side-by-side view",
-  "passes": false
+  "passes": true
 }
 ```
 
